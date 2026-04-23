@@ -7,211 +7,186 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0f0ec;
-  --text:#1a1a1a;--text2:#6b6b6b;--text3:#9b9b9b;
+  --bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;
+  --text:#1a1a1a;--text2:#6b6b6b;
   --border:#e0e0d8;--border2:#c8c8c0;
   --info-bg:#eff6ff;--info-text:#1d4ed8;--info-border:#bfdbfe;
   --success-bg:#f0fdf4;--success-text:#15803d;--success-border:#bbf7d0;
   --danger-bg:#fff1f2;--danger-text:#be123c;--danger-border:#fecdd3;
   --warn-bg:#fffbeb;--warn-text:#b45309;--warn-border:#fde68a;
-  --radius:8px;--radius-lg:12px;
+  --r:8px;--rl:12px;
 }
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
-    --text:#f5f5f0;--text2:#aeaeb2;--text3:#636366;
-    --border:#3a3a3c;--border2:#48484a;
-    --info-bg:#1e3a5f;--info-text:#93c5fd;--info-border:#1e40af;
-    --success-bg:#14532d;--success-text:#86efac;--success-border:#166534;
-    --danger-bg:#4c0519;--danger-text:#fca5a5;--danger-border:#9f1239;
-    --warn-bg:#451a03;--warn-text:#fcd34d;--warn-border:#92400e;
-  }
-}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
+  --text:#f5f5f0;--text2:#aeaeb2;
+  --border:#3a3a3c;--border2:#48484a;
+  --info-bg:#1e3a5f;--info-text:#93c5fd;--info-border:#1e40af;
+  --success-bg:#14532d;--success-text:#86efac;--success-border:#166534;
+  --danger-bg:#4c0519;--danger-text:#fca5a5;--danger-border:#9f1239;
+  --warn-bg:#451a03;--warn-text:#fcd34d;--warn-border:#92400e;
+}}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
-.page{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
-.header{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
-.header h1{font-size:22px;font-weight:600;margin-bottom:4px}
-.header p{font-size:13px;color:var(--text2)}
+.page{max-width:980px;margin:0 auto;padding:2rem 1.5rem}
+.hdr{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.hdr h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.hdr p{font-size:13px;color:var(--text2)}
 .step-bar{display:flex;align-items:center;margin-bottom:1.5rem}
 .si{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
-.si.active{color:var(--text);font-weight:500}
+.si.active{color:var(--text);font-weight:600}
 .si.done{color:var(--success-text)}
-.sn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:var(--bg);flex-shrink:0}
+.sn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--bg);flex-shrink:0}
 .si.active .sn{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}
 .si.done .sn{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}
 .sdiv{flex:1;height:1px;background:var(--border);margin:0 6px}
-.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem}
-.card+.card,.card+.cmt{margin-top:1rem}
-input,select,textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-top:12px}
+.card:first-child{margin-top:0}
+input,select,textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--info-text);box-shadow:0 0 0 3px rgba(29,78,216,.1)}
 textarea{resize:vertical;line-height:1.6}
-.btn{cursor:pointer;font-size:13px;font-weight:500;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;transition:all .15s;white-space:nowrap}
-.btn:hover{background:var(--bg2);border-color:var(--border2)}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
 .btn:active{transform:scale(.98)}
 .btn-primary{background:var(--info-bg);border-color:var(--info-border);color:var(--info-text)}
 .btn-primary:hover{opacity:.85}
-.btn-success{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}
 .btn-danger{background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger-text)}
+.btn-success{background:var(--success-bg);border-color:var(--success-border);color:var(--success-text)}
 .btn-sm{padding:4px 10px;font-size:12px}
-.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-@media(max-width:600px){.g2,.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:600px){.g2{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}}
 .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.fb{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.lbl{font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.lbl{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
 .bi{background:var(--info-bg);color:var(--info-text)}
 .bs{background:var(--success-bg);color:var(--success-text)}
-.bw{background:var(--warn-bg);color:var(--warn-text)}
 .bd{background:var(--danger-bg);color:var(--danger-text)}
 .bg{background:var(--bg2);color:var(--text2)}
-.stat-card{background:var(--bg2);border-radius:var(--radius);padding:14px;text-align:center;border:1px solid var(--border)}
-.stat-val{font-size:26px;font-weight:600;line-height:1}
+.stat-card{background:var(--bg2);border-radius:var(--r);padding:14px;text-align:center;border:1px solid var(--border)}
+.stat-val{font-size:26px;font-weight:700;line-height:1}
 .stat-lbl{font-size:11px;color:var(--text2);margin-top:5px}
-.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .15s}
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--rl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .15s;margin-top:12px}
 .drop-zone:hover,.drop-zone.over{border-color:var(--info-text);background:var(--info-bg)}
-.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:var(--bg2);border-radius:var(--radius);border-left:3px solid var(--info-border)}
+.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:var(--bg2);border-radius:var(--r);border-left:3px solid var(--info-border);line-height:1.6;margin-top:10px}
 .tip a{color:var(--info-text)}
-.pbar{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:8px;border:1px solid var(--border)}
-.pfill{height:100%;background:var(--info-text);border-radius:3px;transition:width .3s ease}
+.errtip{font-size:12px;color:var(--danger-text);padding:10px 14px;background:var(--danger-bg);border-radius:var(--r);border-left:3px solid var(--danger-border);line-height:1.6;margin-top:10px}
+.pbar{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:8px}
+.pfill{height:100%;background:var(--info-text);border-radius:3px;transition:width .3s}
 .email-panel{display:grid;grid-template-columns:270px 1fr;gap:1rem;align-items:start}
 @media(max-width:700px){.email-panel{grid-template-columns:1fr}}
-.lead-list{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
-.ll-hdr{padding:9px 12px;font-size:12px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);background:var(--bg2)}
+.lead-list{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.ll-hdr{padding:9px 12px;font-size:12px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:var(--bg2)}
 .ll-body{max-height:520px;overflow-y:auto}
 .lr{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
 .lr:last-child{border-bottom:none}
 .lr:hover{background:var(--bg2)}
 .lr.active{background:var(--info-bg)}
-.la{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;background:var(--bg3);color:var(--text2)}
+.la{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:var(--bg3);color:var(--text2)}
 .lr.active .la{background:var(--bg);color:var(--info-text)}
-.email-detail{border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;display:flex;flex-direction:column;gap:14px}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--info-text);border-radius:50%;animation:sp .6s linear infinite}
+.email-detail{border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;display:flex;flex-direction:column;gap:14px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--info-text);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
-.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius);border:1px solid var(--border);gap:8px;margin-bottom:8px;background:var(--bg)}
-.sec-title{font-size:15px;font-weight:600;margin-bottom:14px}
-h2{font-size:16px;font-weight:600}
-.sub-text{font-size:13px;color:var(--text2);margin-top:4px}
-.mt1{margin-top:8px}.mt2{margin-top:14px}.mt3{margin-top:22px}
-.empty-state{text-align:center;padding:3rem 2rem;color:var(--text2)}
-.empty-state .icon{font-size:36px;margin-bottom:14px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);gap:8px;margin-bottom:8px}
+.sec{font-size:15px;font-weight:700;margin-bottom:14px}
+h2{font-size:16px;font-weight:700}
+.sub{font-size:13px;color:var(--text2);margin-top:4px}
+.mt{margin-top:12px}
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="header">
+  <div class="hdr">
     <h1>🛡️ CyberRisk Pro — AI Cold Email Agent</h1>
-    <p>Upload leads, generate personalized outreach with AI, review and send via SendGrid.</p>
+    <p>Upload leads → AI generates personalized emails → Review → Send via SendGrid</p>
   </div>
   <div id="root"></div>
 </div>
-
 <script>
-const S = {
-  step:0, leads:[], headers:[],
+// ── STATE ───────────────────────────────────────────────────
+const S={
+  step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
   sender:{name:'',email:'',title:'',company:'CyberRisk Pro',sgKey:''},
-  emails:[], genProgress:0, activeIdx:0, sendStatus:{}, dragOver:false, generating:false
+  emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false
 };
 
+// ── CSV ─────────────────────────────────────────────────────
 function parseCSV(text){
   const lines=text.split(/\r?\n/).filter(l=>l.trim());
   if(!lines.length)return{headers:[],rows:[]};
-  const parseRow=line=>{
-    const r=[];let cur='';let q=false;
-    for(let i=0;i<line.length;i++){
-      const c=line[i];
-      if(c==='"'){q=!q;}else if(c===','&&!q){r.push(cur.trim());cur='';}else cur+=c;
+  const pr=line=>{
+    const r=[];let c='';let q=false;
+    for(const ch of line){
+      if(ch==='"'){q=!q;}else if(ch===','&&!q){r.push(c.trim());c='';}else c+=ch;
     }
-    r.push(cur.trim());return r;
+    r.push(c.trim());return r;
   };
-  const headers=parseRow(lines[0]);
-  const rows=lines.slice(1).filter(l=>l.trim()).map(line=>{
-    const vals=parseRow(line);const obj={};
-    headers.forEach((h,i)=>{obj[h]=vals[i]||'';});return obj;
+  const headers=pr(lines[0]);
+  const rows=lines.slice(1).filter(l=>l.trim()).map(l=>{
+    const v=pr(l);const o={};headers.forEach((h,i)=>o[h]=v[i]||'');return o;
   });
   return{headers,rows};
 }
-
 function autoMap(headers){
   const map={email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''};
-  const v={
-    email:['email','e-mail','email address','mail'],
-    fullName:['full name','fullname','contact name','name'],
-    firstName:['first name','firstname','first','given'],
-    lastName:['last name','lastname','surname','family'],
-    company:['company','organization','org','account name','employer','business'],
-    title:['title','job title','position','role'],
-    industry:['industry','sector','vertical','market']
-  };
+  const v={email:['email','e-mail','mail'],fullName:['full name','fullname','contact name','name'],firstName:['first name','firstname','first','given'],lastName:['last name','lastname','surname','family'],company:['company','organization','org','account','employer','business'],title:['title','job title','position','role'],industry:['industry','sector','vertical','market']};
   headers.forEach(h=>{
     const hl=h.toLowerCase().trim();
-    Object.entries(v).forEach(([key,variants])=>{
-      if(!map[key]&&variants.some(vv=>hl===vv||hl.includes(vv)))map[key]=h;
-    });
+    Object.entries(v).forEach(([k,vs])=>{if(!map[k]&&vs.some(vv=>hl===vv||hl.includes(vv)))map[k]=h;});
   });
   return map;
 }
-
-function getLeadName(lead){
+function getName(lead){
   return(lead[S.colMap.fullName]||((lead[S.colMap.firstName]||'')+' '+(lead[S.colMap.lastName]||'')).trim()||lead[S.colMap.email]||'Unknown').trim();
 }
 
+// ── AI CALL via proxy ───────────────────────────────────────
 const SYSTEM=`You are an expert B2B sales copywriter for a cybersecurity SaaS company.
 
-PRODUCT: CyberRisk Pro — Automated Cybersecurity Risk Assessment Scoring & Data Privacy Compliance Automation
-KEY FEATURES:
-- Continuous cybersecurity risk scores and board-ready ratings
-- Automated compliance gap analysis across 12+ frameworks: SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701
-- AI-powered remediation roadmaps
-- Audit-ready evidence collection in minutes, not months
-- Reduce compliance costs by 60-70% vs manual audits
-- Third-party/vendor risk scoring
+PRODUCT: CyberRisk Pro — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation
+FEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.
 
 INDUSTRY PAIN POINTS:
 - Healthcare: HIPAA violations, PHI breach liability, audit burden
 - Finance/Banking: PCI DSS, SOX, DORA compliance complexity, regulator scrutiny
-- Technology/SaaS: SOC 2 for enterprise sales, customer trust, multi-framework needs
-- Retail/E-commerce: PCI DSS, customer data protection, rapid scaling
-- Manufacturing: OT/IT convergence risk, supply chain vulnerabilities
-- Legal: Client data protection, confidentiality breaches
-- Government: FedRAMP, FISMA, CMMC compliance
+- Technology/SaaS: SOC 2 for enterprise sales, multi-framework sprawl
+- Retail: PCI DSS, customer data at scale, rapid growth compliance gaps
+- Manufacturing: OT/IT risk, supply chain vulnerabilities
+- Legal: Client confidentiality, data breach liability
+- Government: FedRAMP, FISMA, CMMC requirements
 
-RULES:
-- Never open with "I hope this finds you well"
-- Subject: specific and benefit-led, under 55 chars
-- 3 short paragraphs max, conversational professional tone
-- Soft CTA: offer a 15-minute discovery call
-- Under 180 words total
-- Personalize pain points to their specific industry and role`;
+RULES: Never open with "I hope this finds you well". Subject line: specific, benefit-led, under 55 chars. Body: 3 short paragraphs, conversational professional tone. Soft CTA: offer a 15-minute discovery call. Under 180 words total. Personalize to industry and role.`;
 
-async function generateOne(lead){
-  const name=getLeadName(lead);
+async function callAI(lead){
+  const name=getName(lead);
   const company=lead[S.colMap.company]||'your company';
   const title=lead[S.colMap.title]||'decision maker';
   const industry=lead[S.colMap.industry]||'technology';
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+
+  // Calls our Netlify proxy at /api/generate instead of Anthropic directly
+  const resp=await fetch('/api/generate',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',max_tokens:800,
-      messages:[{role:'user',content:`${SYSTEM}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown:\n{"subject":"...","body":"..."}`}]
+      model:'claude-sonnet-4-20250514',
+      max_tokens:800,
+      messages:[{role:'user',content:`${SYSTEM}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}`}]
     })
   });
-  if(!resp.ok)throw new Error('API error '+resp.status);
+  if(!resp.ok){const e=await resp.json().catch(()=>({error:'HTTP '+resp.status}));throw new Error(e.error||'HTTP '+resp.status);}
   const data=await resp.json();
-  const txt=data.content[0].text.replace(/\`\`\`json|\`\`\`/g,'').trim();
+  const txt=data.content[0].text.replace(/```json|```/g,'').trim();
   return JSON.parse(txt);
 }
 
-async function sendOne(emailAddr,subject,body){
+// ── SENDGRID ────────────────────────────────────────────────
+async function sendEmail(to,subject,body){
   const resp=await fetch('https://api.sendgrid.com/v3/mail/send',{
     method:'POST',
     headers:{'Authorization':`Bearer ${S.sender.sgKey}`,'Content-Type':'application/json'},
     body:JSON.stringify({
-      personalizations:[{to:[{email:emailAddr}],subject}],
+      personalizations:[{to:[{email:to}],subject}],
       from:{email:S.sender.email,name:S.sender.name},
       content:[{type:'text/plain',value:body}]
     })
@@ -219,339 +194,287 @@ async function sendOne(emailAddr,subject,body){
   return resp.status>=200&&resp.status<300;
 }
 
-function h(tag,attrs,...children){
+// ── DOM HELPERS ──────────────────────────────────────────────
+function h(tag,attrs,...kids){
   const el=document.createElement(tag);
   if(attrs)Object.entries(attrs).forEach(([k,v])=>{
     if(k==='cls')el.className=v;
+    else if(k==='html')el.innerHTML=v;
     else if(k==='style'&&typeof v==='object')Object.assign(el.style,v);
     else if(k.startsWith('on'))el.addEventListener(k.slice(2).toLowerCase(),v);
-    else if(k==='html'){el.innerHTML=v;return;}
     else el.setAttribute(k,v);
   });
-  children.flat().forEach(c=>{
-    if(c==null||c===false)return;
-    el.appendChild(typeof c==='string'?document.createTextNode(c):c);
-  });
+  kids.flat().forEach(c=>{if(c!=null&&c!==false)el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
   return el;
 }
-
-function redraw(){
-  const root=document.getElementById('root');
-  root.innerHTML='';
-  root.appendChild(stepBar());
-  root.appendChild([s0,s1,s2,s3,s4][S.step]());
+function draw(){
+  const r=document.getElementById('root');r.innerHTML='';
+  r.appendChild(stepBar());
+  r.appendChild([p0,p1,p2,p3,p4][S.step]());
 }
-
 function stepBar(){
-  const steps=['Upload Leads','Configure','Generate','Review & Edit','Send Campaign'];
+  const names=['Upload Leads','Configure','Generate','Review & Edit','Send Campaign'];
   const bar=h('div',{style:{display:'flex',alignItems:'center',marginBottom:'1.5rem'}});
-  steps.forEach((s,i)=>{
+  names.forEach((s,i)=>{
     const cls='si'+(i===S.step?' active':i<S.step?' done':'');
     bar.appendChild(h('div',{cls},h('div',{cls:'sn'},i<S.step?'✓':String(i+1)),h('span',null,s)));
-    if(i<steps.length-1)bar.appendChild(h('div',{cls:'sdiv'}));
+    if(i<names.length-1)bar.appendChild(h('div',{cls:'sdiv'}));
   });
   return bar;
 }
 
-// STEP 0: UPLOAD
-function s0(){
+// ── PAGE 0: UPLOAD ───────────────────────────────────────────
+function p0(){
   const wrap=h('div',null);
-  wrap.appendChild(h('div',{cls:'card'},h('h2',null,'Upload your lead list'),h('p',{cls:'sub-text'},'Upload a CSV file with your contacts. Required: Email, Company. Optional: Name, Job Title, Industry.')));
+  wrap.appendChild(h('div',{cls:'card'},h('h2',null,'Upload your lead list'),h('p',{cls:'sub'},'Upload a CSV. Required: Email + Company. Optional: Name, Job Title, Industry.')));
   let fi;
-  const dz=h('div',{
-    cls:'drop-zone'+(S.dragOver?' over':''),
-    style:{marginTop:'12px'},
-    onClick:()=>fi.click(),
-    onDragover:e=>{e.preventDefault();S.dragOver=true;redraw();},
-    onDragleave:()=>{S.dragOver=false;redraw();},
-    onDrop:e=>{e.preventDefault();S.dragOver=false;handleFile(e.dataTransfer.files[0]);}
-  },
+  const dz=h('div',{cls:'drop-zone'+(S.dragOver?' over':''),onClick:()=>fi.click(),
+    onDragover:e=>{e.preventDefault();S.dragOver=true;draw();},
+    onDragleave:()=>{S.dragOver=false;draw();},
+    onDrop:e=>{e.preventDefault();S.dragOver=false;readFile(e.dataTransfer.files[0]);}},
     h('div',{style:{fontSize:'32px',marginBottom:'10px'}},'📂'),
     h('p',{style:{fontWeight:'600',marginBottom:'6px'}},'Drop your CSV file here'),
     h('p',{style:{fontSize:'13px',color:'var(--text2)'}},'or click to browse')
   );
   wrap.appendChild(dz);
-  fi=document.createElement('input');
-  fi.type='file';fi.accept='.csv,text/csv';fi.style.display='none';
-  fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+  fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
+  fi.addEventListener('change',e=>{if(e.target.files[0])readFile(e.target.files[0]);});
   wrap.appendChild(fi);
-  const tip=h('div',{cls:'tip',style:{marginTop:'10px'},html:'<strong>Recommended columns:</strong> First Name, Last Name, Email, Company, Job Title, Industry &nbsp;·&nbsp; <a href="#" id="dl-sample">Download sample CSV</a>'});
+  const tip=h('div',{cls:'tip',html:'<strong>Columns:</strong> First Name, Last Name, Email, Company, Job Title, Industry &nbsp;·&nbsp; <a href="#" id="dls">Download sample CSV</a>'});
   wrap.appendChild(tip);
-  setTimeout(()=>{const a=document.getElementById('dl-sample');if(a)a.onclick=e=>{e.preventDefault();dlSample();};},0);
+  setTimeout(()=>{const a=document.getElementById('dls');if(a)a.onclick=e=>{e.preventDefault();dlSample();};},0);
   if(S.leads.length>0){
-    const preview=h('div',{cls:'card',style:{marginTop:'12px'}});
-    const top=h('div',{cls:'fb',style:{marginBottom:'8px'}},h('span',{style:{fontWeight:'600'}},'✓ '+S.leads.length+' leads loaded'),h('span',{cls:'badge bs'},S.leads.length+' rows'));
-    preview.appendChild(top);
-    const sample=S.leads.slice(0,3).map(r=>[getLeadName(r),r[S.colMap.company]||''].filter(Boolean).join(' · ')).join('<br>');
-    preview.appendChild(h('p',{style:{fontSize:'12px',color:'var(--text2)'},html:sample+(S.leads.length>3?'<br><em>...and '+(S.leads.length-3)+' more</em>':'')}));
-    preview.appendChild(h('div',{style:{textAlign:'right',marginTop:'12px'}},h('button',{cls:'btn btn-primary',onClick:()=>{S.step=1;redraw();}},'Map Columns & Configure →')));
-    wrap.appendChild(preview);
+    const pv=h('div',{cls:'card'});
+    pv.appendChild(h('div',{cls:'fb',style:{marginBottom:'8px'}},h('span',{style:{fontWeight:'700'}},'✓ '+S.leads.length+' leads loaded'),h('span',{cls:'badge bs'},S.leads.length+' rows')));
+    const sample=S.leads.slice(0,3).map(r=>[getName(r),r[S.colMap.company]||''].filter(Boolean).join(' · ')).join('<br>');
+    pv.appendChild(h('p',{style:{fontSize:'12px',color:'var(--text2)'},html:sample+(S.leads.length>3?'<br><em>...and '+(S.leads.length-3)+' more</em>':'')}));
+    pv.appendChild(h('div',{style:{textAlign:'right',marginTop:'12px'}},h('button',{cls:'btn btn-primary',onClick:()=>{S.step=1;draw();}},'Map Columns & Configure →')));
+    wrap.appendChild(pv);
   }
   return wrap;
 }
-
-function handleFile(file){
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const{headers,rows}=parseCSV(e.target.result);
-    S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);redraw();
-  };
-  reader.readAsText(file);
+function readFile(f){
+  const rd=new FileReader();rd.onload=e=>{const{headers,rows}=parseCSV(e.target.result);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);draw();};rd.readAsText(f);
 }
-
 function dlSample(){
   const csv=`First Name,Last Name,Email,Company,Job Title,Industry\nJohn,Smith,john.smith@acme.com,Acme Financial,CISO,Financial Services\nSarah,Chen,s.chen@healthtech.io,HealthTech Inc,Chief Compliance Officer,Healthcare\nMike,Johnson,mike.j@retailco.com,RetailCo,VP of IT,Retail\nLisa,Park,l.park@mfg.com,Precision Mfg,Director of Risk,Manufacturing\nDavid,Lee,d.lee@techstartup.com,TechStartup Inc,CTO,Technology`;
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='sample_leads.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='sample_leads.csv';a.click();
 }
 
-// STEP 1: CONFIGURE
-function s1(){
+// ── PAGE 1: CONFIGURE ────────────────────────────────────────
+function p1(){
   const wrap=h('div',null);
-  const mapCard=h('div',{cls:'card'},h('p',{cls:'sec-title'},'Map your CSV columns'));
-  const colFields=[{key:'email',lbl:'Email *'},{key:'fullName',lbl:'Full Name'},{key:'firstName',lbl:'First Name'},{key:'lastName',lbl:'Last Name'},{key:'company',lbl:'Company *'},{key:'title',lbl:'Job Title'},{key:'industry',lbl:'Industry'}];
-  const g2=h('div',{cls:'g2'});
-  colFields.forEach(f=>{
-    const g=h('div',null,h('div',{cls:'lbl'},f.lbl));
-    const sel=h('select',{onChange:e=>{S.colMap[f.key]=e.target.value;}});
-    sel.appendChild(h('option',{value:''},'— not mapped —'));
-    S.headers.forEach(hd=>{const opt=h('option',{value:hd},hd);if(S.colMap[f.key]===hd)opt.selected=true;sel.appendChild(opt);});
-    g.appendChild(sel);g2.appendChild(g);
+  const mc=h('div',{cls:'card'},h('p',{cls:'sec'},'Map your CSV columns'));
+  const g=h('div',{cls:'g2'});
+  [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'}].forEach(f=>{
+    const d=h('div',null,h('div',{cls:'lbl'},f.l));
+    const s=h('select',{onChange:e=>S.colMap[f.k]=e.target.value});
+    s.appendChild(h('option',{value:''},'— not mapped —'));
+    S.headers.forEach(hd=>{const o=h('option',{value:hd},hd);if(S.colMap[f.k]===hd)o.selected=true;s.appendChild(o);});
+    d.appendChild(s);g.appendChild(d);
   });
-  mapCard.appendChild(g2);wrap.appendChild(mapCard);
+  mc.appendChild(g);wrap.appendChild(mc);
 
-  const sndCard=h('div',{cls:'card',style:{marginTop:'12px'}},h('p',{cls:'sec-title'},'Your sender details'));
-  const sg2=h('div',{cls:'g2'});
-  [{key:'name',lbl:'Your Full Name *',ph:'Alex Rivera'},{key:'email',lbl:'Sender Email *',ph:'alex@cyberriskpro.com'},{key:'title',lbl:'Your Job Title',ph:'Senior Account Executive'},{key:'company',lbl:'Company Name',ph:'CyberRisk Pro'}].forEach(f=>{
-    const g=h('div',null,h('div',{cls:'lbl'},f.lbl));
-    const inp=h('input',{type:'text',placeholder:f.ph,value:S.sender[f.key]||'',onInput:e=>{S.sender[f.key]=e.target.value;}});
-    g.appendChild(inp);sg2.appendChild(g);
+  const sc=h('div',{cls:'card'},h('p',{cls:'sec'},'Your sender details'));
+  const sg=h('div',{cls:'g2'});
+  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@cyberriskpro.com'},{k:'title',l:'Job Title',p:'Senior Account Executive'},{k:'company',l:'Company',p:'CyberRisk Pro'}].forEach(f=>{
+    const d=h('div',null,h('div',{cls:'lbl'},f.l),h('input',{type:'text',placeholder:f.p,value:S.sender[f.k]||'',onInput:e=>S.sender[f.k]=e.target.value}));
+    sg.appendChild(d);
   });
-  sndCard.appendChild(sg2);
+  sc.appendChild(sg);
+  const sgw=h('div',{cls:'mt'},h('div',{cls:'lbl'},'SendGrid API Key (for sending)'),h('input',{type:'password',placeholder:'SG.xxxxxx... (optional — export CSV if not set)',value:S.sender.sgKey||'',onInput:e=>S.sender.sgKey=e.target.value}));
+  sc.appendChild(sgw);
+  const stip=h('div',{cls:'tip',html:'Get your key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank">SendGrid → API Keys</a> with "Mail Send" permission. Your sender email must be verified in SendGrid. <strong>Keep your API key private — never share it publicly.</strong>'});
+  sc.appendChild(stip);
+  wrap.appendChild(sc);
 
-  const sgWrap=h('div',{style:{marginTop:'12px'}},h('div',{cls:'lbl'},'SendGrid API Key (for automated sending)'));
-  sgWrap.appendChild(h('input',{type:'password',placeholder:'SG.xxxxxx... (optional — export CSV if not set)',value:S.sender.sgKey||'',onInput:e=>{S.sender.sgKey=e.target.value;}}));
-  const sgTip=h('div',{cls:'tip',style:{marginTop:'8px'},html:'Get a key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank">SendGrid → API Keys</a> with "Mail Send" permission. Your sender email must be verified in SendGrid first. <strong>Never share your API key publicly.</strong>'});
-  sgWrap.appendChild(sgTip);
-  sndCard.appendChild(sgWrap);
-  wrap.appendChild(sndCard);
-
-  const canGo=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
-  const acts=h('div',{cls:'fb',style:{marginTop:'14px'}},
-    h('button',{cls:'btn',onClick:()=>{S.step=0;redraw();}},'← Back'),
-    h('button',{cls:'btn btn-primary',style:{opacity:canGo()?1:.5},onClick:()=>{
-      if(!canGo()){alert('Please map Email and Company columns, and enter your Name and Sender Email.');return;}
-      S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};redraw();generateAll();
-    }},'Generate '+S.leads.length+' Personalized Emails →')
-  );
-  wrap.appendChild(acts);
+  const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
+  wrap.appendChild(h('div',{cls:'fb',style:{marginTop:'14px'}},
+    h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
+    h('button',{cls:'btn btn-primary',style:{opacity:ok()?1:.5},onClick:()=>{
+      if(!ok()){alert('Please map Email and Company columns, and enter your Name and Sender Email.');return;}
+      S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};draw();runGenerate();
+    }},'Generate '+S.leads.length+' Emails →')
+  ));
   return wrap;
 }
 
-// STEP 2: GENERATING
-function s2(){
-  const pct=S.leads.length>0?Math.round((S.genProgress/S.leads.length)*100):0;
+// ── PAGE 2: GENERATING ───────────────────────────────────────
+function p2(){
+  const pct=S.leads.length>0?Math.round(S.genProgress/S.leads.length*100):0;
   const latest=S.emails.length>0?S.emails[S.emails.length-1]:null;
-  const wrap=h('div',{cls:'card',style:{textAlign:'center',padding:'3rem 2rem'}});
-  wrap.appendChild(h('div',{style:{fontSize:'36px',marginBottom:'16px'}},'🤖'));
-  wrap.appendChild(h('h2',{style:{marginBottom:'6px'}},'Generating personalized emails'));
-  wrap.appendChild(h('p',{cls:'sub-text'},'Analyzing each lead\'s industry, role, and company to craft targeted outreach...'));
-  const progWrap=h('div',{style:{margin:'22px auto',maxWidth:'440px'}});
-  progWrap.appendChild(h('div',{cls:'fb',style:{marginBottom:'6px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},''+S.genProgress+' of '+S.leads.length+' generated'),h('span',{style:{fontSize:'12px',fontWeight:'600'}},''+pct+'%')));
-  progWrap.appendChild(h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}})));
-  wrap.appendChild(progWrap);
-  if(latest){
-    const box=h('div',{style:{marginTop:'16px',textAlign:'left',maxWidth:'440px',margin:'16px auto 0'}});
-    box.appendChild(h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'6px'}},'Latest generated:'));
-    box.appendChild(h('div',{style:{background:'var(--bg2)',borderRadius:'var(--radius)',padding:'12px',fontSize:'12px'}},
-      h('p',{style:{fontWeight:'600',marginBottom:'4px'}},latest.subject),
-      h('p',{style:{color:'var(--text2)'}},latest.body.substring(0,100)+'...')
-    ));
-    wrap.appendChild(box);
-  }
-  return wrap;
+  return h('div',{cls:'card',style:{textAlign:'center',padding:'3rem 2rem'}},
+    h('div',{style:{fontSize:'36px',marginBottom:'14px'}},'🤖'),
+    h('h2',{style:{marginBottom:'6px'}},'Generating personalized emails'),
+    h('p',{cls:'sub'},'Tailoring each email to the lead\'s industry, role, and company...'),
+    h('div',{style:{margin:'20px auto',maxWidth:'440px'}},
+      h('div',{cls:'fb',style:{marginBottom:'5px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},S.genProgress+' of '+S.leads.length+' generated'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),
+      h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))
+    ),
+    latest?h('div',{style:{textAlign:'left',maxWidth:'440px',margin:'14px auto 0'}},
+      h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'6px'}},'Latest generated:'),
+      h('div',{style:{background:'var(--bg2)',borderRadius:'var(--r)',padding:'12px',fontSize:'12px'}},
+        h('p',{style:{fontWeight:'700',marginBottom:'4px'}},latest.subject),
+        h('p',{style:{color:'var(--text2)'}},latest.body.substring(0,100)+'...')
+      )
+    ):null
+  );
 }
-
-async function generateAll(){
-  S.generating=true;
+async function runGenerate(){
   for(let i=0;i<S.leads.length;i++){
     try{
-      const{subject,body}=await generateOne(S.leads[i]);
-      S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true});
+      const{subject,body}=await callAI(S.leads[i]);
+      S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true,error:false});
     }catch(err){
-      S.emails.push({id:i,lead:S.leads[i],subject:'[Generation failed]',body:'Could not generate. Click Regenerate to retry.\n\nError: '+err.message,approved:false});
+      S.emails.push({id:i,lead:S.leads[i],subject:'[Failed — click Regenerate]',body:'Generation failed: '+err.message,approved:false,error:true});
     }
-    S.genProgress=i+1;redraw();
-    await new Promise(r=>setTimeout(r,80));
+    S.genProgress=i+1;draw();
+    await new Promise(r=>setTimeout(r,100));
   }
-  S.generating=false;S.step=3;S.activeIdx=0;redraw();
+  S.step=3;S.activeIdx=0;draw();
 }
 
-// STEP 3: REVIEW
-function s3(){
+// ── PAGE 3: REVIEW ───────────────────────────────────────────
+function p3(){
   const wrap=h('div',null);
   const approved=S.emails.filter(e=>e.approved).length;
-  const sg4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
-  [{v:S.emails.length,l:'Total Generated'},{v:approved,l:'Approved'},{v:S.emails.length-approved,l:'Excluded'},{v:S.emails.filter(e=>e.subject==='[Generation failed]').length,l:'Failed'}].forEach(s=>{
-    sg4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
+  const failed=S.emails.filter(e=>e.error).length;
+  const g4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
+  [{v:S.emails.length,l:'Generated'},{v:approved,l:'Approved'},{v:S.emails.length-approved,l:'Excluded'},{v:failed,l:'Failed'}].forEach(s=>{
+    g4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
   });
-  wrap.appendChild(sg4);
+  wrap.appendChild(g4);
 
   const panel=h('div',{cls:'email-panel'});
   const list=h('div',{cls:'lead-list'});
   list.appendChild(h('div',{cls:'ll-hdr'},'Leads ('+S.emails.length+')'));
-  const body=h('div',{cls:'ll-body'});
+  const lb=h('div',{cls:'ll-body'});
   S.emails.forEach((e,i)=>{
-    const name=getLeadName(e.lead).substring(0,22);
+    const nm=getName(e.lead).substring(0,22);
     const co=(e.lead[S.colMap.company]||'').substring(0,20);
-    const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)||'?';
-    const row=h('div',{cls:'lr'+(i===S.activeIdx?' active':''),onClick:()=>{S.activeIdx=i;redraw();}},
-      h('div',{cls:'la'},initials),
+    const ini=nm.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2)||'?';
+    lb.appendChild(h('div',{cls:'lr'+(i===S.activeIdx?' active':''),onClick:()=>{S.activeIdx=i;draw();}},
+      h('div',{cls:'la'},ini),
       h('div',{style:{flex:'1',minWidth:'0'}},
-        h('div',{style:{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},name),
+        h('div',{style:{fontWeight:'700',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},nm),
         h('div',{style:{fontSize:'11px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},co)
       ),
-      e.approved?h('span',{cls:'badge bs'},'✓'):h('span',{cls:'badge bd'},'✗')
-    );
-    body.appendChild(row);
+      e.error?h('span',{cls:'badge bd'},'ERR'):e.approved?h('span',{cls:'badge bs'},'✓'):h('span',{cls:'badge bg'},'—')
+    ));
   });
-  list.appendChild(body);panel.appendChild(list);
+  list.appendChild(lb);panel.appendChild(list);
 
   const ae=S.emails[S.activeIdx];
-  const detail=h('div',{cls:'email-detail'});
+  const det=h('div',{cls:'email-detail'});
   if(ae){
-    const name=getLeadName(ae.lead);
-    const co=ae.lead[S.colMap.company]||'';
-    const ttl=ae.lead[S.colMap.title]||'';
-    const ind=ae.lead[S.colMap.industry]||'';
-    const em=ae.lead[S.colMap.email]||'';
-    detail.appendChild(h('div',{cls:'fb'},
-      h('div',null,h('p',{style:{fontWeight:'600'}},name),h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'2px'}},[ttl,co].filter(Boolean).join(' · '))),
-      h('div',{cls:'flex'},ind?h('span',{cls:'badge bg'},ind):null,em?h('span',{cls:'badge bi'},em):null)
+    det.appendChild(h('div',{cls:'fb'},
+      h('div',null,h('p',{style:{fontWeight:'700'}},getName(ae.lead)),h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'2px'}},[ae.lead[S.colMap.title],ae.lead[S.colMap.company]].filter(Boolean).join(' · '))),
+      h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+        ae.lead[S.colMap.industry]?h('span',{cls:'badge bg'},ae.lead[S.colMap.industry]):null,
+        ae.lead[S.colMap.email]?h('span',{cls:'badge bi'},ae.lead[S.colMap.email]):null
+      )
     ));
-    detail.appendChild(h('div',null,h('div',{cls:'lbl'},'Subject line'),h('input',{type:'text',style:{fontWeight:'600'},value:ae.subject,onInput:e=>{S.emails[S.activeIdx].subject=e.target.value;}})));
-    const ta=document.createElement('textarea');
-    ta.style.minHeight='200px';ta.value=ae.body;
-    ta.addEventListener('input',e=>{S.emails[S.activeIdx].body=e.target.value;});
-    detail.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body'),ta));
-    detail.appendChild(h('div',{cls:'fb'},
-      h('div',{cls:'flex'},
-        h('button',{cls:'btn btn-sm '+(ae.approved?'btn-danger':'btn-success'),onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;redraw();}},ae.approved?'✗ Exclude':'✓ Include'),
+    if(ae.error){det.appendChild(h('div',{style:{background:'var(--danger-bg)',border:'1px solid var(--danger-border)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--danger-text)'}},ae.body));}
+    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Subject line'),h('input',{type:'text',style:{fontWeight:'700'},value:ae.subject,onInput:e=>S.emails[S.activeIdx].subject=e.target.value})));
+    const ta=document.createElement('textarea');ta.style.minHeight='190px';ta.value=ae.body;ta.addEventListener('input',e=>S.emails[S.activeIdx].body=e.target.value);
+    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body'),ta));
+    det.appendChild(h('div',{cls:'fb'},
+      h('div',{style:{display:'flex',gap:'8px'}},
+        h('button',{cls:'btn btn-sm '+(ae.approved&&!ae.error?'btn-danger':'btn-success'),onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;draw();}},ae.approved&&!ae.error?'✗ Exclude':'✓ Include'),
         h('button',{cls:'btn btn-sm',onClick:async function(){
-          this.textContent='Regenerating...';this.disabled=true;
-          try{const{subject,body}=await generateOne(ae.lead);S.emails[S.activeIdx].subject=subject;S.emails[S.activeIdx].body=body;S.emails[S.activeIdx].approved=true;}
-          catch(err){alert('Failed: '+err.message);}
-          redraw();
+          this.disabled=true;this.textContent='Regenerating...';
+          try{const{subject,body}=await callAI(ae.lead);S.emails[S.activeIdx].subject=subject;S.emails[S.activeIdx].body=body;S.emails[S.activeIdx].approved=true;S.emails[S.activeIdx].error=false;}
+          catch(err){S.emails[S.activeIdx].body='Failed: '+err.message;S.emails[S.activeIdx].error=true;}
+          draw();
         }},'↺ Regenerate')
       ),
-      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=4;redraw();}},'Proceed to Send →')
+      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=4;draw();}},'Proceed to Send →')
     ));
   }
-  panel.appendChild(detail);wrap.appendChild(panel);
+  panel.appendChild(det);wrap.appendChild(panel);
   return wrap;
 }
 
-// STEP 4: SEND
-function s4(){
+// ── PAGE 4: SEND ─────────────────────────────────────────────
+function p4(){
   const wrap=h('div',null);
-  const approved=S.emails.filter(e=>e.approved);
+  const approved=S.emails.filter(e=>e.approved&&!e.error);
   const sent=Object.values(S.sendStatus).filter(s=>s==='sent').length;
   const failed=Object.values(S.sendStatus).filter(s=>s==='error').length;
-  const pending=approved.length-sent-failed;
 
-  const sg4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
-  [{v:approved.length,l:'Approved'},{v:sent,l:'Sent'},{v:failed,l:'Failed'},{v:pending,l:'Pending'}].forEach(s=>{
-    sg4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
+  const g4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
+  [{v:approved.length,l:'Approved'},{v:sent,l:'Sent'},{v:failed,l:'Failed'},{v:approved.length-sent-failed,l:'Pending'}].forEach(s=>{
+    g4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
   });
-  wrap.appendChild(sg4);
+  wrap.appendChild(g4);
 
-  const actCard=h('div',{cls:'card',style:{marginBottom:'12px'}});
-  actCard.appendChild(h('div',{cls:'flex'},
+  const ac=h('div',{cls:'card'});
+  ac.appendChild(h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
     h('button',{cls:'btn btn-primary',onClick:()=>sendAll(approved)},'▶ Send All ('+approved.length+')'),
-    h('button',{cls:'btn',onClick:exportCSV},'↓ Export CSV'),
-    h('button',{cls:'btn',onClick:()=>{S.step=3;redraw();}},'← Edit Emails')
+    h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'),
+    h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails')
   ));
   if(!S.sender.sgKey){
-    actCard.appendChild(h('div',{cls:'tip',style:{marginTop:'10px'},html:'No SendGrid key configured. Use <strong>Export CSV</strong> to download all personalized emails and import into HubSpot, Mailchimp, Klaviyo, or any email platform.'}));
+    ac.appendChild(h('div',{cls:'tip',style:{marginTop:'10px'},html:'No SendGrid key set. Use <strong>Export CSV</strong> to download all personalized emails and import into HubSpot, Mailchimp, Klaviyo, etc.'}));
   } else if(sent>0){
-    const pb=h('div',{style:{marginTop:'10px'}});
-    pb.appendChild(h('div',{cls:'fb',style:{marginBottom:'4px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},''+sent+' of '+approved.length+' sent'),h('span',{style:{fontSize:'12px',fontWeight:'600'}},Math.round(sent/approved.length*100)+'%')));
-    pb.appendChild(h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:Math.round(sent/approved.length*100)+'%'}})));
-    actCard.appendChild(pb);
+    const pct=Math.round(sent/approved.length*100);
+    ac.appendChild(h('div',{style:{marginTop:'10px'}},h('div',{cls:'fb',style:{marginBottom:'4px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},sent+' of '+approved.length+' sent'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))));
   }
-  wrap.appendChild(actCard);
+  wrap.appendChild(ac);
 
   if(approved.length===0){
-    wrap.appendChild(h('div',{cls:'card empty-state'},
-      h('div',{cls:'icon'},'📭'),
-      h('h2',{style:{marginBottom:'8px'}},'No approved emails'),
-      h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Go back to Review & Edit and mark emails as approved (✓) to send them.'),
-      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=3;redraw();}},'← Back to Review')
-    ));
+    wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem'}},h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'📭'),h('h2',{style:{marginBottom:'8px'}},'No approved emails'),h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Go back and mark emails as approved (✓).'),h('button',{cls:'btn btn-primary',onClick:()=>{S.step=3;draw();}},'← Back to Review')));
     return wrap;
   }
 
-  const listCard=h('div',{cls:'card'});
-  listCard.appendChild(h('p',{style:{fontWeight:'600',marginBottom:'14px'}},'Email queue'));
-  approved.forEach(emailData=>{
-    const id=emailData.id;
-    const status=S.sendStatus[id];
-    const name=getLeadName(emailData.lead).substring(0,28);
-    const co=(emailData.lead[S.colMap.company]||'').substring(0,24);
-    const toEmail=emailData.lead[S.colMap.email]||'';
+  const lc=h('div',{cls:'card'});
+  lc.appendChild(h('p',{style:{fontWeight:'700',marginBottom:'14px'}},'Email queue ('+approved.length+' emails)'));
+  approved.forEach(ed=>{
+    const id=ed.id;const st=S.sendStatus[id];
+    const nm=getName(ed.lead).substring(0,28);
+    const co=(ed.lead[S.colMap.company]||'').substring(0,24);
+    const toEmail=ed.lead[S.colMap.email]||'';
     const row=h('div',{cls:'srow'});
     row.appendChild(h('div',{style:{flex:'1',minWidth:'0'}},
-      h('p',{style:{fontWeight:'600',fontSize:'13px'}},name+(co?' · ':'')+h('span',{style:{fontWeight:'400',color:'var(--text2)'}},co).outerHTML),
-      h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},emailData.subject)
+      h('p',{style:{fontWeight:'700',fontSize:'13px'}},nm+(co?' · ':'')+h('span',{style:{fontWeight:'400',color:'var(--text2)'}},co).outerHTML),
+      h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},ed.subject)
     ));
-    row.appendChild(h('span',{style:{fontSize:'12px',color:'var(--text2)',flexShrink:'0',maxWidth:'180px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
-    const statusEl=h('div',{style:{flexShrink:'0'}});
-    if(status==='sent')statusEl.appendChild(h('span',{cls:'badge bs'},'✓ Sent'));
-    else if(status==='error')statusEl.appendChild(h('span',{cls:'badge bd'},'✗ Failed'));
-    else if(status==='sending')statusEl.appendChild(h('div',{cls:'spin'}));
-    else if(S.sender.sgKey){
-      statusEl.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
-        S.sendStatus[id]='sending';redraw();
-        try{const ok=await sendOne(toEmail,emailData.subject,emailData.body);S.sendStatus[id]=ok?'sent':'error';}
-        catch{S.sendStatus[id]='error';}
-        redraw();
-      }},'Send'));
-    }else{statusEl.appendChild(h('span',{cls:'badge bg'},'Ready'));}
-    row.appendChild(statusEl);
-    listCard.appendChild(row);
+    row.appendChild(h('span',{style:{fontSize:'12px',color:'var(--text2)',flexShrink:'0',maxWidth:'170px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
+    const se=h('div',{style:{flexShrink:'0'}});
+    if(st==='sent')se.appendChild(h('span',{cls:'badge bs'},'✓ Sent'));
+    else if(st==='error')se.appendChild(h('span',{cls:'badge bd'},'✗ Failed'));
+    else if(st==='sending')se.appendChild(h('span',{cls:'spin'}));
+    else if(S.sender.sgKey)se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
+      S.sendStatus[id]='sending';draw();
+      try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch{S.sendStatus[id]='error';}
+      draw();
+    }},'Send'));
+    else se.appendChild(h('span',{cls:'badge bg'},'Ready'));
+    row.appendChild(se);lc.appendChild(row);
   });
-  wrap.appendChild(listCard);
+  wrap.appendChild(lc);
   return wrap;
 }
 
 async function sendAll(approved){
-  if(!S.sender.sgKey){alert('No SendGrid API key configured.\n\nPlease go back to Configure (Step 2) and enter your SendGrid key, or use "Export CSV" to download all emails.');return;}
-  for(const emailData of approved){
-    const id=emailData.id;
-    if(S.sendStatus[id]==='sent')continue;
-    S.sendStatus[id]='sending';redraw();
-    const toEmail=emailData.lead[S.colMap.email]||'';
-    try{const ok=await sendOne(toEmail,emailData.subject,emailData.body);S.sendStatus[id]=ok?'sent':'error';}
+  if(!S.sender.sgKey){alert('No SendGrid key set. Use Export CSV, or go back to Configure to add your key.');return;}
+  for(const ed of approved){
+    const id=ed.id;if(S.sendStatus[id]==='sent')continue;
+    S.sendStatus[id]='sending';draw();
+    try{const ok=await sendEmail(ed.lead[S.colMap.email]||'',ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}
     catch{S.sendStatus[id]='error';}
-    redraw();
-    await new Promise(r=>setTimeout(r,250));
+    draw();await new Promise(r=>setTimeout(r,300));
   }
 }
-
-function exportCSV(){
-  const approved=S.emails.filter(e=>e.approved);
+function doExport(){
+  const approved=S.emails.filter(e=>e.approved&&!e.error);
   if(!approved.length){alert('No approved emails to export.');return;}
   const hdrs=['To Name','To Email','Company','Job Title','Industry','Subject','Body'];
-  const rows=approved.map(e=>[getLeadName(e.lead),e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||'',e.lead[S.colMap.industry]||'',e.subject,e.body]);
-  const csv=[hdrs,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='personalized_cold_emails.csv';a.click();
+  const csv=[hdrs,...approved.map(e=>[getName(e.lead),e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||'',e.lead[S.colMap.industry]||'',e.subject,e.body])].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='cold_emails.csv';a.click();
 }
 
-redraw();
+draw();
 </script>
 </body>
 </html>
