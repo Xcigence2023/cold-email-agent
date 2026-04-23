@@ -164,7 +164,7 @@ async function callAI(lead){
   const title=lead[S.colMap.title]||'decision maker';
   const industry=lead[S.colMap.industry]||'technology';
 
-  // Calls our Netlify proxy at /.netlify/functions/generate instead of Anthropic directly
+  // Calls our Netlify proxy at /api/generate instead of Anthropic directly
   const resp=await fetch('/.netlify/functions/generate',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
