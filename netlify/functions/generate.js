@@ -1,4 +1,16 @@
 exports.handler = async function(event) {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -14,6 +26,10 @@ exports.handler = async function(event) {
 
   try {
     const body = JSON.parse(event.body);
+
+    // Use correct current model string
+    body.model = 'claude-haiku-4-5-20251001';
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -24,15 +40,25 @@ exports.handler = async function(event) {
       body: JSON.stringify(body)
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      return {
+        statusCode: response.status,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Anthropic API error ' + response.status + ': ' + responseText })
+      };
+    }
+
     return {
-      statusCode: response.status,
+      statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(data)
+      body: responseText
     };
+
   } catch (err) {
     return {
       statusCode: 500,
