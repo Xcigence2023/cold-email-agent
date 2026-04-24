@@ -10,54 +10,29 @@ exports.handler = async function(event) {
       body: ''
     };
   }
-
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
-
   try {
-    const { to, subject, body, fromEmail, fromName, attachments } = JSON.parse(event.body);
-const apiKey = process.env.SENDGRID_API_KEY;
-    const payload = {
-      personalizations: [{ to: [{ email: to }], subject }],
-      from: { email: fromEmail, name: fromName },
-      content: [{ type: 'text/plain', value: body }]
-    };
+    const body = JSON.parse(event.body);
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
-    // Add attachments if any (up to 5)
-    if (attachments && attachments.length > 0) {
-      payload.attachments = attachments.slice(0, 5).map(a => ({
-        content: a.base64,
-        type: a.type || 'application/octet-stream',
-        filename: a.name,
-        disposition: 'attachment'
-      }));
-    }
-
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
 
-    if (response.status >= 200 && response.status < 300) {
-      return {
-        statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ success: true })
-      };
-    } else {
-      const text = await response.text();
-      return {
-        statusCode: response.status,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: 'SendGrid error ' + response.status + ': ' + text })
-      };
-    }
-
+    const data = await response.json();
+    return {
+      statusCode: response.status,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify(data)
+    };
   } catch (err) {
     return {
       statusCode: 500,
