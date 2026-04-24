@@ -190,8 +190,7 @@ async function sendEmail(to,subject,body){
       to, subject, body,
       fromEmail: S.sender.email,
       fromName: S.sender.name,
-      apiKey: S.sender.sgKey,
-      attachments: S.attachments
+     attachments: S.attachments
     })
   });
   const data=await resp.json();
