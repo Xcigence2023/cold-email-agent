@@ -107,7 +107,7 @@ h2{font-size:16px;font-weight:700}
 const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
-  sender:{name:'',email:'',title:'',company:'Xcigence',sgKey:''},
+  sender:{name:'',email:'',title:'',company:'Xcigence',sgKey:'',anthropicKey:''},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[]
 };
@@ -165,20 +165,33 @@ async function callAI(lead){
   const title=lead[S.colMap.title]||'decision maker';
   const industry=lead[S.colMap.industry]||'technology';
 
-  // Calls our Netlify proxy at /api/generate instead of Anthropic directly
-  const resp=await fetch('/.netlify/functions/generate',{
+  if(!S.sender.anthropicKey){throw new Error('Please enter your Anthropic API key in Step 2 (Configure).');}
+
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':S.sender.anthropicKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-allow-browser':'true'
+    },
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-haiku-4-5-20251001',
       max_tokens:800,
       messages:[{role:'user',content:`${SYSTEM}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}`}]
     })
   });
-  if(!resp.ok){const e=await resp.json().catch(()=>({error:'HTTP '+resp.status}));throw new Error(e.error||'HTTP '+resp.status);}
-  const data=await resp.json();
+  const respText=await resp.text();
+  if(!resp.ok){
+    let errMsg='HTTP '+resp.status;
+    try{const e=JSON.parse(respText);errMsg=e.error?.message||e.message||JSON.stringify(e);}catch(ex){}
+    throw new Error(errMsg);
+  }
+  let data;
+  try{data=JSON.parse(respText);}catch(e){throw new Error('Invalid server response: '+respText.substring(0,100));}
+  if(!data.content||!data.content[0]){throw new Error('Unexpected response: '+JSON.stringify(data).substring(0,100));}
   const txt=data.content[0].text.replace(/```json|```/g,'').trim();
-  return JSON.parse(txt);
+  try{return JSON.parse(txt);}catch(e){throw new Error('Could not parse JSON: '+txt.substring(0,100));}
 }
 
 // ── SENDGRID ────────────────────────────────────────────────
@@ -190,7 +203,8 @@ async function sendEmail(to,subject,body){
       to, subject, body,
       fromEmail: S.sender.email,
       fromName: S.sender.name,
-     attachments: S.attachments
+      apiKey: S.sender.sgKey,
+      attachments: S.attachments
     })
   });
   const data=await resp.json();
@@ -285,13 +299,18 @@ function p1(){
     sg.appendChild(d);
   });
   sc.appendChild(sg);
+  const anthropicWrap=h('div',{cls:'mt'},h('div',{cls:'lbl'},'Anthropic API Key *'),h('input',{type:'password',placeholder:'sk-ant-api03-... (get from console.anthropic.com)',value:S.sender.anthropicKey||'',onInput:e=>S.sender.anthropicKey=e.target.value}));
+  const anthropicTip=h('div',{cls:'tip',style:{marginTop:'8px'}});
+  anthropicTip.innerHTML='Get your key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Starts with <strong>sk-ant-</strong>. Required to generate personalized emails.';
+  anthropicWrap.appendChild(anthropicTip);
+  sc.appendChild(anthropicWrap);
   const sgw=h('div',{cls:'mt'},h('div',{cls:'lbl'},'SendGrid API Key (for sending)'),h('input',{type:'password',placeholder:'SG.xxxxxx... (optional — export CSV if not set)',value:S.sender.sgKey||'',onInput:e=>S.sender.sgKey=e.target.value}));
   sc.appendChild(sgw);
   const stip=h('div',{cls:'tip',html:'Get your key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank">SendGrid → API Keys</a> with "Mail Send" permission. Your sender email must be verified in SendGrid. <strong>Keep your API key private — never share it publicly.</strong>'});
   sc.appendChild(stip);
   wrap.appendChild(sc);
 
-  const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
+  const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&S.sender.anthropicKey;
   wrap.appendChild(h('div',{cls:'fb',style:{marginTop:'14px'}},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
     h('button',{cls:'btn btn-primary',style:{opacity:ok()?1:.5},onClick:()=>{
