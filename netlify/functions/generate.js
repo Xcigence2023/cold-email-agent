@@ -15,49 +15,48 @@ exports.handler = async function(event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
-    return {
-      statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY not set in Netlify environment variables.' })
-    };
-  }
-
   try {
-    const body = JSON.parse(event.body);
+    const { to, subject, body, fromEmail, fromName, apiKey, attachments } = JSON.parse(event.body);
 
-    // Use correct current model string
-    body.model = 'claude-haiku-4-5-20251001';
+    const payload = {
+      personalizations: [{ to: [{ email: to }], subject }],
+      from: { email: fromEmail, name: fromName },
+      content: [{ type: 'text/plain', value: body }]
+    };
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(body)
-    });
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      return {
-        statusCode: response.status,
-        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Anthropic API error ' + response.status + ': ' + responseText })
-      };
+    // Add attachments if any (up to 5)
+    if (attachments && attachments.length > 0) {
+      payload.attachments = attachments.slice(0, 5).map(a => ({
+        content: a.base64,
+        type: a.type || 'application/octet-stream',
+        filename: a.name,
+        disposition: 'attachment'
+      }));
     }
 
-    return {
-      statusCode: 200,
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
       },
-      body: responseText
-    };
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ success: true })
+      };
+    } else {
+      const text = await response.text();
+      return {
+        statusCode: response.status,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'SendGrid error ' + response.status + ': ' + text })
+      };
+    }
 
   } catch (err) {
     return {
