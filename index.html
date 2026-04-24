@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CyberRisk Pro — AI Cold Email Agent</title>
+<title>Xcigence — AI Cold Email Agent</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -97,7 +97,7 @@ h2{font-size:16px;font-weight:700}
 <body>
 <div class="page">
   <div class="hdr">
-    <h1>🛡️ CyberRisk Pro — AI Cold Email Agent</h1>
+    <h1>🛡️ Xcigence — AI Cold Email Agent</h1>
     <p>Upload leads → AI generates personalized emails → Review → Send via SendGrid</p>
   </div>
   <div id="root"></div>
@@ -107,8 +107,9 @@ h2{font-size:16px;font-weight:700}
 const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
-  sender:{name:'',email:'',title:'',company:'CyberRisk Pro',sgKey:''},
-  emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false
+  sender:{name:'',email:'',title:'',company:'Xcigence',sgKey:''},
+  emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
+  attachments:[]
 };
 
 // ── CSV ─────────────────────────────────────────────────────
@@ -144,7 +145,7 @@ function getName(lead){
 // ── AI CALL via proxy ───────────────────────────────────────
 const SYSTEM=`You are an expert B2B sales copywriter for a cybersecurity SaaS company.
 
-PRODUCT: CyberRisk Pro — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation
+PRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation
 FEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.
 
 INDUSTRY PAIN POINTS:
@@ -189,7 +190,8 @@ async function sendEmail(to,subject,body){
       to, subject, body,
       fromEmail: S.sender.email,
       fromName: S.sender.name,
-      apiKey: S.sender.sgKey
+      apiKey: S.sender.sgKey,
+      attachments: S.attachments
     })
   });
   const data=await resp.json();
@@ -279,7 +281,7 @@ function p1(){
 
   const sc=h('div',{cls:'card'},h('p',{cls:'sec'},'Your sender details'));
   const sg=h('div',{cls:'g2'});
-  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@cyberriskpro.com'},{k:'title',l:'Job Title',p:'Senior Account Executive'},{k:'company',l:'Company',p:'CyberRisk Pro'}].forEach(f=>{
+  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@xcigence.com'},{k:'title',l:'Job Title',p:'Senior Account Executive'},{k:'company',l:'Company',p:'Xcigence'}].forEach(f=>{
     const d=h('div',null,h('div',{cls:'lbl'},f.l),h('input',{type:'text',placeholder:f.p,value:S.sender[f.k]||'',onInput:e=>S.sender[f.k]=e.target.value}));
     sg.appendChild(d);
   });
