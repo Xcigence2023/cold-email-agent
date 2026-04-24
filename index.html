@@ -182,16 +182,18 @@ async function callAI(lead){
 
 // ── SENDGRID ────────────────────────────────────────────────
 async function sendEmail(to,subject,body){
-  const resp=await fetch('https://api.sendgrid.com/v3/mail/send',{
+  const resp=await fetch('/.netlify/functions/send',{
     method:'POST',
-    headers:{'Authorization':`Bearer ${S.sender.sgKey}`,'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      personalizations:[{to:[{email:to}],subject}],
-      from:{email:S.sender.email,name:S.sender.name},
-      content:[{type:'text/plain',value:body}]
+      to, subject, body,
+      fromEmail: S.sender.email,
+      fromName: S.sender.name,
+      apiKey: S.sender.sgKey
     })
   });
-  return resp.status>=200&&resp.status<300;
+  const data=await resp.json();
+  return data.success===true;
 }
 
 // ── DOM HELPERS ──────────────────────────────────────────────
