@@ -16,8 +16,8 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { to, subject, body, fromEmail, fromName, apiKey, attachments } = JSON.parse(event.body);
-
+    const { to, subject, body, fromEmail, fromName, attachments } = JSON.parse(event.body);
+const apiKey = process.env.SENDGRID_API_KEY;
     const payload = {
       personalizations: [{ to: [{ email: to }], subject }],
       from: { email: fromEmail, name: fromName },
