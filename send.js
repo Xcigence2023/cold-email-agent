@@ -16,7 +16,8 @@ exports.handler = async function(event) {
   }
 
   try {
-    const { to, subject, body, fromEmail, fromName, apiKey } = JSON.parse(event.body);
+    const { to, subject, body, fromEmail, fromName } = JSON.parse(event.body);
+const apiKey = process.env.SENDGRID_API_KEY;
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
