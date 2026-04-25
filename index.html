@@ -445,6 +445,17 @@ function p4(){
   }
   wrap.appendChild(ac);
 
+  // Check if email column mapping looks wrong
+  const emailRegexCheck=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const badEmails=approved.filter(e=>!emailRegexCheck.test((e.lead[S.colMap.email]||'').trim()));
+  if(badEmails.length>0){
+    const warn=h('div',{style:{background:'var(--danger-bg)',border:'1px solid var(--danger-border)',borderRadius:'var(--r)',padding:'14px',marginBottom:'12px',color:'var(--danger-text)'}});
+    warn.innerHTML=`<strong>⚠️ Email column mapping issue!</strong><br><br>${badEmails.length} lead(s) have invalid email addresses. The "Email" column in Step 2 may be mapped to the wrong CSV column.<br><br><strong>Example:</strong> "${(badEmails[0].lead[S.colMap.email]||'empty')}" is not a valid email.<br><br>Go back to <strong>Step 2 (Configure)</strong> and re-map the Email column to the correct column in your CSV.`;
+    const fixBtn=h('button',{cls:'btn btn-danger',style:{marginTop:'10px'},onClick:()=>{S.step=1;draw();}},'← Fix Column Mapping');
+    warn.appendChild(fixBtn);
+    wrap.appendChild(warn);
+  }
+
   if(approved.length===0){
     wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem'}},h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'📭'),h('h2',{style:{marginBottom:'8px'}},'No approved emails'),h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Go back and mark emails as approved (✓).'),h('button',{cls:'btn btn-primary',onClick:()=>{S.step=3;draw();}},'← Back to Review')));
     return wrap;
@@ -469,7 +480,8 @@ function p4(){
     else if(st==='sending')se.appendChild(h('span',{cls:'spin'}));
     else se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
       S.sendStatus[id]='sending';draw();
-      try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch{S.sendStatus[id]='error';}
+      if(!emailRegex.test(toEmail)){S.sendStatus[id]='error';alert('Invalid email address: "'+toEmail+'"\n\nPlease go back to Step 2 and make sure the Email column is correctly mapped to the email address column in your CSV.');draw();return;}
+      try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch(e){console.error('Send error:',e.message);S.sendStatus[id]='error';}
       draw();
     }},'Send'));
     
