@@ -107,7 +107,7 @@ h2{font-size:16px;font-weight:700}
 const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
-  sender:{name:'',email:'',title:'',company:'Xcigence',sgKey:''},
+  sender:{name:'',email:'',title:'',company:'Xcigence'},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[]
 };
@@ -213,9 +213,7 @@ async function sendEmail(to,subject,body){
       to, subject, body,
       fromEmail: S.sender.email,
       fromName: S.sender.name,
-      apiKey: S.sender.sgKey,
-      attachments: S.attachments,
-      replyTo: S.sender.email
+      attachments: S.attachments
     })
   });
   const data=await resp.json();
@@ -311,7 +309,6 @@ function p1(){
     sg.appendChild(d);
   });
   sc.appendChild(sg);
-  const sgw=h('div',{cls:'mt'},h('div',{cls:'lbl'},'SendGrid API Key (for sending)'),h('input',{type:'password',placeholder:'SG.xxxxxx... (optional — export CSV if not set)',value:S.sender.sgKey||'',onInput:e=>S.sender.sgKey=e.target.value}));
   sc.appendChild(sgw);
   const stip=h('div',{cls:'tip',html:'Get your key from <a href="https://app.sendgrid.com/settings/api_keys" target="_blank">SendGrid → API Keys</a> with "Mail Send" permission. Your sender email must be verified in SendGrid. <strong>Keep your API key private — never share it publicly.</strong>'});
   sc.appendChild(stip);
@@ -443,9 +440,7 @@ function p4(){
     h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'),
     h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails')
   ));
-  if(!S.sender.sgKey){
-    ac.appendChild(h('div',{cls:'tip',style:{marginTop:'10px'},html:'No SendGrid key set. Use <strong>Export CSV</strong> to download all personalized emails and import into HubSpot, Mailchimp, Klaviyo, etc.'}));
-  } else if(sent>0){
+  if(sent>0){
     const pct=Math.round(sent/approved.length*100);
     ac.appendChild(h('div',{style:{marginTop:'10px'}},h('div',{cls:'fb',style:{marginBottom:'4px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},sent+' of '+approved.length+' sent'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))));
   }
@@ -473,12 +468,12 @@ function p4(){
     if(st==='sent')se.appendChild(h('span',{cls:'badge bs'},'✓ Sent'));
     else if(st==='error')se.appendChild(h('span',{cls:'badge bd'},'✗ Failed'));
     else if(st==='sending')se.appendChild(h('span',{cls:'spin'}));
-    else if(S.sender.sgKey)se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
+    else se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
       S.sendStatus[id]='sending';draw();
       try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch{S.sendStatus[id]='error';}
       draw();
     }},'Send'));
-    else se.appendChild(h('span',{cls:'badge bg'},'Ready'));
+    
     row.appendChild(se);lc.appendChild(row);
   });
   wrap.appendChild(lc);
@@ -486,7 +481,7 @@ function p4(){
 }
 
 async function sendAll(approved){
-  if(!S.sender.sgKey){alert('No SendGrid key set. Use Export CSV, or go back to Configure to add your key.');return;}
+  
   for(const ed of approved){
     const id=ed.id;if(S.sendStatus[id]==='sent')continue;
     S.sendStatus[id]='sending';draw();
