@@ -179,6 +179,7 @@ EMAIL STRUCTURE:
 
 Under 175 words total. Conversational, human, peer-to-peer tone.`;
 
+const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function callAI(lead){
   const name=getName(lead);
   const company=lead[S.colMap.company]||'your company';
@@ -446,8 +447,7 @@ function p4(){
   wrap.appendChild(ac);
 
   // Check if email column mapping looks wrong
-  const emailRegexCheck=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const badEmails=approved.filter(e=>!emailRegexCheck.test((e.lead[S.colMap.email]||'').trim()));
+  const badEmails=approved.filter(e=>!emailRegex.test((e.lead[S.colMap.email]||'').trim()));
   if(badEmails.length>0){
     const warn=h('div',{style:{background:'var(--danger-bg)',border:'1px solid var(--danger-border)',borderRadius:'var(--r)',padding:'14px',marginBottom:'12px',color:'var(--danger-text)'}});
     warn.innerHTML=`<strong>⚠️ Email column mapping issue!</strong><br><br>${badEmails.length} lead(s) have invalid email addresses. The "Email" column in Step 2 may be mapped to the wrong CSV column.<br><br><strong>Example:</strong> "${(badEmails[0].lead[S.colMap.email]||'empty')}" is not a valid email.<br><br>Go back to <strong>Step 2 (Configure)</strong> and re-map the Email column to the correct column in your CSV.`;
