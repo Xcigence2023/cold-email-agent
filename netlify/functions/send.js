@@ -56,7 +56,6 @@ exports.handler = async function(event) {
         body: JSON.stringify({ error: 'SendGrid error ' + response.status + ': ' + text })
       };
     }
-
   } catch (err) {
     return {
       statusCode: 500,
