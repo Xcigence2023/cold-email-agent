@@ -110,7 +110,8 @@ const S={
   sender:{name:'',email:'',title:'',company:'Xcigence'},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[],
-  emailAngle:'pain'
+  emailAngle:'pain',
+  researchMode:false
 };
 
 // ── CSV ─────────────────────────────────────────────────────
@@ -167,7 +168,12 @@ async function callAI(lead){
   const resp=await fetch('/.netlify/functions/generate',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({prompt})
+    body:JSON.stringify({
+      prompt,
+      company,
+      industry,
+      researchMode:S.researchMode
+    })
   });
   const respText=await resp.text();
   if(!resp.ok){
@@ -327,6 +333,37 @@ function p1(){
   angleCard.appendChild(angleGrid);
   wrap.appendChild(angleCard);
 
+  // Research Mode Toggle
+  const researchCard=h('div',{cls:'card',style:{marginTop:'12px'}});
+  const researchRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'12px'}});
+  const researchLeft=h('div',null,
+    h('p',{style:{fontWeight:'700',fontSize:'14px',marginBottom:'4px'}},'🔍 AI Research Mode'),
+    h('p',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.5'}},'When enabled, the AI automatically searches the web for each company before writing. It researches their website, recent news, and the latest cybersecurity threats in their industry — then crafts a hyper-personalized email using real, current context.')
+  );
+  const toggle=h('div',{
+    style:{
+      width:'52px',height:'28px',borderRadius:'14px',cursor:'pointer',flexShrink:'0',
+      background:S.researchMode?'var(--success-text)':'var(--border2)',
+      transition:'background .2s',position:'relative',display:'flex',alignItems:'center',padding:'3px'
+    },
+    onClick:()=>{S.researchMode=!S.researchMode;draw();}
+  });
+  const knob=h('div',{style:{
+    width:'22px',height:'22px',borderRadius:'50%',background:'white',
+    transition:'transform .2s',
+    transform:S.researchMode?'translateX(24px)':'translateX(0)'
+  }});
+  toggle.appendChild(knob);
+  researchRow.appendChild(researchLeft);
+  researchRow.appendChild(h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}},toggle,h('span',{style:{fontSize:'11px',fontWeight:'700',color:S.researchMode?'var(--success-text)':'var(--text2)'}},S.researchMode?'ON':'OFF')));
+  researchCard.appendChild(researchRow);
+  if(S.researchMode){
+    const warn=h('div',{style:{marginTop:'12px',padding:'10px 12px',background:'var(--warn-bg)',borderRadius:'var(--r)',border:'1px solid var(--warn-border)',fontSize:'12px',color:'var(--warn-text)'}});
+    warn.innerHTML='<strong>⏱ Note:</strong> Research mode takes 15-30 seconds per lead as it searches the web for each company. Best used for high-value prospects. Disable for large lists of 50+ leads.';
+    researchCard.appendChild(warn);
+  }
+  wrap.appendChild(researchCard);
+
   const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
   wrap.appendChild(h('div',{cls:'fb',style:{marginTop:'14px'}},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
@@ -363,7 +400,7 @@ async function runGenerate(){
   for(let i=0;i<S.leads.length;i++){
     try{
       const{subject,body}=await callAI(S.leads[i]);
-      S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true,error:false});
+      S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true,error:false,researched:S.researchMode});
     }catch(err){
       S.emails.push({id:i,lead:S.leads[i],subject:'[Failed — click Regenerate]',body:'Generation failed: '+err.message,approved:false,error:true});
     }
@@ -398,7 +435,7 @@ function p3(){
         h('div',{style:{fontWeight:'700',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},nm),
         h('div',{style:{fontSize:'11px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},co)
       ),
-      e.error?h('span',{cls:'badge bd'},'ERR'):e.approved?h('span',{cls:'badge bs'},'✓'):h('span',{cls:'badge bg'},'—')
+      e.error?h('span',{cls:'badge bd'},'ERR'):e.researched?h('span',{cls:'badge bs'},'🔍✓'):e.approved?h('span',{cls:'badge bs'},'✓'):h('span',{cls:'badge bg'},'—')
     ));
   });
   list.appendChild(lb);panel.appendChild(list);
@@ -439,7 +476,7 @@ function p3(){
       const sysPrompt=getSystem(S.emailAngle);
       const prompt=sysPrompt+'\n\nWrite ONLY the email body (no subject line) for this lead. The body MUST directly follow and expand on this exact subject line:\nSUBJECT: "'+customSubject+'"\n\nThe opening line must connect directly to the subject. Personalize for their industry and role.\n\nLead details:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown:\n{"body":"..."}';
       try{
-        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:company,industry:industry,researchMode:S.researchMode})});
         const respText=await resp.text();
         const data=JSON.parse(respText);
         if(data.content&&data.content[0]){
