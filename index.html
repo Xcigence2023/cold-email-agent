@@ -109,7 +109,8 @@ const S={
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
   sender:{name:'',email:'',title:'',company:'Xcigence'},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
-  attachments:[]
+  attachments:[],
+  emailAngle:'pain'
 };
 
 // ── CSV ─────────────────────────────────────────────────────
@@ -143,7 +144,18 @@ function getName(lead){
 }
 
 // ── AI CALL via proxy ───────────────────────────────────────
-const SYSTEM=`You are an expert B2B sales copywriter for a cybersecurity SaaS company. Write emails that land in the inbox, not spam.
+function getSystem(angle){
+const angles={
+  pain:`EMAIL ANGLE: PAIN-FOCUSED. Open by naming their specific compliance pain point. Make them feel the problem acutely before introducing the solution. Use phrases like 'If your team is still...' or 'Most [industry] companies we talk to are struggling with...'`,
+  roi:`EMAIL ANGLE: ROI-FOCUSED. Lead with concrete numbers and business value. Reference specific metrics: 60-70% cost reduction, hours saved per audit, faster time-to-compliance. Make the financial case clear and compelling.`,
+  risk:`EMAIL ANGLE: RISK-FOCUSED. Open with the real consequences of inaction — regulatory fines, breach costs, reputational damage, audit failures. Create urgency without being alarmist. Reference real industry penalties where relevant.`,
+  proof:`EMAIL ANGLE: SOCIAL PROOF. Reference results from similar companies in their industry. Use language like 'A [industry] company similar to yours...' or 'Our clients in [industry] typically...'. Focus on outcomes achieved.`,
+  question:`EMAIL ANGLE: QUESTION-BASED. Open with a single sharp, thought-provoking question relevant to their role and industry. The question should make them stop and think. Then answer it with your solution.`,
+  insight:`EMAIL ANGLE: INSIGHT-LED. Open with a surprising or counter-intuitive industry insight or data point about compliance/security in their sector. Then connect it naturally to how Xcigence solves it.`
+};
+return `You are an expert B2B sales copywriter for a cybersecurity SaaS company. Write emails that land in the inbox, not spam.
+
+${angles[angle]||angles.pain}
 
 PRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation
 FEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.
@@ -185,7 +197,7 @@ async function callAI(lead){
   const company=lead[S.colMap.company]||'your company';
   const title=lead[S.colMap.title]||'decision maker';
   const industry=lead[S.colMap.industry]||'technology';
-  const prompt=`${SYSTEM}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}`;
+  const prompt=`${getSystem(S.emailAngle)}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}`;
 
   const resp=await fetch('/.netlify/functions/generate',{
     method:'POST',
@@ -314,6 +326,42 @@ function p1(){
   sc.appendChild(stip);
   wrap.appendChild(sc);
 
+  // Email Angle Selector
+  const angles=[
+    {val:'pain',    emoji:'🎯', label:'Pain-Focused',    desc:'Lead with their specific compliance pain point and urgency'},
+    {val:'roi',     emoji:'💰', label:'ROI-Focused',     desc:'Lead with cost savings, time reduction and business value'},
+    {val:'risk',    emoji:'⚠️', label:'Risk-Focused',    desc:'Lead with breach risk, regulatory fines and consequences'},
+    {val:'proof',   emoji:'🏆', label:'Social Proof',    desc:'Lead with customer success stories and real results'},
+    {val:'question',emoji:'❓', label:'Question-Based',  desc:'Open with a sharp question that makes them think'},
+    {val:'insight', emoji:'💡', label:'Insight-Led',     desc:'Share an industry insight then connect it to your solution'}
+  ];
+  const angleCard=h('div',{cls:'card',style:{marginTop:'12px'}});
+  angleCard.appendChild(h('p',{cls:'sec'},'Email Angle & Tone'));
+  angleCard.appendChild(h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Choose the messaging angle for this campaign. Each angle generates completely different emails.'));
+  const angleGrid=h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}});
+  angles.forEach(a=>{
+    const isActive=S.emailAngle===a.val;
+    const card=h('div',{
+      style:{
+        padding:'12px',borderRadius:'var(--r)',cursor:'pointer',
+        border: isActive?'2px solid var(--info-text)':'1px solid var(--border)',
+        background: isActive?'var(--info-bg)':'var(--bg)',
+        transition:'all .15s'
+      },
+      onClick:()=>{S.emailAngle=a.val;draw();}
+    },
+      h('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'4px'}},
+        h('span',{style:{fontSize:'18px'}},a.emoji),
+        h('span',{style:{fontWeight:'700',fontSize:'13px',color:isActive?'var(--info-text)':'var(--text)'}} ,a.label),
+        isActive?h('span',{style:{marginLeft:'auto',fontSize:'11px',color:'var(--info-text)',fontWeight:'700'}},'✓ Selected'):null
+      ),
+      h('p',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.4'}},a.desc)
+    );
+    angleGrid.appendChild(card);
+  });
+  angleCard.appendChild(angleGrid);
+  wrap.appendChild(angleCard);
+
   const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
   wrap.appendChild(h('div',{cls:'fb',style:{marginTop:'14px'}},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
@@ -401,9 +449,52 @@ function p3(){
       )
     ));
     if(ae.error){det.appendChild(h('div',{style:{background:'var(--danger-bg)',border:'1px solid var(--danger-border)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--danger-text)'}},ae.body));}
-    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Subject line'),h('input',{type:'text',style:{fontWeight:'700'},value:ae.subject,onInput:e=>S.emails[S.activeIdx].subject=e.target.value})));
-    const ta=document.createElement('textarea');ta.style.minHeight='190px';ta.value=ae.body;ta.addEventListener('input',e=>S.emails[S.activeIdx].body=e.target.value);
-    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body'),ta));
+    // Subject line + Rewrite Body button
+    const subjWrap=h('div',null);
+    subjWrap.appendChild(h('div',{cls:'lbl'},'Subject line — edit it, then click "Rewrite Body" to regenerate body based on your subject'));
+    const subjRow=h('div',{style:{display:'flex',gap:'8px',alignItems:'center',marginTop:'4px'}});
+    const subjInp=document.createElement('input');
+    subjInp.type='text';subjInp.style.fontWeight='700';subjInp.style.flex='1';
+    subjInp.value=ae.subject;
+    subjInp.addEventListener('input',function(e){S.emails[S.activeIdx].subject=e.target.value;});
+    const rewriteBtn=document.createElement('button');
+    rewriteBtn.className='btn btn-primary btn-sm';
+    rewriteBtn.style.whiteSpace='nowrap';
+    rewriteBtn.textContent='Rewrite Body';
+    rewriteBtn.addEventListener('click',async function(){
+      const idx=S.activeIdx;
+      const lead=S.emails[idx].lead;
+      const customSubject=subjInp.value.trim();
+      if(!customSubject){alert('Please enter a subject line first.');return;}
+      this.disabled=true;this.textContent='Rewriting...';
+      const name=getName(lead);
+      const company=lead[S.colMap.company]||'your company';
+      const title=lead[S.colMap.title]||'decision maker';
+      const industry=lead[S.colMap.industry]||'technology';
+      const sysPrompt=getSystem(S.emailAngle);
+      const prompt=sysPrompt+'\n\nWrite ONLY the email body (no subject line) for this lead. The body MUST directly follow and expand on this exact subject line:\nSUBJECT: "'+customSubject+'"\n\nThe opening line must connect directly to the subject. Personalize for their industry and role.\n\nLead details:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown:\n{"body":"..."}';
+      try{
+        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+        const respText=await resp.text();
+        const data=JSON.parse(respText);
+        if(data.content&&data.content[0]){
+          const txt=data.content[0].text.replace(/```json|```/g,'').trim();
+          const parsed=JSON.parse(txt);
+          S.emails[idx].body=parsed.body;
+          S.emails[idx].subject=customSubject;
+          S.emails[idx].approved=true;
+          S.emails[idx].error=false;
+          draw();
+        }else{alert('Rewrite failed: unexpected API response');}
+      }catch(e){alert('Rewrite failed: '+e.message);}
+      this.disabled=false;this.textContent='Rewrite Body';
+    });
+    subjRow.appendChild(subjInp);
+    subjRow.appendChild(rewriteBtn);
+    subjWrap.appendChild(subjRow);
+    det.appendChild(subjWrap);
+    const ta=document.createElement('textarea');ta.style.minHeight='190px';ta.value=ae.body;ta.addEventListener('input',function(e){S.emails[S.activeIdx].body=e.target.value;});
+    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body — edit directly or use "Rewrite Body" above to regenerate from your subject'),ta));
     det.appendChild(h('div',{cls:'fb'},
       h('div',{style:{display:'flex',gap:'8px'}},
         h('button',{cls:'btn btn-sm '+(ae.approved&&!ae.error?'btn-danger':'btn-success'),onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;draw();}},ae.approved&&!ae.error?'✗ Exclude':'✓ Include'),
