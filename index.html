@@ -145,52 +145,17 @@ function getName(lead){
 
 // ── AI CALL via proxy ───────────────────────────────────────
 function getSystem(angle){
-const angles={
-  pain:`EMAIL ANGLE: PAIN-FOCUSED. Open by naming their specific compliance pain point. Make them feel the problem acutely before introducing the solution. Use phrases like 'If your team is still...' or 'Most [industry] companies we talk to are struggling with...'`,
-  roi:`EMAIL ANGLE: ROI-FOCUSED. Lead with concrete numbers and business value. Reference specific metrics: 60-70% cost reduction, hours saved per audit, faster time-to-compliance. Make the financial case clear and compelling.`,
-  risk:`EMAIL ANGLE: RISK-FOCUSED. Open with the real consequences of inaction — regulatory fines, breach costs, reputational damage, audit failures. Create urgency without being alarmist. Reference real industry penalties where relevant.`,
-  proof:`EMAIL ANGLE: SOCIAL PROOF. Reference results from similar companies in their industry. Use language like 'A [industry] company similar to yours...' or 'Our clients in [industry] typically...'. Focus on outcomes achieved.`,
-  question:`EMAIL ANGLE: QUESTION-BASED. Open with a single sharp, thought-provoking question relevant to their role and industry. The question should make them stop and think. Then answer it with your solution.`,
-  insight:`EMAIL ANGLE: INSIGHT-LED. Open with a surprising or counter-intuitive industry insight or data point about compliance/security in their sector. Then connect it naturally to how Xcigence solves it.`
+const angleInstructions={
+  pain:"EMAIL ANGLE: PAIN-FOCUSED. Open by naming their specific compliance pain point. Make them feel the problem before introducing the solution.",
+  roi:"EMAIL ANGLE: ROI-FOCUSED. Lead with concrete numbers — 60-70% cost reduction, hours saved, faster audits. Make the financial case compelling.",
+  risk:"EMAIL ANGLE: RISK-FOCUSED. Open with real consequences of inaction — regulatory fines, breach costs, audit failures. Create urgency without being alarmist.",
+  proof:"EMAIL ANGLE: SOCIAL PROOF. Reference results from similar companies in their industry. Focus on outcomes achieved by peers.",
+  question:"EMAIL ANGLE: QUESTION-BASED. Open with one sharp thought-provoking question relevant to their role. Then answer it with your solution.",
+  insight:"EMAIL ANGLE: INSIGHT-LED. Open with a surprising industry insight about compliance or security in their sector. Then connect it to how Xcigence solves it."
 };
-return `You are an expert B2B sales copywriter for a cybersecurity SaaS company. Write emails that land in the inbox, not spam.
-
-${angles[angle]||angles.pain}
-
-PRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation
-FEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.
-
-INDUSTRY PAIN POINTS:
-- Healthcare: HIPAA violations, PHI breach liability, audit burden
-- Finance/Banking: PCI DSS, SOX, DORA compliance complexity, regulator scrutiny
-- Technology/SaaS: SOC 2 for enterprise sales, multi-framework sprawl
-- Retail: PCI DSS, customer data at scale, rapid growth compliance gaps
-- Manufacturing: OT/IT risk, supply chain vulnerabilities
-- Legal: Client confidentiality, data breach liability
-- Government: FedRAMP, FISMA, CMMC requirements
-
-DELIVERABILITY RULES (critical for inbox placement):
-- NO spam trigger words: free, guarantee, risk-free, act now, limited time, click here, buy now, discount, save, winner, congratulations, urgent, exclusive offer, no obligation
-- NO all-caps words anywhere
-- NO excessive punctuation (!!!, ???)
-- NO more than one link or URL in the email
-- NO promotional language — write like a human, not a marketer
-- Keep sentences short and varied
-- Use the recipient's first name naturally once in the opening
-- Write in plain text style — no HTML formatting instructions
-- Sound like a peer reaching out, not a sales pitch
-- Include a clear one-line unsubscribe offer at the end: "If you'd prefer not to hear from me, just reply and I'll remove you."
-
-EMAIL STRUCTURE:
-1. Subject: specific, curiosity-driven, under 50 chars, NO spam words, no punctuation gimmicks
-2. Opening: address by first name, reference their specific industry pain point
-3. Middle: one concrete benefit with a real number (e.g. 60% faster, 12 frameworks)
-4. CTA: soft ask for a 15-minute call, specific day suggestion
-5. Sign-off: professional, with full name and title
-6. Final line: "If you'd prefer not to hear from me, just reply and I'll remove you from my list."
-
-Under 175 words total. Conversational, human, peer-to-peer tone.`;
-
+const angleText=angleInstructions[angle]||angleInstructions.pain;
+return "You are an expert B2B sales copywriter for a cybersecurity SaaS company. Write emails that land in the inbox, not spam.\n\n"+angleText+"\n\nPRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation\nFEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.\n\nINDUSTRY PAIN POINTS:\n- Healthcare: HIPAA violations, PHI breach liability, audit burden\n- Finance/Banking: PCI DSS, SOX, DORA compliance complexity, regulator scrutiny\n- Technology/SaaS: SOC 2 for enterprise sales, multi-framework sprawl\n- Retail: PCI DSS, customer data at scale, rapid growth compliance gaps\n- Manufacturing: OT/IT risk, supply chain vulnerabilities\n- Legal: Client confidentiality, data breach liability\n- Government: FedRAMP, FISMA, CMMC requirements\n\nDELIVERABILITY RULES:\n- NO spam trigger words: free, guarantee, risk-free, act now, limited time, click here, buy now\n- NO all-caps, NO excessive punctuation\n- NO more than one URL\n- Write like a human peer, not a marketer\n- Use recipient first name once naturally\n- End with: If you would prefer not to hear from me, just reply and I will remove you.\n\nEMAIL STRUCTURE:\n1. Subject: specific, curiosity-driven, under 50 chars, no spam words\n2. Opening: use the selected angle above, address by first name\n3. Middle: one concrete benefit with a real number\n4. CTA: soft ask for a 15-minute call\n5. Sign-off: professional full name and title\n6. Final line: unsubscribe offer\n\nUnder 175 words total. Conversational, human, peer-to-peer tone.";
+}
 const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function callAI(lead){
   const name=getName(lead);
