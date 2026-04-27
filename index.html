@@ -163,7 +163,9 @@ async function callAI(lead){
   const company=lead[S.colMap.company]||'your company';
   const title=lead[S.colMap.title]||'decision maker';
   const industry=lead[S.colMap.industry]||'technology';
-  const prompt=`${getSystem(S.emailAngle)}\n\nWrite a cold email to:\n- Name: ${name}\n- Title: ${title}\n- Company: ${company}\n- Industry: ${industry}\n- From: ${S.sender.name}, ${S.sender.title||'Account Executive'}, ${S.sender.company}\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}`;
+  const companySize=lead[S.colMap.companySize]||'';
+  const revenue=lead[S.colMap.revenue]||'';
+  const prompt=getSystem(S.emailAngle,companySize,revenue)+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- Company Size: '+(companySize||'unknown')+'\n- Revenue: '+(revenue||'unknown')+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}';
 
   const resp=await fetch('/.netlify/functions/generate',{
     method:'POST',
