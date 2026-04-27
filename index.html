@@ -106,7 +106,7 @@ h2{font-size:16px;font-weight:700}
 // ── STATE ───────────────────────────────────────────────────
 const S={
   step:0,leads:[],headers:[],
-  colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:''},
+  colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''},
   sender:{name:'',email:'',title:'',company:'Xcigence'},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[],
@@ -145,17 +145,17 @@ function getName(lead){
 }
 
 // ── AI CALL via proxy ───────────────────────────────────────
-function getSystem(angle){
+function getSystem(angle,companySize,revenue){
 const angleInstructions={
-  pain:"EMAIL ANGLE: PAIN-FOCUSED. Open by naming their specific compliance pain point. Make them feel the problem before introducing the solution.",
-  roi:"EMAIL ANGLE: ROI-FOCUSED. Lead with concrete numbers — 60-70% cost reduction, hours saved, faster audits. Make the financial case compelling.",
-  risk:"EMAIL ANGLE: RISK-FOCUSED. Open with real consequences of inaction — regulatory fines, breach costs, audit failures. Create urgency without being alarmist.",
-  proof:"EMAIL ANGLE: SOCIAL PROOF. Reference results from similar companies in their industry. Focus on outcomes achieved by peers.",
-  question:"EMAIL ANGLE: QUESTION-BASED. Open with one sharp thought-provoking question relevant to their role. Then answer it with your solution.",
-  insight:"EMAIL ANGLE: INSIGHT-LED. Open with a surprising industry insight about compliance or security in their sector. Then connect it to how Xcigence solves it."
+  pain:"EMAIL ANGLE: PAIN-FOCUSED. Open by naming their single most pressing business risk — could be a cyberattack crippling operations, a breach destroying customer trust, or compliance failure triggering regulatory action. Make them feel the real business consequence before introducing the solution. Never lead with just a framework name.",
+  roi:"EMAIL ANGLE: ROI-FOCUSED. Lead with the financial reality — the average data breach costs $4.88M (IBM 2024), ransomware attacks average 22 days of downtime, compliance failures cost 2-3x more than prevention. Show how Xcigence protects the balance sheet and reduces total risk cost by 60-70%.",
+  risk:"EMAIL ANGLE: RISK-FOCUSED. Open with the real business consequences of a cyberattack or breach — operational shutdown, stock price collapse, customer churn, board accountability, executive liability, reputational damage that takes years to rebuild. Frame compliance and risk management as business survival, not just checkbox exercises.",
+  proof:"EMAIL ANGLE: SOCIAL PROOF. Reference how similar companies in their industry recovered from or avoided breaches and compliance failures. Focus on business outcomes — revenue protected, operations kept running, customer trust maintained, regulatory fines avoided.",
+  question:"EMAIL ANGLE: QUESTION-BASED. Open with one sharp business question — not a technical one. Something like: 'If your systems went down for 3 weeks from ransomware, what would that cost your business?' Make it visceral and real before connecting to Xcigence.",
+  insight:"EMAIL ANGLE: INSIGHT-LED. Open with a surprising business insight — how a recent breach in their industry wiped out market cap, triggered lawsuits, or caused customer exodus. Connect the dots between poor cyber risk visibility and business vulnerability."
 };
 const angleText=angleInstructions[angle]||angleInstructions.pain;
-return "You are an expert B2B sales copywriter for a cybersecurity SaaS company. Write emails that land in the inbox, not spam.\n\n"+angleText+"\n\nPRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation\nFEATURES: Continuous risk scores, compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701), AI remediation roadmaps, audit-ready evidence in minutes, 60-70% cost reduction vs manual audits, vendor risk scoring.\n\nINDUSTRY PAIN POINTS:\n- Healthcare: HIPAA violations, PHI breach liability, audit burden\n- Finance/Banking: PCI DSS, SOX, DORA compliance complexity, regulator scrutiny\n- Technology/SaaS: SOC 2 for enterprise sales, multi-framework sprawl\n- Retail: PCI DSS, customer data at scale, rapid growth compliance gaps\n- Manufacturing: OT/IT risk, supply chain vulnerabilities\n- Legal: Client confidentiality, data breach liability\n- Government: FedRAMP, FISMA, CMMC requirements\n\nDELIVERABILITY RULES:\n- NO spam trigger words: free, guarantee, risk-free, act now, limited time, click here, buy now\n- NO all-caps, NO excessive punctuation\n- NO more than one URL\n- Write like a human peer, not a marketer\n- Use recipient first name once naturally\n- End with: If you would prefer not to hear from me, just reply and I will remove you.\n\nEMAIL STRUCTURE:\n1. Subject: specific, curiosity-driven, under 50 chars, no spam words\n2. Opening: use the selected angle above, address by first name\n3. Middle: one concrete benefit with a real number\n4. CTA: soft ask for a 15-minute call\n5. Sign-off: professional full name and title\n6. Final line: unsubscribe offer\n\nUnder 175 words total. Conversational, human, peer-to-peer tone.";
+return "You are an expert B2B sales copywriter for a cybersecurity company. You write emails that connect cybersecurity and compliance to real business outcomes — not just technical checklists. Write emails that land in the inbox, not spam.\n\n"+angleText+"\n\nPRODUCT: Xcigence — Automated Cybersecurity Risk Assessment & Data Privacy Compliance Automation\n\nWHAT XCIGENCE DOES:\n- Gives executives a continuous, real-time cybersecurity risk score and rating — like a credit score for cyber health\n- Automated compliance gap analysis across 12+ frameworks (SOC 2, ISO 27001, GDPR, HIPAA, CCPA, PCI DSS, NIST CSF, CIS Controls, FedRAMP, PIPEDA, DORA, ISO 27701)\n- AI-powered remediation roadmaps that show exactly what to fix and in what order\n- Audit-ready evidence collection in minutes, not months\n- 60-70% reduction in compliance costs vs manual audits\n- Third-party and vendor risk scoring\n- Business continuity risk visibility\n\nBUSINESS IMPACT ANGLES TO USE (pick what fits the lead):\n- Cyber attacks cost businesses an average of $4.88M per breach (IBM 2024)\n- Ransomware causes average 22 days of operational downtime — devastating for revenue\n- A data breach can erase 25-40% of company market value within days\n- 60% of small-to-mid businesses close within 6 months of a major cyberattack\n- Data breaches destroy customer trust — 81% of consumers stop doing business with a breached company\n- Regulatory fines can reach 4% of global annual revenue under GDPR\n- Cyber incidents trigger shareholder lawsuits, executive liability, and board accountability\n- Supply chain attacks can shut down entire operations overnight\n- Cyber insurance premiums have risen 50%+ — poor risk scores mean higher costs or denied coverage\n- Business continuity failures from cyber incidents can take months to recover from\n\nFRAMEWORK SELECTION (match to industry — never default to SOC 2 unless SaaS/tech):\n- Healthcare: HIPAA, HITECH — tie to patient data liability, OCR fines, operational disruption\n- Finance/Banking: PCI DSS, SOX, DORA, GLBA — tie to regulatory action, license risk, investor confidence\n- Government: FedRAMP, FISMA, CMMC, NIST CSF — tie to contract loss, national security obligations\n- Retail/E-commerce: PCI DSS, CCPA, GDPR — tie to customer data liability, payment system attacks\n- Manufacturing: NIST CSF, IEC 62443, ISO 27001 — tie to OT/IT attacks, production shutdown, supply chain risk\n- Legal/Professional Services: ISO 27001, GDPR, CCPA — tie to client confidentiality, malpractice exposure\n- Insurance: NAIC, SOX, ISO 27001 — tie to policyholder data, regulatory scrutiny\n- Education: FERPA, COPPA, ISO 27001 — tie to student data liability, ransomware targeting\n- SaaS/Technology: SOC 2, ISO 27001 — tie to enterprise customer trust, deal-blocking security reviews\n- Multinational/EU: GDPR, DORA — tie to cross-border data fines, operational resilience requirements\n- Canadian: PIPEDA, ISO 27001 — tie to privacy obligations, OPC enforcement\n\nROLE-SPECIFIC PAIN POINTS:\n- CISO: Board pressure, inability to quantify risk in business terms, alert fatigue, audit exhaustion\n- Compliance Officer/CCO: Framework sprawl, manual evidence collection, regulatory deadlines, audit costs\n- CFO/Finance: Breach costs destroying margins, rising cyber insurance premiums, compliance budget justification\n- CTO: Technical debt in security tooling, developer compliance burden, multi-cloud risk visibility\n- CEO/Executive: Reputational risk, investor confidence, operational resilience, competitive disadvantage\n- VP IT/IT Director: Tool consolidation, audit readiness without extra headcount, resource constraints\n- COO: Business continuity, operational risk, supply chain vulnerabilities\n\nDELIVERABILITY RULES:\n- NO spam trigger words: free, guarantee, risk-free, act now, limited time, click here, buy now, discount\n- NO all-caps, NO excessive punctuation (!!!, ???)\n- NO more than one URL\n- Write like a senior peer reaching out — not a sales pitch\n- Use recipient first name once naturally in the opening\n- Make the business impact visceral and specific — dollars lost, days of downtime, customers churned\n- Blend compliance obligation with business risk — they are two sides of the same coin\n- End with: If you would prefer not to hear from me, just reply and I will remove you.\n\nEMAIL STRUCTURE:\n1. Subject: business-outcome focused, under 50 chars, no spam words — avoid leading with just a framework acronym\n2. Opening: address by first name, immediately connect to a real business risk or consequence in their industry\n3. Middle: weave together the business cost of inaction + how Xcigence solves it with a specific stat or benefit\n4. CTA: soft ask for a 15-minute call to show them their risk score\n5. Sign-off: professional full name and title\n6. Final line: unsubscribe offer\n\nCOMPANY SIZE GUIDANCE (critical — always match stats and language to company size):\nIf company has 1-50 employees: Small business — use SMB-specific stats: '60% of small businesses close within 6 months of a major attack', focus on survival, lean teams, limited IT resources, wearing multiple hats.\nIf company has 51-500 employees: Mid-market — use mid-market language: operational disruption, growing compliance burden, scaling risk, limited dedicated security staff, increasing regulatory scrutiny as they grow.\nIf company has 501-5000 employees: Enterprise — use enterprise language: board accountability, shareholder value, reputational risk at scale, complex multi-framework compliance, large attack surface, vendor risk across hundreds of suppliers. Use stats like 'enterprise breaches average $4.88M in total cost'.\nIf company has 5000+ employees: Large enterprise/corporation — use C-suite language: market cap impact (breaches erase 25-40% of stock value), regulatory fines in tens of millions, class action lawsuits, global compliance obligations, SEC cyber disclosure requirements, investor confidence erosion.\nIf company size is unknown: Use neutral language that works across sizes — avoid SMB-specific survival stats for companies that may be large enterprises.\n\nNEVER apply SMB survival statistics (like '60% close within 6 months') to enterprise or large companies. NEVER apply enterprise board/shareholder language to small startups. Match the language, stakes, and statistics precisely to the company's scale.\n\nUnder 180 words total. Every email must feel written by someone who truly understands their business scale and risk profile. The goal is to make them think: this person gets exactly what we are dealing with.";
 }
 const emailRegex=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function callAI(lead){
@@ -172,6 +172,8 @@ async function callAI(lead){
       prompt,
       company,
       industry,
+      companySize,
+      revenue,
       researchMode:S.researchMode
     })
   });
@@ -277,7 +279,7 @@ function p1(){
   const wrap=h('div',null);
   const mc=h('div',{cls:'card'},h('p',{cls:'sec'},'Map your CSV columns'));
   const g=h('div',{cls:'g2'});
-  [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'}].forEach(f=>{
+  [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'},{k:'companySize',l:'Company Size (employees)'},{k:'revenue',l:'Annual Revenue'}].forEach(f=>{
     const d=h('div',null,h('div',{cls:'lbl'},f.l));
     const s=h('select',{onChange:e=>S.colMap[f.k]=e.target.value});
     s.appendChild(h('option',{value:''},'— not mapped —'));
@@ -474,20 +476,30 @@ function p3(){
       const title=lead[S.colMap.title]||'decision maker';
       const industry=lead[S.colMap.industry]||'technology';
       const sysPrompt=getSystem(S.emailAngle);
+      const companySize2=lead[S.colMap.companySize]||'';
+      const revenue2=lead[S.colMap.revenue]||'';
+      const sysPrompt=getSystem(S.emailAngle,companySize2,revenue2);
       const prompt=sysPrompt+'\n\nWrite ONLY the email body (no subject line) for this lead. The body MUST directly follow and expand on this exact subject line:\nSUBJECT: "'+customSubject+'"\n\nThe opening line must connect directly to the subject. Personalize for their industry and role.\n\nLead details:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown:\n{"body":"..."}';
       try{
         const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:company,industry:industry,researchMode:S.researchMode})});
         const respText=await resp.text();
         const data=JSON.parse(respText);
-        if(data.content&&data.content[0]){
-          const txt=data.content[0].text.replace(/```json|```/g,'').trim();
-          const parsed=JSON.parse(txt);
-          S.emails[idx].body=parsed.body;
+        // Extract text from content blocks (handles tool-use responses too)
+        let txt='';
+        if(data.content&&Array.isArray(data.content)){
+          for(const block of data.content){if(block.type==='text')txt+=block.text;}
+        } else if(data.error){throw new Error(data.error.message||JSON.stringify(data.error));}
+        txt=txt.replace(/```json|```/g,'').trim();
+        const jsonStart=txt.indexOf('{');const jsonEnd=txt.lastIndexOf('}');
+        if(jsonStart>=0&&jsonEnd>jsonStart){
+          const parsed=JSON.parse(txt.substring(jsonStart,jsonEnd+1));
+          S.emails[idx].body=parsed.body||txt;
           S.emails[idx].subject=customSubject;
-          S.emails[idx].approved=true;
-          S.emails[idx].error=false;
-          draw();
-        }else{alert('Rewrite failed: unexpected API response');}
+          S.emails[idx].approved=true;S.emails[idx].error=false;draw();
+        }else if(txt.length>20){
+          S.emails[idx].body=txt;S.emails[idx].subject=customSubject;
+          S.emails[idx].approved=true;draw();
+        }else{throw new Error('Could not parse email from response: '+txt.substring(0,100));}
       }catch(e){alert('Rewrite failed: '+e.message);}
       this.disabled=false;this.textContent='Rewrite Body';
     });
