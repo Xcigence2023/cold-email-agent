@@ -180,6 +180,25 @@ async function callAI(lead){
     })
   });
   const respText=await resp.text();
+  if(resp.status===429){
+    // Rate limited — wait 10 seconds and retry once
+    await new Promise(r=>setTimeout(r,10000));
+    const retry=await fetch('/.netlify/functions/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt,company,industry,companySize,revenue,researchMode:S.researchMode})
+    });
+    const retryText=await retry.text();
+    if(!retry.ok){
+      let errMsg='HTTP '+retry.status+' (after retry)';
+      try{const e=JSON.parse(retryText);errMsg=e.error||e.message||JSON.stringify(e);}catch(ex){}
+      throw new Error(errMsg);
+    }
+    const retryData=JSON.parse(retryText);
+    if(!retryData.content||!retryData.content[0])throw new Error('Empty retry response');
+    const retryTxt=retryData.content[0].text.replace(/```json|```/g,'').trim();
+    return JSON.parse(retryTxt);
+  }
   if(!resp.ok){
     let errMsg='HTTP '+resp.status;
     try{const e=JSON.parse(respText);errMsg=e.error||e.message||JSON.stringify(e);}catch(ex){}
@@ -386,7 +405,7 @@ function p2(){
   return h('div',{cls:'card',style:{textAlign:'center',padding:'3rem 2rem'}},
     h('div',{style:{fontSize:'36px',marginBottom:'14px'}},'🤖'),
     h('h2',{style:{marginBottom:'6px'}},'Generating personalized emails'),
-    h('p',{cls:'sub'},'Tailoring each email to the lead\'s industry, role, and company...'),
+    h('p',{cls:'sub'},'Tailoring each email to the lead\'s industry, role, and company... (3s delay between emails to avoid rate limits)'),
     h('div',{style:{margin:'20px auto',maxWidth:'440px'}},
       h('div',{cls:'fb',style:{marginBottom:'5px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},S.genProgress+' of '+S.leads.length+' generated'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),
       h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))
@@ -409,7 +428,7 @@ async function runGenerate(){
       S.emails.push({id:i,lead:S.leads[i],subject:'[Failed — click Regenerate]',body:'Generation failed: '+err.message,approved:false,error:true});
     }
     S.genProgress=i+1;draw();
-    await new Promise(r=>setTimeout(r,100));
+    await new Promise(r=>setTimeout(r,3000)); // 3s delay to avoid Anthropic rate limits
   }
   S.step=3;S.activeIdx=0;draw();
 }
