@@ -475,7 +475,6 @@ function p3(){
       const company=lead[S.colMap.company]||'your company';
       const title=lead[S.colMap.title]||'decision maker';
       const industry=lead[S.colMap.industry]||'technology';
-      const sysPrompt=getSystem(S.emailAngle);
       const companySize2=lead[S.colMap.companySize]||'';
       const revenue2=lead[S.colMap.revenue]||'';
       const sysPrompt=getSystem(S.emailAngle,companySize2,revenue2);
