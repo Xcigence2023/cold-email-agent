@@ -108,11 +108,11 @@ input:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,21
 <script>
 const SUPABASE_URL = 'https://cncxqqxwhejcyiiwlqgf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_r1pXucl5EeEeORtDd6jAeA_bXo15UDa'; // Replace with your anon key
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Check if already logged in
 (async () => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sbClient.auth.getSession();
   if (session) window.location.href = '/app.html';
 })();
 
@@ -143,7 +143,7 @@ async function login() {
   if (!email || !password) return showMsg('login-msg', 'Please enter your email and password.', 'error');
   const btn = document.getElementById('btn-login');
   btn.disabled = true; btn.textContent = 'Signing in...';
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await sbClient.auth.signInWithPassword({ email, password });
   if (error) {
     showMsg('login-msg', error.message, 'error');
     btn.disabled = false; btn.textContent = 'Sign In';
@@ -161,7 +161,7 @@ async function signup() {
   if (password.length < 8) return showMsg('signup-msg', 'Password must be at least 8 characters.', 'error');
   const btn = document.getElementById('btn-signup');
   btn.disabled = true; btn.textContent = 'Creating account...';
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await sbClient.auth.signUp({
     email, password,
     options: { data: { full_name: name, company } }
   });
@@ -179,7 +179,7 @@ async function signup() {
 async function resetPassword() {
   const email = document.getElementById('forgot-email').value.trim();
   if (!email) return showMsg('forgot-msg', 'Please enter your email address.', 'error');
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await sbClient.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + '/app.html'
   });
   if (error) showMsg('forgot-msg', error.message, 'error');
