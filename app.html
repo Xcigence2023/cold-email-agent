@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Xcigence — AI Cold Email Agent</title>
+<title>Velorah — AI Cold Email Agent</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -133,8 +133,8 @@ h2{font-size:16px;font-weight:700}
 </div>
 <div class="page">
   <div class="hdr">
-    <h1>🛡️ Xcigence — AI Cold Email Agent</h1>
-    <p>Upload leads → AI generates personalized emails → Review → Send via SendGrid</p>
+    <h1>✉️ Velorah — AI Cold Email Agent</h1>
+    <p>Upload leads → AI researches & personalizes → Review → Send</p>
   </div>
   <div id="root"></div>
 </div>
@@ -143,7 +143,7 @@ h2{font-size:16px;font-weight:700}
 const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''},
-  sender:{name:'',email:'',title:'',company:'Xcigence'},
+  sender:{name:'',email:'',title:'',company:'Velorah'},
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[],
   emailAngle:'pain',
@@ -352,7 +352,7 @@ function p1(){
 
   const sc=h('div',{cls:'card'},h('p',{cls:'sec'},'Your sender details'));
   const sg=h('div',{cls:'g2'});
-  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@xcigence.com'},{k:'title',l:'Job Title',p:'Senior Account Executive'},{k:'company',l:'Company',p:'Xcigence'}].forEach(f=>{
+  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@xcigence.com'},{k:'title',l:'Job Title',p:'Senior Account Executive'},{k:'company',l:'Company',p:'Velorah'}].forEach(f=>{
     const d=h('div',null,h('div',{cls:'lbl'},f.l),h('input',{type:'text',placeholder:f.p,value:S.sender[f.k]||'',onInput:e=>S.sender[f.k]=e.target.value}));
     sg.appendChild(d);
   });
@@ -733,7 +733,7 @@ async function loadUserKeys(){
       S.sender.name=keys.sender_name||'';
       S.sender.email=keys.sender_email||'';
       S.sender.title=keys.sender_title||'';
-      S.sender.company=keys.sender_company||'Xcigence';
+      S.sender.company=keys.sender_company||'Velorah';
       _session._anthropicKey=keys.anthropic_key||'';
       _session._sendgridKey=keys.sendgrid_key||'';
     }
