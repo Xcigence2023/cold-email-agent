@@ -147,7 +147,9 @@ const S={
   emails:[],genProgress:0,activeIdx:0,sendStatus:{},dragOver:false,
   attachments:[],
   emailAngle:'pain',
-  researchMode:false
+  researchMode:false,
+  trackingStatus:{},
+  messageIds:{}
 };
 
 // ── CSV ─────────────────────────────────────────────────────
@@ -616,6 +618,7 @@ function p4(){
   ac.appendChild(h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
     h('button',{cls:'btn btn-primary',onClick:()=>sendAll(approved)},'▶ Send All ('+approved.length+')'),
     h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'),
+    h('button',{cls:'btn',onClick:()=>checkTracking(),style:{background:'var(--bg2)'}},'🔄 Refresh Tracking'),
     h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails')
   ));
   if(sent>0){
@@ -667,6 +670,27 @@ function p4(){
   });
   wrap.appendChild(lc);
   return wrap;
+}
+
+
+async function checkTracking(){
+  const sent=S.emails.filter(e=>S.sendStatus[e.id]==='sent');
+  if(!sent.length)return;
+  try{
+    const resp=await fetch('/.netlify/functions/check-tracking',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({emails:sent.map(e=>({email:e.lead[S.colMap.email],messageId:S.messageIds[e.id]||''}))})
+    });
+    const data=await resp.json();
+    if(data.results){
+      Object.entries(data.results).forEach(([email,status])=>{
+        const emailObj=sent.find(e=>e.lead[S.colMap.email]===email);
+        if(emailObj)S.trackingStatus[emailObj.id]=status;
+      });
+      draw();
+    }
+  }catch(e){console.error('Tracking check failed:',e);}
 }
 
 async function sendAll(approved){
