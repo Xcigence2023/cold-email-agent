@@ -1,7 +1,7 @@
 exports.handler = async function(event) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
   };
@@ -10,9 +10,7 @@ exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'SENDGRID_API_KEY not configured' }) };
-  }
+  if (!SENDGRID_API_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'SENDGRID_API_KEY not configured' }) };
 
   let to, subject, body, fromEmail, fromName, attachments;
   try {
@@ -26,26 +24,29 @@ exports.handler = async function(event) {
   if (!fromEmail || !emailRegex.test(fromEmail)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid FROM email: ' + fromEmail }) };
   if (!subject || !body) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing subject or body' }) };
 
-  // Convert plain text to HTML
   const htmlBody = body
     .split('\n\n')
     .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g, '<br>')}</p>`)
     .join('');
 
+  // Unique message ID for tracking
+  const messageId = `velorah-${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
+
   const payload = {
     personalizations: [{ to: [{ email: to }], subject }],
-    // Use sender's actual email and name as FROM for authenticity
-    from: { email: fromEmail, name: fromName || 'Xcigence' },
-    reply_to: { email: fromEmail, name: fromName || 'Xcigence' },
+    from: { email: fromEmail, name: fromName || 'Velorah' },
+    reply_to: { email: fromEmail, name: fromName || 'Velorah' },
     content: [
       { type: 'text/plain', value: body },
-      { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:20px 20px 40px;background:#fff;max-width:600px">${htmlBody}<p style="margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px">This email was sent by ${fromName||'Xcigence'} (${fromEmail}). If you'd prefer not to receive emails from us, please reply with "Unsubscribe".</p></body></html>` }
+      { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:20px 20px 40px;background:#fff;max-width:600px">${htmlBody}<p style="margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px">Sent by ${fromName||'Velorah'} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>` }
     ],
+    // Enable open tracking for analytics
     tracking_settings: {
-      click_tracking: { enable: false, enable_text: false },
-      open_tracking: { enable: false },
+      click_tracking: { enable: true, enable_text: false },
+      open_tracking: { enable: true },
       subscription_tracking: { enable: false }
-    }
+    },
+    custom_args: { message_id: messageId }
   };
 
   if (attachments && attachments.length > 0) {
@@ -65,7 +66,9 @@ exports.handler = async function(event) {
     });
 
     if (res.status >= 200 && res.status < 300) {
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      // Get SendGrid message ID from response headers
+      const sgMessageId = res.headers.get('x-message-id') || messageId;
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, messageId: sgMessageId }) };
     }
     const text = await res.text();
     return { statusCode: res.status, headers, body: JSON.stringify({ error: 'SendGrid error ' + res.status + ': ' + text }) };
