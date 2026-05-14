@@ -2,11 +2,22 @@
   publish = "."
   functions = "netlify/functions"
 
+[functions]
+  node_bundler = "esbuild"
+
+[functions."generate"]
+  timeout = 26
+
+[functions."send-bulk"]
+  timeout = 26
+
+[functions."research"]
+  timeout = 26
+
 [[redirects]]
   from = "/"
   to = "/login.html"
   status = 302
-  conditions = {Cookie = ["!sb-access-token"]}
 
 [[redirects]]
   from = "/app"
