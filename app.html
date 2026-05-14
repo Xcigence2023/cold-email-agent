@@ -480,7 +480,11 @@ async function runGenerate(){
       const{subject,body}=await callAI(S.leads[i]);
       S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true,error:false,researched:S.researchMode});
     }catch(err){
-      S.emails.push({id:i,lead:S.leads[i],subject:'[Failed — click Regenerate]',body:'Generation failed: '+err.message,approved:false,error:true});
+      const isOverload=err.message&&(err.message.includes('529')||err.message.includes('Overloaded')||err.message.includes('504'));
+      S.emails.push({id:i,lead:S.leads[i],
+        subject:isOverload?'[Overloaded — click Regenerate]':'[Failed — click Regenerate]',
+        body:isOverload?'API overloaded. Click ↺ Regenerate to retry this lead. Consider turning OFF Research Mode to reduce API calls.':'Generation failed: '+err.message,
+        approved:false,error:true});
     }
     S.genProgress=i+1;draw();
     await new Promise(r=>setTimeout(r,3000)); // 3s delay to avoid Anthropic rate limits
@@ -575,7 +579,25 @@ function p3(){
           S.emails[idx].body=txt;S.emails[idx].subject=customSubject;
           S.emails[idx].approved=true;draw();
         }else{throw new Error('Could not parse email from response: '+txt.substring(0,100));}
-      }catch(e){alert('Rewrite failed: '+e.message);}
+      }catch(e){
+        if(e.message&&(e.message.includes('529')||e.message.includes('Overloaded')||e.message.includes('429'))){
+          // Overloaded — wait and retry once automatically
+          this.textContent='Overloaded, retrying in 8s...';
+          await new Promise(r=>setTimeout(r,8000));
+          try{
+            const resp2=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:company,industry:industry,researchMode:false,anthropicKey:_aKey})});
+            const rawText2=await resp2.text();
+            const data2=JSON.parse(rawText2);
+            let txt2='';
+            if(data2.content&&Array.isArray(data2.content)){for(const block of data2.content){if(block.type==='text')txt2+=block.text;}}
+            txt2=txt2.replace(/```json|```/g,'').trim();
+            const js=txt2.indexOf('{');const je=txt2.lastIndexOf('}');
+            if(js>=0&&je>js){const p=JSON.parse(txt2.substring(js,je+1));S.emails[idx].body=p.body||txt2;S.emails[idx].subject=customSubject;S.emails[idx].approved=true;S.emails[idx].error=false;draw();}
+          }catch(e2){alert('Rewrite failed after retry: '+e2.message);}
+        } else {
+          alert('Rewrite failed: '+e.message);
+        }
+      }
       this.disabled=false;this.textContent='Rewrite Body';
     });
     subjRow.appendChild(subjInp);
