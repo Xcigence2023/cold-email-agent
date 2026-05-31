@@ -149,7 +149,11 @@ const S={
   emailAngle:'pain',
   researchMode:false,
   trackingStatus:{},
-  messageIds:{}
+  messageIds:{},
+  scheduleAt:null,
+  campaignName:'',
+  bulkSending:false,
+  bulkProgress:{total:0,sent:0,failed:0,scheduled:0}
 };
 
 // ── CSV ─────────────────────────────────────────────────────
@@ -629,70 +633,271 @@ function p4(){
   const approved=S.emails.filter(e=>e.approved&&!e.error);
   const sent=Object.values(S.sendStatus).filter(s=>s==='sent').length;
   const failed=Object.values(S.sendStatus).filter(s=>s==='error').length;
+  const scheduled=Object.values(S.sendStatus).filter(s=>s==='scheduled').length;
 
-  const g4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
-  [{v:approved.length,l:'Approved'},{v:sent,l:'Sent'},{v:failed,l:'Failed'},{v:approved.length-sent-failed,l:'Pending'}].forEach(s=>{
-    g4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
+  // Stats bar
+  const stats=h('div',{cls:'g4',style:{marginBottom:'16px'}});
+  [
+    {v:approved.length,l:'Total Recipients',c:'#1d4ed8'},
+    {v:sent,l:'✅ Sent',c:'#15803d'},
+    {v:scheduled,l:'⏰ Scheduled',c:'#7e22ce'},
+    {v:failed,l:'❌ Failed',c:'#dc2626'}
+  ].forEach(s=>{
+    const card=h('div',{cls:'stat-card'});
+    card.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';
+    stats.appendChild(card);
   });
-  wrap.appendChild(g4);
+  wrap.appendChild(stats);
 
-  const ac=h('div',{cls:'card'});
-  ac.appendChild(h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
-    h('button',{cls:'btn btn-primary',onClick:()=>sendAll(approved)},'▶ Send All ('+approved.length+')'),
-    h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'),
-    h('button',{cls:'btn',onClick:()=>checkTracking(),style:{background:'var(--bg2)'}},'🔄 Refresh Tracking'),
-    h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails')
-  ));
-  if(sent>0){
-    const pct=Math.round(sent/approved.length*100);
-    ac.appendChild(h('div',{style:{marginTop:'10px'}},h('div',{cls:'fb',style:{marginBottom:'4px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},sent+' of '+approved.length+' sent'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))));
-  }
-  wrap.appendChild(ac);
-
-  // Check if email column mapping looks wrong
-  const badEmails=approved.filter(e=>!emailRegex.test((e.lead[S.colMap.email]||'').trim()));
-  if(badEmails.length>0){
-    const warn=h('div',{style:{background:'var(--danger-bg)',border:'1px solid var(--danger-border)',borderRadius:'var(--r)',padding:'14px',marginBottom:'12px',color:'var(--danger-text)'}});
-    warn.innerHTML=`<strong>⚠️ Email column mapping issue!</strong><br><br>${badEmails.length} lead(s) have invalid email addresses. The "Email" column in Step 2 may be mapped to the wrong CSV column.<br><br><strong>Example:</strong> "${(badEmails[0].lead[S.colMap.email]||'empty')}" is not a valid email.<br><br>Go back to <strong>Step 2 (Configure)</strong> and re-map the Email column to the correct column in your CSV.`;
-    const fixBtn=h('button',{cls:'btn btn-danger',style:{marginTop:'10px'},onClick:()=>{S.step=1;draw();}},'← Fix Column Mapping');
-    warn.appendChild(fixBtn);
-    wrap.appendChild(warn);
-  }
-
-  if(approved.length===0){
-    wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem'}},h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'📭'),h('h2',{style:{marginBottom:'8px'}},'No approved emails'),h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Go back and mark emails as approved (✓).'),h('button',{cls:'btn btn-primary',onClick:()=>{S.step=3;draw();}},'← Back to Review')));
+  // Bulk send in progress
+  if(S.bulkSending){
+    const prog=h('div',{cls:'card',style:{textAlign:'center',padding:'2rem',marginBottom:'12px'}});
+    const pct=S.bulkProgress.total>0?Math.round(((S.bulkProgress.sent+S.bulkProgress.failed)/S.bulkProgress.total)*100):0;
+    prog.innerHTML=`
+      <div style="font-size:28px;margin-bottom:12px">🚀</div>
+      <h2 style="margin-bottom:6px">Sending campaign...</h2>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">${S.bulkProgress.sent} sent · ${S.bulkProgress.failed} failed · ${S.bulkProgress.total} total</p>
+      <div style="max-width:400px;margin:0 auto">
+        <div class="fb" style="margin-bottom:4px">
+          <span style="font-size:12px;color:var(--text2)">${pct}% complete</span>
+          <span style="font-size:12px;font-weight:700">${S.bulkProgress.sent+S.bulkProgress.failed} / ${S.bulkProgress.total}</span>
+        </div>
+        <div class="pbar" style="height:8px"><div class="pfill" style="width:${pct}%;background:#1d4ed8"></div></div>
+      </div>
+    `;
+    wrap.appendChild(prog);
     return wrap;
   }
 
-  const lc=h('div',{cls:'card'});
-  lc.appendChild(h('p',{style:{fontWeight:'700',marginBottom:'14px'}},'Email queue ('+approved.length+' emails)'));
-  approved.forEach(ed=>{
-    const id=ed.id;const st=S.sendStatus[id];
-    const nm=getName(ed.lead).substring(0,28);
-    const co=(ed.lead[S.colMap.company]||'').substring(0,24);
-    const toEmail=ed.lead[S.colMap.email]||'';
-    const row=h('div',{cls:'srow'});
+  // Campaign launcher card
+  const launcher=h('div',{cls:'card',style:{marginBottom:'12px'}});
+
+  // Campaign name
+  const nameRow=h('div',{style:{marginBottom:'14px'}});
+  nameRow.appendChild(h('div',{cls:'lbl'},'Campaign Name'));
+  const nameInp=document.createElement('input');
+  nameInp.type='text';
+  nameInp.placeholder='e.g. Q2 CISO Outreach — May 2026';
+  nameInp.value=S.campaignName||'';
+  nameInp.addEventListener('input',e=>S.campaignName=e.target.value);
+  nameRow.appendChild(nameInp);
+  launcher.appendChild(nameRow);
+
+  // Schedule toggle
+  const schedRow=h('div',{style:{marginBottom:'14px'}});
+  const schedHeader=h('div',{cls:'fb',style:{marginBottom:'8px'}});
+  schedHeader.appendChild(h('div',null,
+    h('p',{style:{fontWeight:'700',fontSize:'14px',marginBottom:'2px'}},'⏰ Schedule Delivery'),
+    h('p',{style:{fontSize:'12px',color:'var(--text2)'}},'Send now or pick a future date and time')
+  ));
+  const toggleWrap=h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}});
+  const tog=h('div',{
+    style:{width:'48px',height:'26px',borderRadius:'13px',cursor:'pointer',background:S.scheduleAt?'#15803d':'var(--border2)',transition:'background .2s',position:'relative',display:'flex',alignItems:'center',padding:'3px'},
+    onClick:()=>{
+      if(S.scheduleAt){S.scheduleAt=null;}
+      else{
+        const d=new Date();d.setHours(d.getHours()+1);
+        S.scheduleAt=d.toISOString().slice(0,16);
+      }
+      draw();
+    }
+  });
+  const knob=h('div',{style:{width:'20px',height:'20px',borderRadius:'50%',background:'white',transition:'transform .2s',transform:S.scheduleAt?'translateX(22px)':'translateX(0)'}});
+  tog.appendChild(knob);
+  toggleWrap.appendChild(tog);
+  toggleWrap.appendChild(h('span',{style:{fontSize:'11px',fontWeight:'700',color:S.scheduleAt?'#15803d':'var(--text2)'}} ,S.scheduleAt?'Scheduled':'Send Now'));
+  schedHeader.appendChild(toggleWrap);
+  schedRow.appendChild(schedHeader);
+
+  if(S.scheduleAt){
+    const dtWrap=h('div',null,h('div',{cls:'lbl'},'Schedule Date & Time (within 72 hours)'));
+    const dtInp=document.createElement('input');
+    dtInp.type='datetime-local';
+    dtInp.value=S.scheduleAt||'';
+    const minDate=new Date();minDate.setMinutes(minDate.getMinutes()+5);
+    const maxDate=new Date();maxDate.setHours(maxDate.getHours()+72);
+    dtInp.min=minDate.toISOString().slice(0,16);
+    dtInp.max=maxDate.toISOString().slice(0,16);
+    dtInp.addEventListener('change',e=>S.scheduleAt=e.target.value);
+    dtWrap.appendChild(dtInp);
+    schedRow.appendChild(dtWrap);
+    const schedTip=h('div',{cls:'tip',style:{marginTop:'8px'}});
+    schedTip.innerHTML='Email will be delivered at the scheduled time via SendGrid. Max 72 hours in advance.';
+    schedRow.appendChild(schedTip);
+  }
+  launcher.appendChild(schedRow);
+
+  // Action buttons
+  const actRow=h('div',{cls:'flex',style:{flexWrap:'wrap',gap:'10px'}});
+
+  // Main launch button
+  const launchBtn=h('button',{
+    cls:'btn btn-primary',
+    style:{fontSize:'15px',padding:'12px 28px',fontWeight:'700'},
+    onClick:async function(){
+      if(!approved.length){alert('No approved emails to send.');return;}
+      const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails right now?';
+      if(!confirm(label+'
+
+This will send to all approved recipients at once.'))return;
+      await launchCampaign(approved);
+    }
+  },S.scheduleAt?'⏰ Schedule Campaign ('+approved.length+')':'🚀 Launch Campaign ('+approved.length+')');
+  actRow.appendChild(launchBtn);
+  actRow.appendChild(h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'));
+  actRow.appendChild(h('button',{cls:'btn',onClick:()=>checkTracking()},'🔄 Refresh Tracking'));
+  actRow.appendChild(h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails'));
+  launcher.appendChild(actRow);
+  wrap.appendChild(launcher);
+
+  if(approved.length===0){
+    wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem'}},
+      h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'📭'),
+      h('h2',{style:{marginBottom:'8px'}},'No approved emails'),
+      h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'14px'}},'Go back and mark emails as approved (✓).'),
+      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=3;draw();}},'← Back to Review')
+    ));
+    return wrap;
+  }
+
+  // Recipient list with color-coded tracking
+  const listCard=h('div',{cls:'card'});
+  listCard.appendChild(h('p',{style:{fontWeight:'700',marginBottom:'14px',fontSize:'15px'}},'Recipients ('+approved.length+')'));
+
+  // Legend
+  const legend=h('div',{style:{display:'flex',gap:'12px',flexWrap:'wrap',marginBottom:'14px',fontSize:'12px'}});
+  [
+    {c:'#dcfce7',tc:'#15803d',l:'🟢 Opened'},
+    {c:'#dbeafe',tc:'#1d4ed8',l:'🔵 Clicked'},
+    {c:'#fef9c3',tc:'#854d0e',l:'🟡 Delivered'},
+    {c:'#fee2e2',tc:'#dc2626',l:'🔴 Bounced/Failed'},
+    {c:'#f3f4f6',tc:'#6b7280',l:'⚪ Pending'}
+  ].forEach(item=>{
+    legend.appendChild(h('span',{style:{padding:'2px 8px',borderRadius:'4px',background:item.c,color:item.tc,fontWeight:'600'}},item.l));
+  });
+  listCard.appendChild(legend);
+
+  approved.forEach(emailData=>{
+    const id=emailData.id;
+    const st=S.sendStatus[id];
+    const tracking=S.trackingStatus[id];
+    const toEmail=(emailData.lead[S.colMap.email]||'').trim();
+    const nm=getName(emailData.lead).substring(0,28);
+    const co=(emailData.lead[S.colMap.company]||'').substring(0,22);
+
+    // Determine row color based on tracking status
+    let rowBg='var(--bg)';let rowBorder='var(--border)';
+    if(tracking==='opened'){rowBg='#dcfce7';rowBorder='#86efac';}
+    else if(tracking==='clicked'){rowBg='#dbeafe';rowBorder='#93c5fd';}
+    else if(tracking==='delivered'||st==='sent'){rowBg='#fef9c3';rowBorder='#fde68a';}
+    else if(st==='error'||tracking==='bounced'){rowBg='#fee2e2';rowBorder='#fca5a5';}
+    else if(st==='scheduled'){rowBg='#f3e8ff';rowBorder='#c4b5fd';}
+
+    const row=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',borderRadius:'var(--r)',border:'1px solid '+rowBorder,background:rowBg,gap:'8px',marginBottom:'6px'}});
+
     row.appendChild(h('div',{style:{flex:'1',minWidth:'0'}},
       h('p',{style:{fontWeight:'700',fontSize:'13px'}},nm+(co?' · ':'')+co),
-      h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},ed.subject)
+      h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},emailData.subject)
     ));
-    row.appendChild(h('span',{style:{fontSize:'12px',color:'var(--text2)',flexShrink:'0',maxWidth:'170px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
-    const se=h('div',{style:{flexShrink:'0'}});
-    if(st==='sent')se.appendChild(h('span',{cls:'badge bs'},'✓ Sent'));
-    else if(st==='error')se.appendChild(h('span',{cls:'badge bd'},'✗ Failed'));
-    else if(st==='sending')se.appendChild(h('span',{cls:'spin'}));
-    else se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
-      S.sendStatus[id]='sending';draw();
-      if(!emailRegex.test(toEmail)){S.sendStatus[id]='error';alert('Invalid email address: "'+toEmail+'"\n\nPlease go back to Step 2 and make sure the Email column is correctly mapped to the email address column in your CSV.');draw();return;}
-      try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch(e){console.error('Send error:',e.message);S.sendStatus[id]='error';}
-      draw();
-    }},'Send'));
-    
-    row.appendChild(se);lc.appendChild(row);
+    row.appendChild(h('span',{style:{fontSize:'12px',color:'var(--text2)',flexShrink:'0',maxWidth:'180px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
+
+    // Status badge
+    const badge=h('div',{style:{flexShrink:'0',fontSize:'12px',fontWeight:'700',padding:'3px 8px',borderRadius:'4px'}});
+    if(tracking==='opened'){badge.style.background='#dcfce7';badge.style.color='#15803d';badge.textContent='🟢 Opened';}
+    else if(tracking==='clicked'){badge.style.background='#dbeafe';badge.style.color='#1d4ed8';badge.textContent='🔵 Clicked';}
+    else if(tracking==='delivered'){badge.style.background='#fef9c3';badge.style.color='#854d0e';badge.textContent='🟡 Delivered';}
+    else if(tracking==='bounced'){badge.style.background='#fee2e2';badge.style.color='#dc2626';badge.textContent='🔴 Bounced';}
+    else if(st==='sent'){badge.style.background='#fef9c3';badge.style.color='#854d0e';badge.textContent='🟡 Sent';}
+    else if(st==='scheduled'){badge.style.background='#f3e8ff';badge.style.color='#7e22ce';badge.textContent='⏰ Scheduled';}
+    else if(st==='sending'){badge.appendChild(h('span',{cls:'spin'}));}
+    else if(st==='error'){badge.style.background='#fee2e2';badge.style.color='#dc2626';badge.textContent='🔴 Failed';}
+    else{badge.style.background='#f3f4f6';badge.style.color='#6b7280';badge.textContent='⚪ Pending';}
+    row.appendChild(badge);
+    listCard.appendChild(row);
   });
-  wrap.appendChild(lc);
+  wrap.appendChild(listCard);
   return wrap;
 }
+
+async function launchCampaign(approved){
+  S.bulkSending=true;
+  S.bulkProgress={total:approved.length,sent:0,failed:0,scheduled:0};
+  draw();
+
+  const emails=approved.map(ed=>({
+    id:ed.id,
+    to:(ed.lead[S.colMap.email]||'').trim(),
+    subject:ed.subject,
+    body:ed.body
+  }));
+
+  try{
+    const resp=await fetch('/.netlify/functions/send-bulk',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+(_session?.access_token||'')
+      },
+      body:JSON.stringify({
+        emails,
+        fromEmail:S.sender.email,
+        fromName:S.sender.name,
+        scheduleAt:S.scheduleAt||null,
+        campaignName:S.campaignName||'Campaign '+new Date().toLocaleDateString()
+      })
+    });
+    const data=await resp.json();
+
+    if(data.success){
+      S.bulkProgress={total:data.total,sent:data.sent,failed:data.failed,scheduled:data.scheduled||0};
+      // Update send status for each
+      approved.forEach(ed=>{
+        if(data.messageIds&&data.messageIds[ed.id]){
+          S.sendStatus[ed.id]=data.scheduled?'scheduled':'sent';
+          S.messageIds[ed.id]=data.messageIds[ed.id];
+        } else {
+          S.sendStatus[ed.id]='error';
+        }
+      });
+      // Save to history log
+      try{
+        const historyRecords=approved.map(ed=>({
+          campaignName:S.campaignName||'Campaign',
+          name:getName(ed.lead),
+          email:(ed.lead[S.colMap.email]||'').trim(),
+          company:ed.lead[S.colMap.company]||'',
+          title:ed.lead[S.colMap.title]||'',
+          industry:ed.lead[S.colMap.industry]||'',
+          subject:ed.subject,
+          body:ed.body,
+          status:data.scheduled?'scheduled':'sent',
+          messageId:data.messageIds?data.messageIds[ed.id]||null:null,
+          scheduledAt:S.scheduleAt||null
+        }));
+        await fetch('/.netlify/functions/email-history',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
+          body:JSON.stringify({records:historyRecords})
+        });
+      }catch(e){console.error('History save failed:',e);}
+      // Show success
+      const msg=data.scheduled?
+        `✅ ${data.sent+data.scheduled} emails scheduled for ${new Date(S.scheduleAt).toLocaleString()}!`:
+        `✅ Campaign launched! ${data.sent} sent · ${data.failed} failed`;
+      alert(msg);
+      // Auto refresh tracking after 30s
+      if(!data.scheduled)setTimeout(()=>checkTracking(),30000);
+    } else {
+      alert('Campaign failed: '+(data.error||'Unknown error'));
+    }
+  }catch(e){
+    alert('Campaign error: '+e.message);
+  }
+  S.bulkSending=false;
+  draw();
+}
+
+function ___p4_placeholder(){
 
 
 async function checkTracking(){
