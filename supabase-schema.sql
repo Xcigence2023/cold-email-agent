@@ -140,3 +140,38 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- pro:      10000 leads/month
 -- enterprise: unlimited (-1)
 -- ============================================================
+
+-- ============================================================
+-- EMAIL SENDS HISTORY TABLE (add this to your existing schema)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.email_sends (
+  id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id          UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  campaign_name    TEXT DEFAULT 'Campaign',
+  recipient_name   TEXT,
+  recipient_email  TEXT,
+  company          TEXT,
+  title            TEXT,
+  industry         TEXT,
+  subject          TEXT,
+  body             TEXT,
+  status           TEXT DEFAULT 'sent',        -- sent | scheduled | failed
+  tracking_status  TEXT DEFAULT 'pending',     -- pending | delivered | opened | clicked | bounced
+  message_id       TEXT,                       -- SendGrid message ID for tracking
+  sent_at          TIMESTAMPTZ,
+  scheduled_at     TIMESTAMPTZ,
+  opened_at        TIMESTAMPTZ,
+  clicked_at       TIMESTAMPTZ,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for fast queries
+CREATE INDEX IF NOT EXISTS email_sends_user_id_idx ON public.email_sends(user_id);
+CREATE INDEX IF NOT EXISTS email_sends_sent_at_idx ON public.email_sends(sent_at DESC);
+CREATE INDEX IF NOT EXISTS email_sends_status_idx ON public.email_sends(status);
+
+-- RLS
+ALTER TABLE public.email_sends ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users view own sends" ON public.email_sends FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users insert own sends" ON public.email_sends FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users update own sends" ON public.email_sends FOR UPDATE USING (auth.uid() = user_id);
