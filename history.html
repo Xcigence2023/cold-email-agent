@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Velorah — Email History</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--r:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f5f5f0;--text2:#aeaeb2;--border:#3a3a3c;--border2:#48484a}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 1.5rem;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-left a{font-size:13px;color:#1d4ed8;text-decoration:none;font-weight:500}
+.topbar-left a:hover{text-decoration:underline}
+.page{max-width:1100px;margin:0 auto;padding:1.5rem}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+input,select{font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:#1d4ed8}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn-primary{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1rem}
+@media(max-width:600px){.stat-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--border)}
+.stat-val{font-size:24px;font-weight:700;line-height:1}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);background:var(--bg2);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--bg2)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:space-between;flex-wrap:wrap}
+.loading{text-align:center;padding:3rem;color:var(--text2)}
+.empty{text-align:center;padding:3rem;color:var(--text2)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.search-bar{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;margin-bottom:14px;align-items:center}
+@media(max-width:600px){.search-bar{grid-template-columns:1fr}}
+.tag{font-size:11px;padding:2px 6px;border-radius:3px;background:var(--bg2);color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <strong>✉️ Velorah</strong>
+    <a href="/app.html">← Back to Campaigns</a>
+    <span id="user-email" style="color:var(--text2);font-size:12px"></span>
+  </div>
+  <div class="flex">
+    <button class="btn" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="btn" onclick="refreshTracking()">🔄 Refresh Tracking</button>
+    <button class="btn" onclick="signOut()" style="color:var(--text2)">Sign out</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="fb" style="margin-bottom:1rem">
+    <div>
+      <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">📋 Email Send History</h1>
+      <p style="font-size:13px;color:var(--text2)">All emails sent from your campaigns</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total Sent</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#15803d" id="stat-opened">—</div><div class="stat-lbl">🟢 Opened</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#1d4ed8" id="stat-clicked">—</div><div class="stat-lbl">🔵 Clicked</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#854d0e" id="stat-delivered">—</div><div class="stat-lbl">🟡 Delivered</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#dc2626" id="stat-bounced">—</div><div class="stat-lbl">🔴 Bounced</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search by name, email, company..." oninput="debounceSearch()"/>
+      <select id="status-filter" onchange="loadHistory(0)">
+        <option value="">All Statuses</option>
+        <option value="sent">Sent</option>
+        <option value="scheduled">Scheduled</option>
+        <option value="failed">Failed</option>
+      </select>
+      <select id="tracking-filter" onchange="loadHistory(0)">
+        <option value="">All Tracking</option>
+        <option value="opened">Opened</option>
+        <option value="clicked">Clicked</option>
+        <option value="delivered">Delivered</option>
+        <option value="bounced">Bounced</option>
+        <option value="pending">Pending</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadHistory(0)">Search</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card" id="table-container">
+    <div class="loading">Loading history...</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+let _session=null;
+let _records=[];
+let _total=0;
+let _offset=0;
+const PAGE_SIZE=50;
+let _searchTimer=null;
+
+async function init(){
+  const{data:{session}}=await sbClient.auth.getSession();
+  if(!session){window.location.href='/login.html';return;}
+  _session=session;
+  document.getElementById('user-email').textContent=session.user.email;
+  await loadHistory(0);
+}
+
+function debounceSearch(){
+  clearTimeout(_searchTimer);
+  _searchTimer=setTimeout(()=>loadHistory(0),500);
+}
+
+async function loadHistory(offset){
+  _offset=offset||0;
+  const container=document.getElementById('table-container');
+  container.innerHTML='<div class="loading">⏳ Loading...</div>';
+
+  const search=document.getElementById('search-input').value.trim();
+  const status=document.getElementById('status-filter').value;
+  const tracking=document.getElementById('tracking-filter').value;
+
+  let url=`/.netlify/functions/email-history?limit=${PAGE_SIZE}&offset=${_offset}`;
+  if(search)url+='&search='+encodeURIComponent(search);
+  if(status)url+='&status='+status;
+  if(tracking)url+='&tracking='+tracking;
+
+  try{
+    const resp=await fetch(url,{headers:{'Authorization':'Bearer '+_session.access_token}});
+    const data=await resp.json();
+    _records=data.records||[];
+    _total=data.total||0;
+    renderTable();
+    updateStats();
+  }catch(e){
+    container.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>Failed to load history: '+e.message+'</p></div>';
+  }
+}
+
+function trackingBadge(t,s){
+  if(t==='opened')  return'<span class="badge" style="background:#dcfce7;color:#15803d">🟢 Opened</span>';
+  if(t==='clicked') return'<span class="badge" style="background:#dbeafe;color:#1d4ed8">🔵 Clicked</span>';
+  if(t==='delivered')return'<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 Delivered</span>';
+  if(t==='bounced') return'<span class="badge" style="background:#fee2e2;color:#dc2626">🔴 Bounced</span>';
+  if(s==='scheduled')return'<span class="badge" style="background:#f3e8ff;color:#7e22ce">⏰ Scheduled</span>';
+  if(s==='failed')  return'<span class="badge" style="background:#fee2e2;color:#dc2626">🔴 Failed</span>';
+  return'<span class="badge" style="background:#f3f4f6;color:#6b7280">⚪ Pending</span>';
+}
+
+function rowBg(t,s){
+  if(t==='opened')  return'#f0fdf4';
+  if(t==='clicked') return'#eff6ff';
+  if(t==='delivered'||s==='sent') return'#fefce8';
+  if(t==='bounced'||s==='failed') return'#fff1f2';
+  if(s==='scheduled') return'#faf5ff';
+  return'';
+}
+
+function renderTable(){
+  const container=document.getElementById('table-container');
+  if(!_records.length){
+    container.innerHTML='<div class="empty"><div class="empty-icon">📭</div><h3 style="margin-bottom:8px">No emails found</h3><p style="color:var(--text2)">Send your first campaign to see history here.</p></div>';
+    return;
+  }
+
+  let html=`
+    <table>
+      <thead>
+        <tr>
+          <th>Date Sent</th>
+          <th>Campaign</th>
+          <th>Recipient</th>
+          <th>Company</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Opened</th>
+          <th>Clicked</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  _records.forEach(r=>{
+    const bg=rowBg(r.tracking_status,r.status);
+    const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Scheduled';
+    const openedDate=r.opened_at?new Date(r.opened_at).toLocaleString():'—';
+    const clickedDate=r.clicked_at?new Date(r.clicked_at).toLocaleString():'—';
+    html+=`
+      <tr style="${bg?'background:'+bg:''}">
+        <td style="white-space:nowrap;font-size:12px">${sentDate}</td>
+        <td><span class="tag">${r.campaign_name||'—'}</span></td>
+        <td>
+          <div style="font-weight:600">${r.recipient_name||'—'}</div>
+          <div style="font-size:11px;color:var(--text2)">${r.recipient_email||''}</div>
+        </td>
+        <td style="font-size:12px">${r.company||'—'}</td>
+        <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.subject||''}">${r.subject||'—'}</td>
+        <td>${trackingBadge(r.tracking_status,r.status)}</td>
+        <td style="font-size:11px;color:var(--text2)">${openedDate}</td>
+        <td style="font-size:11px;color:var(--text2)">${clickedDate}</td>
+      </tr>
+    `;
+  });
+
+  html+='</tbody></table>';
+
+  // Pagination
+  const totalPages=Math.ceil(_total/PAGE_SIZE);
+  const currentPage=Math.floor(_offset/PAGE_SIZE)+1;
+  html+=`
+    <div class="pagination">
+      <span style="font-size:13px;color:var(--text2)">Showing ${_offset+1}–${Math.min(_offset+PAGE_SIZE,_total)} of ${_total} emails</span>
+      <div class="flex">
+        ${currentPage>1?'<button class="btn" onclick="loadHistory('+(_offset-PAGE_SIZE)+')">← Prev</button>':''}
+        <span style="font-size:13px;font-weight:600">Page ${currentPage} of ${totalPages}</span>
+        ${currentPage<totalPages?'<button class="btn" onclick="loadHistory('+(_offset+PAGE_SIZE)+')">Next →</button>':''}
+      </div>
+    </div>
+  `;
+
+  container.innerHTML=html;
+}
+
+function updateStats(){
+  const total=_total;
+  const opened=_records.filter(r=>r.tracking_status==='opened').length;
+  const clicked=_records.filter(r=>r.tracking_status==='clicked').length;
+  const delivered=_records.filter(r=>r.tracking_status==='delivered').length;
+  const bounced=_records.filter(r=>r.tracking_status==='bounced').length;
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-opened').textContent=opened;
+  document.getElementById('stat-clicked').textContent=clicked;
+  document.getElementById('stat-delivered').textContent=delivered;
+  document.getElementById('stat-bounced').textContent=bounced;
+}
+
+async function refreshTracking(){
+  const btn=document.querySelector('[onclick="refreshTracking()"]');
+  if(btn){btn.textContent='Refreshing...';btn.disabled=true;}
+  const emails=_records.filter(r=>r.tracking_status==='pending'||r.tracking_status==='delivered').map(r=>({email:r.recipient_email,messageId:r.message_id}));
+  if(emails.length){
+    try{
+      const resp=await fetch('/.netlify/functions/check-tracking',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({emails})
+      });
+      const data=await resp.json();
+      if(data.results){
+        Object.entries(data.results).forEach(([email,status])=>{
+          const r=_records.find(r=>r.recipient_email===email);
+          if(r)r.tracking_status=status;
+        });
+        renderTable();updateStats();
+      }
+    }catch(e){}
+  }
+  if(btn){btn.textContent='🔄 Refresh Tracking';btn.disabled=false;}
+}
+
+function exportCSV(){
+  if(!_records.length){alert('No records to export.');return;}
+  const headers=['Date Sent','Campaign','Recipient Name','Email','Company','Title','Subject','Status','Tracking','Opened At','Clicked At'];
+  const rows=_records.map(r=>[
+    r.sent_at?new Date(r.sent_at).toLocaleString():'Scheduled',
+    r.campaign_name||'',r.recipient_name||'',r.recipient_email||'',
+    r.company||'',r.title||'',r.subject||'',r.status||'',
+    r.tracking_status||'',
+    r.opened_at?new Date(r.opened_at).toLocaleString():'',
+    r.clicked_at?new Date(r.clicked_at).toLocaleString():''
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='email_history_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+async function signOut(){
+  await sbClient.auth.signOut();
+  window.location.href='/login.html';
+}
+
+init();
+</script>
+</body>
+</html>
