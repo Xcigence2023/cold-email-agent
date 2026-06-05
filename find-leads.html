@@ -43,7 +43,6 @@ exports.handler = async function(event) {
     ];
 
     const apolloPayload = {
-      api_key: APOLLO_KEY,
       page: searchParams.page || 1,
       per_page: Math.min(searchParams.perPage || 25, 100),
       person_titles: titles
@@ -64,7 +63,8 @@ exports.handler = async function(event) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'x-api-key': APOLLO_KEY
         },
         body: JSON.stringify(apolloPayload)
       });
