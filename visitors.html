@@ -84,7 +84,7 @@ tr:hover td{background:var(--bg2)}
     </div>
     <div class="install-box" id="install-code">
 &lt;!-- Add before &lt;/body&gt; on every page of xcigence.com --&gt;
-&lt;script src="https://portal.xcigence.com/velorah-tracker.js"&gt;&lt;/script&gt;</div>
+&lt;script src="/velorah-tracker.js"&gt;&lt;/script&gt;</div>
     <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="copyInstall()">📋 Copy Install Code</button>
     <p style="font-size:12px;color:var(--text2);margin-top:8px">Also set <strong>IPINFO_TOKEN</strong> in Netlify env vars (free at <a href="https://ipinfo.io" target="_blank" style="color:var(--blue)">ipinfo.io</a> — 50,000 lookups/month). Optional: <strong>CLEARBIT_API_KEY</strong> for richer company data.</p>
   </div>
@@ -372,7 +372,7 @@ async function launchToSelected(){
 }
 
 function copyInstall(){
-  const code=`<!-- Add before </body> on every page of xcigence.com -->\n<script src="https://portal.xcigence.com/velorah-tracker.js"><\/script>`;
+  const code=`<!-- Add before </body> on every page of xcigence.com -->\n<script src="/velorah-tracker.js"><\/script>`;
   navigator.clipboard.writeText(code).then(()=>alert('Install code copied! Paste before </body> on every page of your website.'));
 }
 
