@@ -3,122 +3,84 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah — LinkedIn Campaigns</title>
+<title>Velorah - LinkedIn Campaign Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#070c18;--bg2:#0d1526;--bg3:#111e35;
-  --text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;
-  --blue:#3b82f6;--blue-dim:#1e3a6e;--blue-glow:rgba(59,130,246,.2);
-  --cyan:#06b6d4;--green:#10b981;--red:#ef4444;
-  --gold:#f59e0b;--purple:#8b5cf6;--li:#0077b5;
-  --border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);
-  --glass:rgba(255,255,255,.03);--r:10px;--rl:14px;
-}
+:root{--bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--red:#ef4444;--gold:#f59e0b;--li:#0077b5;--border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);--glass:rgba(255,255,255,.03);--r:10px;--rl:14px}
 body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 0%,rgba(59,130,246,.08),transparent 60%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(0,119,181,.06),transparent 60%);pointer-events:none}
 body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
-.topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
 .brand{display:flex;align-items:center;gap:10px}
 .brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px}
 .brand-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f0fe,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav{display:flex;gap:2px;margin-left:12px}
+.nav{display:flex;gap:4px;margin-left:12px}
 .nav a{font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;text-decoration:none;color:var(--text2);transition:all .2s}
 .nav a:hover{color:var(--text);background:rgba(59,130,246,.08)}
 .nav a.active{color:var(--blue);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
 .page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:1.5rem}
-.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:12px;transition:border-color .2s}
-.card:hover{border-color:var(--border2)}
-.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:12px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
 .card-title::before{content:'';width:3px;height:16px;background:linear-gradient(var(--blue),var(--cyan));border-radius:2px}
 .lbl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
 input,select,textarea{width:100%;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:rgba(13,21,38,.8);color:var(--text);font-family:'Outfit',sans-serif;transition:all .2s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
 input::placeholder,textarea::placeholder{color:var(--text3)}
 select option{background:var(--bg2)}
-textarea{resize:vertical;line-height:1.6}
-.btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s}
+textarea{resize:vertical;line-height:1.6;min-height:100px}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;text-decoration:none;display:inline-block}
 .btn:hover{border-color:var(--border2);background:rgba(59,130,246,.08)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn-primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:var(--blue);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,.3)}
 .btn-primary:hover{box-shadow:0 4px 25px rgba(59,130,246,.5);transform:translateY(-1px)}
 .btn-li{background:linear-gradient(135deg,#0077b5,#005885);border-color:#0077b5;color:#fff;box-shadow:0 4px 15px rgba(0,119,181,.3)}
-.btn-li:hover{box-shadow:0 4px 25px rgba(0,119,181,.5);transform:translateY(-1px)}
+.btn-li:hover{transform:translateY(-1px)}
 .btn-green{background:linear-gradient(135deg,var(--green),#059669);border-color:var(--green);color:#fff}
 .btn-sm{padding:5px 12px;font-size:12px}
 .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
-.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:rgba(59,130,246,.06);border-radius:var(--r);border-left:3px solid var(--blue-dim);line-height:1.6;margin-top:8px}
-.warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);margin-top:8px;line-height:1.5}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700}
+.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:rgba(59,130,246,.06);border-radius:var(--r);border-left:3px solid rgba(59,130,246,.3);line-height:1.6}
+.warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);line-height:1.5}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
-.step-pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:700;font-size:13px;flex-shrink:0;box-shadow:0 0 10px rgba(59,130,246,.4)}
-.step-done{background:var(--green)!important;box-shadow:0 0 10px rgba(16,185,129,.4)!important}
-.li-step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
-.li-step-content{flex:1}
-.li-step-title{font-weight:700;margin-bottom:4px;font-size:14px}
-.li-step-desc{font-size:12px;color:var(--text2);line-height:1.6}
-
-/* TABS */
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
-.tab{padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab:hover{color:var(--text)}
-
-/* TABLE */
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Outfit',sans-serif}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-btn:hover{color:var(--text)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:rgba(13,21,38,.5);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:hover td{background:rgba(59,130,246,.04)}
-.cb{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
-
-/* STATS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
 .stat{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:14px;text-align:center}
-.stat-val{font-size:24px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px}
+.stat-val{font-size:26px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px}
 .stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
-
-/* MESSAGE PANEL */
-.msg-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:700px){.msg-panel{grid-template-columns:1fr}}
+.dz{border:2px dashed var(--border);border-radius:var(--rl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass)}
+.dz:hover,.dz.over{border-color:var(--li);background:rgba(0,119,181,.05);box-shadow:inset 0 0 40px rgba(0,119,181,.05)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s;margin:3px}
+.chip.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);color:var(--blue)}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 0 10px rgba(59,130,246,.4);flex-shrink:0}
+.step-row{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.step-row:last-child{border-bottom:none}
+.msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.msg-grid{grid-template-columns:1fr}}
 .msg-box{background:rgba(13,21,38,.6);border:1px solid var(--border);border-radius:var(--r);padding:14px}
-.msg-box-title{font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.05em}
-
-/* PBAR */
-.pbar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:6px}
+.ch-card{flex:1;padding:14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s;min-width:160px}
+.ch-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.angle-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
+.angle-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.pbar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden}
 .pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width .4s}
-
-/* EMPTY */
 .empty{text-align:center;padding:3rem;color:var(--text2)}
-.empty-icon{font-size:40px;margin-bottom:12px}
-
-/* CHIP */
-.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s}
-.chip:hover{border-color:var(--blue);color:var(--blue)}
-.chip.active{background:rgba(59,130,246,.15);border-color:var(--blue);color:var(--blue)}
-.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-
-/* DROP ZONE */
-.drop-zone{border:2px dashed var(--border);border-radius:var(--rl);padding:2.5rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass)}
-.drop-zone:hover,.drop-zone.over{border-color:var(--li);background:rgba(0,119,181,.05)}
-.drop-icon{font-size:40px;margin-bottom:12px}
-
-/* SCORE BAR */
-.score-hot{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
-.score-warm{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--border2)}
-.score-cold{background:var(--bg3);color:var(--text3);border:1px solid var(--border)}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="flex" style="gap:0">
     <div class="brand">
@@ -126,612 +88,667 @@ tr:hover td{background:rgba(59,130,246,.04)}
       <span class="brand-name">Velorah</span>
     </div>
     <nav class="nav">
-      <a href="/app.html">🚀 Campaigns</a>
-      <a href="/find-leads.html">🔍 Find Leads</a>
-      <a href="/linkedin.html" class="active">💼 LinkedIn</a>
-      <a href="/visitors.html">🌐 Visitors</a>
-      <a href="/history.html">📋 History</a>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/find-leads.html">Find Leads</a>
+      <a href="/linkedin.html" class="active">LinkedIn</a>
+      <a href="/visitors.html">Visitors</a>
+      <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="flex">
-    <span id="user-email" style="font-size:12px;color:var(--text2);font-family:'IBM Plex Mono',monospace"></span>
+    <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
     <button class="btn btn-sm" onclick="signOut()">Sign out</button>
   </div>
 </div>
 
 <div class="page">
-
-  <!-- Header -->
-  <div class="card" style="background:linear-gradient(135deg,rgba(0,119,181,.08),rgba(59,130,246,.05));border-color:rgba(0,119,181,.2);margin-bottom:1.25rem">
+  <div class="card" style="background:linear-gradient(135deg,rgba(0,119,181,.08),rgba(59,130,246,.05));border-color:rgba(0,119,181,.25);margin-bottom:1.25rem">
     <div class="fb">
       <div>
-        <h1 style="font-size:20px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:10px">
-          <span style="font-size:28px">💼</span>
-          <span style="background:linear-gradient(135deg,#e8f0fe,#0077b5);-webkit-background-clip:text;-webkit-text-fill-color:transparent">LinkedIn Campaign Agent</span>
-        </h1>
-        <p style="font-size:13px;color:var(--text2)">Import connections → Filter by title/location → Generate personalized messages → Email or LinkedIn outreach</p>
+        <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">💼 LinkedIn Campaign Agent</h1>
+        <p style="font-size:13px;color:var(--text2)">Import connections &rarr; Filter by title/location &rarr; Generate personalized messages &rarr; Email or LinkedIn outreach</p>
       </div>
       <a href="https://www.linkedin.com/mynetwork/invite-connect/connections/" target="_blank" class="btn btn-li">💼 Open LinkedIn Connections</a>
     </div>
   </div>
 
-  <!-- TABS -->
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('import',this)">Step 1: Import</div>
-    <div class="tab" onclick="switchTab('filter',this)">Step 2: Filter & Enrich</div>
-    <div class="tab" onclick="switchTab('compose',this)">Step 3: Compose</div>
-    <div class="tab" onclick="switchTab('send',this)">Step 4: Send</div>
+    <button class="tab-btn active" onclick="showTab('import',this)">Step 1: Import</button>
+    <button class="tab-btn" onclick="showTab('filter',this)">Step 2: Filter &amp; Enrich</button>
+    <button class="tab-btn" onclick="showTab('compose',this)">Step 3: Compose</button>
+    <button class="tab-btn" onclick="showTab('send',this)">Step 4: Send</button>
   </div>
 
   <div id="tab-content"></div>
 </div>
 
 <script>
-const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
-const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
-let _session=null;
+var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+var _session=null;
 
 // State
-const S={
-  raw:[],          // raw LinkedIn CSV rows
-  filtered:[],     // after filtering
-  enriched:[],     // after email enrichment
-  selected:new Set(),
-  filters:{titles:[],locations:[],companies:[],keywords:''},
-  customTitles:[],
-  channel:'both',  // 'email' | 'linkedin' | 'both'
-  emailAngle:'pain',
-  sender:{name:'',email:'',company:'Velorah'},
-  messages:[],     // [{contact, email:{subject,body}, linkedin:text}]
-  generating:false,
-  genProgress:0
+var S={
+  raw:[], filtered:[], selected:new Set(), messages:[],
+  filters:{titles:[], locations:[], companies:[], keywords:''},
+  channel:'both', angle:'connection',
+  sender:{name:'', email:'', company:'Velorah'},
+  generating:false, genProgress:0
 };
 
-const TITLE_PRESETS=['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT','Director of Technology','VP of IT','Chief Information Officer'];
+var PRESETS=['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT','Director of IT','VP of IT','Chief Information Officer','CISO','Chief Compliance Officer'];
 
 async function init(){
-  const{data:{session}}=await sbClient.auth.getSession();
-  if(!session){window.location.href='/login.html';return;}
-  _session=session;
-  document.getElementById('user-email').textContent=session.user.email;
-  try{const r=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await r.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.company=keys.sender_company||'Velorah';}}catch(e){}
-  switchTab('import',document.querySelector('.tab.active'));
+  try{
+    var r=await sbClient.auth.getSession();
+    var session=r.data.session;
+    if(!session){window.location.href='/login.html';return;}
+    _session=session;
+    document.getElementById('user-email').textContent=session.user.email;
+    try{var kr=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'Velorah';}}catch(e){}
+  }catch(e){}
+  showTab('import', document.querySelector('.tab-btn'));
 }
 
-function switchTab(tab,el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  const tabs={import:renderImport,filter:renderFilter,compose:renderCompose,send:renderSend};
-  const fn=tabs[tab];if(fn)document.getElementById('tab-content').innerHTML='',document.getElementById('tab-content').appendChild(fn());
+function showTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var content=document.getElementById('tab-content');
+  content.innerHTML='';
+  if(tab==='import') renderImport(content);
+  else if(tab==='filter') renderFilter(content);
+  else if(tab==='compose') renderCompose(content);
+  else if(tab==='send') renderSend(content);
 }
 
-// -- TAB 1: IMPORT -----------------------------------------
-function renderImport(){
-  const wrap=document.createElement('div');
+// ========== STEP 1: IMPORT ==========
+function renderImport(wrap){
+  // Instructions card
+  var card=mk('div','card');
+  card.appendChild(mkTitle('How to Export Your LinkedIn Connections'));
 
-  // Step-by-step instructions
-  const steps=document.createElement('div');steps.className='card';
-  steps.innerHTML=`<div class="card-title">How to Export Your LinkedIn Connections</div>
-  <div class="li-step">
-    <div class="step-pill${S.raw.length?''>':''}">1</div>
-    <div class="li-step-content">
-      <div class="li-step-title">Go to LinkedIn Data Export</div>
-      <div class="li-step-desc">Click the button below - it opens directly to the LinkedIn data export page in a new tab.</div>
-      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <a href="https://www.linkedin.com/mynetwork/invite-connect/connections/" target="_blank" class="btn btn-li btn-sm">💼 Open LinkedIn Connections</a>
-        <a href="https://www.linkedin.com/settings/data-privacy/download-your-data" target="_blank" class="btn btn-sm" style="border-color:rgba(0,119,181,.3);color:#0077b5">⚙️ LinkedIn Data Export Settings</a>
-      </div>
-    </div>
-  </div>
-  <div class="li-step">
-    <div class="step-pill">2</div>
-    <div class="li-step-content">
-      <div class="li-step-title">Request Your Connections File</div>
-      <div class="li-step-desc">On the Data Privacy page: Select <strong style="color:var(--text)">"Connections"</strong> checkbox -> Click <strong style="color:var(--text)">"Request archive"</strong> -> LinkedIn emails you a download link (usually within 10 minutes).</div>
-    </div>
-  </div>
-  <div class="li-step">
-    <div class="step-pill">3</div>
-    <div class="li-step-content">
-      <div class="li-step-title">Download & Upload Here</div>
-      <div class="li-step-desc">Open the email from LinkedIn -> download the ZIP -> extract -> upload <strong style="color:var(--text)">Connections.csv</strong> below. Velorah auto-cleans and organizes it.</div>
-    </div>
-  </div>
-  <div class="warn" style="margin-top:0">⚠️ LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Hunter.io and Lusha.</div>`;
-  wrap.appendChild(steps);
+  var steps=[
+    {n:'1', t:'Open LinkedIn Data Export', d:'Click the button on this page to go directly to LinkedIn connection settings, then click "Get a copy of your data".', link:['Open LinkedIn Export Settings','https://www.linkedin.com/settings/data-privacy/download-your-data'], link2:['View Connections','https://www.linkedin.com/mynetwork/invite-connect/connections/']},
+    {n:'2', t:'Request Your Connections File', d:'Check the "Connections" checkbox, then click "Request archive". LinkedIn emails you a download link within 10 minutes.'},
+    {n:'3', t:'Download & Upload Here', d:'Open the LinkedIn email, download the ZIP file, extract it, then upload Connections.csv below. Velorah auto-cleans LinkedIn\'s format.'}
+  ];
 
-  // Drop zone
-  const dzCard=document.createElement('div');dzCard.className='card';
-  let fi;
-  const dz=document.createElement('div');dz.className='drop-zone'+(S.raw.length?' over':'');
-  dz.innerHTML=`<div class="drop-icon">${S.raw.length?'✅':'💼'}</div><p style="font-weight:700;font-size:15px;margin-bottom:6px">${S.raw.length?S.raw.length+' connections loaded':'Drop your LinkedIn Connections.csv here'}</p><p style="font-size:13px;color:var(--text2)">${S.raw.length?'Upload a new file to replace':'or click to browse - Velorah auto-cleans LinkedIn\'s format'}</p>`;
-  dz.onclick=()=>fi.click();
-  dz.ondragover=e=>{e.preventDefault();dz.classList.add('over');};
-  dz.ondragleave=()=>dz.classList.remove('over');
-  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])readLinkedInCSV(e.dataTransfer.files[0]);};
-  fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
-  fi.onchange=e=>{if(e.target.files[0])readLinkedInCSV(e.target.files[0]);};
+  steps.forEach(function(s){
+    var row=mk('div','step-row');
+    var num=mk('div','step-num');num.textContent=s.n;
+    var body=mk('div',null);body.style.flex='1';
+    var title=mk('p',null);title.style.fontWeight='700';title.style.marginBottom='4px';title.textContent=s.t;
+    var desc=mk('p',null);desc.style.cssText='font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px';desc.textContent=s.d;
+    body.appendChild(title);body.appendChild(desc);
+    if(s.link){
+      var btnRow=mk('div','flex');
+      var a1=mk('a','btn btn-li btn-sm');a1.href=s.link[1];a1.target='_blank';a1.textContent=s.link[0];
+      btnRow.appendChild(a1);
+      if(s.link2){var a2=mk('a','btn btn-sm');a2.href=s.link2[1];a2.target='_blank';a2.style.cssText='border-color:rgba(0,119,181,.3);color:#0077b5';a2.textContent=s.link2[0];btnRow.appendChild(a2);}
+      body.appendChild(btnRow);
+    }
+    row.appendChild(num);row.appendChild(body);
+    card.appendChild(row);
+  });
+
+  var warn=mk('div','warn');warn.style.marginTop='12px';
+  warn.textContent='Note: LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Hunter.io and Lusha.';
+  card.appendChild(warn);
+  wrap.appendChild(card);
+
+  // Drop zone card
+  var dzCard=mk('div','card');
+  var dz=mk('div','dz'+(S.raw.length?' over':''));
+  var dzIcon=mk('div',null);dzIcon.style.cssText='font-size:42px;margin-bottom:14px';dzIcon.textContent=S.raw.length?'✅':'💼';
+  var dzTitle=mk('p',null);dzTitle.style.cssText='font-weight:700;font-size:15px;margin-bottom:6px';
+  dzTitle.textContent=S.raw.length?(S.raw.length+' connections loaded - upload new file to replace'):'Drop your LinkedIn Connections.csv here';
+  var dzSub=mk('p',null);dzSub.style.cssText='font-size:13px;color:var(--text2)';
+  dzSub.textContent=S.raw.length?'Velorah auto-cleaned LinkedIn\'s format':'or click to browse - Velorah auto-cleans LinkedIn\'s format';
+  dz.appendChild(dzIcon);dz.appendChild(dzTitle);dz.appendChild(dzSub);
+
+  var fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
+  fi.addEventListener('change',function(e){if(e.target.files[0])readCSV(e.target.files[0]);});
+  dz.addEventListener('click',function(){fi.click();});
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
+  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])readCSV(e.dataTransfer.files[0]);});
   dzCard.appendChild(dz);dzCard.appendChild(fi);
 
   if(S.raw.length){
-    // Preview stats
-    const statsDiv=document.createElement('div');statsDiv.style.marginTop='14px';
-    const companies=new Set(S.raw.map(r=>r.company).filter(Boolean));
-    const withEmail=S.raw.filter(r=>r.email).length;
-    statsDiv.innerHTML=`<div class="stats-row">
-      <div class="stat"><div class="stat-val" style="color:var(--blue)">${S.raw.length}</div><div class="stat-lbl">Total Connections</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--green)">${withEmail}</div><div class="stat-lbl">Have Email</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--text2)">${S.raw.length-withEmail}</div><div class="stat-lbl">Need Enrichment</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--cyan)">${companies.size}</div><div class="stat-lbl">Companies</div></div>
-    </div>`;
-    dzCard.appendChild(statsDiv);
+    var withEmail=S.raw.filter(function(r){return r.email;}).length;
+    var companies=new Set(S.raw.map(function(r){return r.company;}).filter(Boolean)).size;
 
-    // Sample table
-    const tableWrap=document.createElement('div');tableWrap.style.marginTop='12px';tableWrap.style.overflowX='auto';
-    const sample=S.raw.slice(0,5);
-    tableWrap.innerHTML=`<p style="font-size:12px;color:var(--text2);margin-bottom:8px">Preview (first 5 of ${S.raw.length}):</p>
-    <table><thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Email</th><th>Location</th><th>Connected</th></tr></thead><tbody>
-    ${sample.map(r=>`<tr><td><strong>${r.firstName} ${r.lastName}</strong></td><td style="font-size:12px">${r.title||'-'}</td><td style="font-size:12px">${r.company||'-'}</td><td style="font-size:11px;color:${r.email?'var(--green)':'var(--red)'}">${r.email||'No email'}</td><td style="font-size:11px">${r.location||'-'}</td><td style="font-size:11px;color:var(--text2)">${r.connectedOn||'-'}</td></tr>`).join('')}
-    </tbody></table>`;
-    dzCard.appendChild(tableWrap);
+    var statGrid=mk('div','g4');statGrid.style.margin='14px 0';
+    [{v:S.raw.length,l:'Total Connections',c:'var(--blue)'},{v:withEmail,l:'Have Email',c:'var(--green)'},{v:S.raw.length-withEmail,l:'Need Enrichment',c:'var(--gold)'},{v:companies,l:'Companies',c:'var(--cyan)'}].forEach(function(s){
+      var sc=mk('div','stat');
+      var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
+      var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
+      sc.appendChild(sv);sc.appendChild(sl);statGrid.appendChild(sc);
+    });
+    dzCard.appendChild(statGrid);
 
-    const nextBtn=document.createElement('div');nextBtn.style.cssText='text-align:right;margin-top:14px';
-    const nb=document.createElement('button');nb.className='btn btn-primary';nb.textContent='Filter & Enrich Connections ->';
-    nb.onclick=()=>switchTab('filter',document.querySelectorAll('.tab')[1]);
-    nextBtn.appendChild(nb);dzCard.appendChild(nextBtn);
+    // Preview table
+    var tWrap=mk('div',null);tWrap.style.overflowX='auto';
+    var pTitle=mk('p',null);pTitle.style.cssText='font-size:12px;color:var(--text2);margin-bottom:8px';pTitle.textContent='Preview (first 5 of '+S.raw.length+'):';
+    var table=mk('table',null);
+    table.innerHTML='<thead><tr><th>Name</th><th>Job Title</th><th>Company</th><th>Email</th><th>Location</th><th>Connected</th></tr></thead>';
+    var tbody=mk('tbody',null);
+    S.raw.slice(0,5).forEach(function(r){
+      var tr=mk('tr',null);
+      tr.innerHTML='<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:var(--text2)">'+esc(r.connectedOn||'-')+'</td>';
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tWrap.appendChild(pTitle);tWrap.appendChild(table);
+    dzCard.appendChild(tWrap);
+
+    var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
+    var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Filter & Enrich Connections ->';
+    nextBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[1].click();});
+    nextRow.appendChild(nextBtn);dzCard.appendChild(nextRow);
   }
-  wrap.appendChild(dzCard);return wrap;
+
+  wrap.appendChild(dzCard);
 }
 
-function readLinkedInCSV(file){
-  const rd=new FileReader();
-  rd.onload=e=>{
-    const text=e.target.result;
-    const lines=text.split(/\r?\n/).filter(l=>l.trim());
-
-    // LinkedIn CSV has 3 header lines of notes, then actual headers
-    // Find the real header row (contains "First Name" or "Email Address")
-    let headerIdx=0;
-    for(let i=0;i<Math.min(10,lines.length);i++){
-      if(lines[i].includes('First Name')||lines[i].includes('Email Address')||lines[i].includes('Connected On')){
-        headerIdx=i;break;
-      }
+function readCSV(file){
+  var rd=new FileReader();
+  rd.onload=function(e){
+    var text=e.target.result;
+    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+    var headerIdx=0;
+    for(var i=0;i<Math.min(10,lines.length);i++){
+      if(lines[i].indexOf('First Name')>=0||lines[i].indexOf('Email Address')>=0||lines[i].indexOf('Connected On')>=0){headerIdx=i;break;}
     }
-
-    const parseRow=line=>{const r=[];let c='',q=false;for(const ch of line){if(ch==='"'){q=!q;}else if(ch===','&&!q){r.push(c.trim().replace(/^"|"$/g,''));c='';}else c+=ch;}r.push(c.trim().replace(/^"|"$/g,''));return r;};
-    const headers=parseRow(lines[headerIdx]).map(h=>h.trim());
-    const rows=lines.slice(headerIdx+1).filter(l=>l.trim());
-
-    const idx=(name)=>headers.findIndex(h=>h.toLowerCase().includes(name.toLowerCase()));
-    const fi=idx('first');const li2=idx('last');const ei=idx('email');const ti=idx('position');const ci=idx('company');const loci=idx('location')||idx('city');const doi=idx('connected');const urli=idx('url')||idx('linkedin');
-
-    S.raw=rows.map(row=>{
-      const v=parseRow(row);
-      return{
-        firstName: v[fi]||'',
-        lastName:  v[li2]||'',
-        email:     v[ei]||'',
-        title:     v[ti]||'',
-        company:   v[ci]||'',
-        location:  loci>=0?v[loci]:'',
-        connectedOn:doi>=0?v[doi]:'',
-        linkedinUrl:urli>=0?v[urli]:'',
-        source:'linkedin'
-      };
-    }).filter(r=>r.firstName||r.lastName||r.email);
-
-    S.filtered=[...S.raw];
-    switchTab('import',document.querySelector('.tab.active'));
+    function pr(line){
+      var r=[],c='',q=false;
+      for(var i=0;i<line.length;i++){
+        var ch=line[i];
+        if(ch==='"'){q=!q;}
+        else if(ch===','&&!q){r.push(c.trim().replace(/^"|"$/g,''));c='';}
+        else c+=ch;
+      }
+      r.push(c.trim().replace(/^"|"$/g,''));
+      return r;
+    }
+    var headers=pr(lines[headerIdx]).map(function(h){return h.trim();});
+    function col(name){for(var i=0;i<headers.length;i++){if(headers[i].toLowerCase().indexOf(name.toLowerCase())>=0)return i;}return -1;}
+    var fi=col('first'),li=col('last'),ei=col('email'),ti=col('position'),ci=col('company'),loci=col('location'),doi=col('connected'),urli=col('url');
+    var rows=lines.slice(headerIdx+1);
+    S.raw=rows.filter(function(l){return l.trim();}).map(function(row){
+      var v=pr(row);
+      function g(i){return i>=0&&i<v.length?v[i]:'';}
+      return{firstName:g(fi),lastName:g(li),email:g(ei),title:g(ti),company:g(ci),location:g(loci>=0?loci:-1),connectedOn:g(doi),linkedinUrl:g(urli),source:'linkedin'};
+    }).filter(function(r){return r.firstName||r.lastName||r.email;});
+    S.filtered=S.raw.slice();
+    document.querySelector('.tab-btn').click();
   };
   rd.readAsText(file);
 }
 
-// -- TAB 2: FILTER & ENRICH ---------------------------------
-function renderFilter(){
-  const wrap=document.createElement('div');
+// ========== STEP 2: FILTER & ENRICH ==========
+function renderFilter(wrap){
   if(!S.raw.length){
-    const empty=document.createElement('div');empty.className='card';
-    empty.innerHTML='<div class="empty"><div class="empty-icon">💼</div><h3 style="margin-bottom:8px">No connections loaded</h3><p>Go to Step 1 and upload your LinkedIn Connections.csv first.</p></div>';
-    wrap.appendChild(empty);return wrap;
+    var empty=mk('div','card');
+    empty.innerHTML='<div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3 style="margin-bottom:8px">No connections loaded</h3><p>Go to Step 1 and upload your LinkedIn Connections.csv first.</p></div>';
+    wrap.appendChild(empty);return;
   }
 
-  // Filters card
-  const fc=document.createElement('div');fc.className='card';
-  fc.innerHTML='<div class="card-title">Filter Your Connections</div>';
+  // Filter card
+  var fc=mk('div','card');fc.appendChild(mkTitle('Filter Your Connections'));
 
-  // Job Title filter
-  const tf=document.createElement('div');tf.style.marginBottom='14px';
-  tf.innerHTML='<label class="lbl">Filter by Job Title</label>';
-  const tagList=document.createElement('div');tagList.className='chip-group';
-  TITLE_PRESETS.forEach(t=>{
-    const chip=document.createElement('span');chip.className='chip'+(S.filters.titles.includes(t)?' active':'');
-    chip.textContent=t;chip.onclick=()=>{
-      if(S.filters.titles.includes(t))S.filters.titles=S.filters.titles.filter(x=>x!==t);
-      else S.filters.titles.push(t);
-      applyFilters();switchTab('filter',document.querySelectorAll('.tab')[1]);
-    };
-    tagList.appendChild(chip);
+  // Title filter
+  var tf=mk('div',null);tf.style.marginBottom='16px';
+  var tl=mk('label','lbl');tl.textContent='Filter by Job Title';
+  tf.appendChild(tl);
+  var chips=mk('div',null);chips.style.marginBottom='8px';
+  PRESETS.forEach(function(t){
+    var chip=mk('span','chip'+(S.filters.titles.indexOf(t)>=0?' active':''));
+    chip.textContent=t;
+    chip.addEventListener('click',function(){
+      var idx=S.filters.titles.indexOf(t);
+      if(idx>=0)S.filters.titles.splice(idx,1);else S.filters.titles.push(t);
+      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+    });
+    chips.appendChild(chip);
   });
-  const customInp=document.createElement('div');customInp.style.cssText='display:flex;gap:8px;margin-top:8px';
-  const ci2=document.createElement('input');ci2.type='text';ci2.placeholder='Add custom title + press Enter';
-  ci2.style.flex='1';
-  ci2.addEventListener('keydown',e=>{if(e.key==='Enter'&&ci2.value.trim()){S.filters.titles.push(ci2.value.trim());ci2.value='';applyFilters();switchTab('filter',document.querySelectorAll('.tab')[1]);}});
-  customInp.appendChild(ci2);
-  tf.appendChild(tagList);tf.appendChild(customInp);
+  tf.appendChild(chips);
+  var customRow=mk('div','flex');customRow.style.marginTop='6px';
+  var customInp=document.createElement('input');customInp.type='text';customInp.placeholder='Add custom title + press Enter';customInp.style.flex='1';
+  customInp.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&customInp.value.trim()){
+      S.filters.titles.push(customInp.value.trim());customInp.value='';
+      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+    }
+  });
+  customRow.appendChild(customInp);tf.appendChild(customRow);
   fc.appendChild(tf);
 
   // Location filter
-  const lf=document.createElement('div');lf.style.marginBottom='14px';
-  lf.innerHTML='<label class="lbl">Filter by Location (optional)</label>';
-  const li3=document.createElement('input');li3.type='text';li3.placeholder='e.g. United States, Canada, United Kingdom';li3.value=S.filters.locations.join(', ');
-  li3.addEventListener('input',e=>{S.filters.locations=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);applyFilters();});
-  lf.appendChild(li3);fc.appendChild(lf);
+  var lf=mk('div',null);lf.style.marginBottom='12px';
+  lf.appendChild(mkLbl('Location (comma-separated, optional)'));
+  var li2=document.createElement('input');li2.type='text';li2.placeholder='e.g. United States, Canada';
+  li2.value=S.filters.locations.join(', ');
+  li2.addEventListener('input',function(e){
+    S.filters.locations=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    applyFilters();
+  });
+  lf.appendChild(li2);fc.appendChild(lf);
 
   // Company filter
-  const cof=document.createElement('div');cof.style.marginBottom='14px';
-  cof.innerHTML='<label class="lbl">Filter by Company (optional)</label>';
-  const coi=document.createElement('input');coi.type='text';coi.placeholder='e.g. Microsoft, Google, or leave empty for all';coi.value=S.filters.companies.join(', ');
-  coi.addEventListener('input',e=>{S.filters.companies=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);applyFilters();});
+  var cof=mk('div',null);cof.style.marginBottom='12px';
+  cof.appendChild(mkLbl('Company (optional)'));
+  var coi=document.createElement('input');coi.type='text';coi.placeholder='e.g. Microsoft, Google';
+  coi.value=S.filters.companies.join(', ');
+  coi.addEventListener('input',function(e){
+    S.filters.companies=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    applyFilters();
+  });
   cof.appendChild(coi);fc.appendChild(cof);
 
   // Keywords
-  const kf=document.createElement('div');
-  kf.innerHTML='<label class="lbl">Keywords (optional)</label>';
-  const ki=document.createElement('input');ki.type='text';ki.placeholder='e.g. cybersecurity, fintech, healthcare';ki.value=S.filters.keywords;
-  ki.addEventListener('input',e=>{S.filters.keywords=e.target.value;applyFilters();});
+  var kf=mk('div',null);
+  kf.appendChild(mkLbl('Keywords (optional)'));
+  var ki=document.createElement('input');ki.type='text';ki.placeholder='e.g. cybersecurity, compliance';
+  ki.value=S.filters.keywords;
+  ki.addEventListener('input',function(e){S.filters.keywords=e.target.value;applyFilters();});
   kf.appendChild(ki);fc.appendChild(kf);
   wrap.appendChild(fc);
 
   applyFilters();
 
   // Results
-  const rc=document.createElement('div');rc.className='card';
-  const withEmail=S.filtered.filter(r=>r.email).length;
-  const noEmail=S.filtered.length-withEmail;
+  var rc=mk('div','card');
+  var withEmail=S.filtered.filter(function(r){return r.email;}).length;
+  var noEmail=S.filtered.length-withEmail;
 
-  rc.innerHTML=`<div class="fb" style="margin-bottom:14px">
-    <div class="card-title" style="margin-bottom:0">Filtered Results: <span style="color:var(--blue)">${S.filtered.length}</span> connections</div>
-    <div class="flex">
-      <span class="badge score-warm">${withEmail} have email</span>
-      <span class="badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">${noEmail} need enrichment</span>
-    </div>
-  </div>`;
+  var rh=mk('div','fb');rh.style.marginBottom='12px';
+  var rTitle=mk('p',null);rTitle.style.fontWeight='700';rTitle.textContent='Results: '+S.filtered.length+' connections';
+  var rBadges=mk('div','flex');
+  var b1=mk('span','badge');b1.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';b1.textContent=withEmail+' have email';
+  var b2=mk('span','badge');b2.style.cssText='background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)';b2.textContent=noEmail+' need enrichment';
+  rBadges.appendChild(b1);rBadges.appendChild(b2);
+  rh.appendChild(rTitle);rh.appendChild(rBadges);rc.appendChild(rh);
 
   if(noEmail>0){
-    const enrichBtn=document.createElement('div');enrichBtn.style.marginBottom='14px';
-    enrichBtn.innerHTML=`<p style="font-size:13px;color:var(--text2);margin-bottom:8px">${noEmail} connections don't have emails. Enrich via Hunter.io + Lusha:</p>`;
-    const eb=document.createElement('button');eb.className='btn btn-primary btn-sm';eb.textContent='🔍 Find '+noEmail+' Missing Emails';
-    eb.onclick=()=>enrichEmails(eb);
-    enrichBtn.appendChild(eb);rc.appendChild(enrichBtn);
+    var eb=mk('button','btn btn-primary btn-sm');eb.style.marginBottom='12px';
+    eb.textContent='🔍 Find '+noEmail+' Missing Emails via Hunter.io + Lusha';
+    eb.addEventListener('click',function(){enrichEmails(eb);});
+    rc.appendChild(eb);
   }
 
-  // Table
-  const tw=document.createElement('div');tw.style.overflowX='auto';
-  const selectAll=document.createElement('div');
-  selectAll.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';
-  selectAll.innerHTML=`<span style="font-size:12px;color:var(--text2)">${S.selected.size} selected</span>`;
-  const saBtn=document.createElement('button');saBtn.className='btn btn-sm';saBtn.textContent='Select All';saBtn.onclick=()=>{S.filtered.forEach(r=>S.selected.add(r.email||r.firstName+r.lastName));tw.querySelectorAll('.cb').forEach(cb=>cb.checked=true);selectAll.querySelector('span').textContent=S.selected.size+' selected';};
-  const snBtn=document.createElement('button');snBtn.className='btn btn-sm';snBtn.textContent='Clear';snBtn.onclick=()=>{S.selected.clear();tw.querySelectorAll('.cb').forEach(cb=>cb.checked=false);selectAll.querySelector('span').textContent='0 selected';};
-  selectAll.appendChild(saBtn);selectAll.appendChild(snBtn);
+  // Select all row
+  var selRow=mk('div','flex');selRow.style.marginBottom='8px';
+  var selCount=mk('span',null);selCount.style.cssText='font-size:12px;color:var(--text2)';selCount.id='sel-count';selCount.textContent=S.selected.size+' selected';
+  var saBtn=mk('button','btn btn-sm');saBtn.textContent='Select All';
+  var snBtn=mk('button','btn btn-sm');snBtn.textContent='Clear';
+  saBtn.addEventListener('click',function(){S.filtered.forEach(function(r){S.selected.add(r.email||r.firstName+r.lastName);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
+  snBtn.addEventListener('click',function(){S.selected.clear();buildTable(tBody,S.filtered);selCount.textContent='0 selected';});
+  selRow.appendChild(selCount);selRow.appendChild(saBtn);selRow.appendChild(snBtn);
+  rc.appendChild(selRow);
 
-  const table=document.createElement('table');
-  table.innerHTML=`<thead><tr><th><input type="checkbox" class="cb" onchange="if(this.checked){document.querySelectorAll('.row-cb').forEach(c=>{c.checked=true;S.filtered.forEach(r=>S.selected.add(r.email||r.firstName+r.lastName));})}else{document.querySelectorAll('.row-cb').forEach(c=>{c.checked=false;S.selected.clear();});}"/></th><th>Name</th><th>Job Title</th><th>Company</th><th>Location</th><th>Email</th><th>LinkedIn</th></tr></thead><tbody>
-  ${S.filtered.slice(0,100).map((r,i)=>{
-    const key=r.email||r.firstName+r.lastName+i;
-    const isSel=S.selected.has(key);
-    return`<tr>
-      <td><input type="checkbox" class="cb row-cb" ${isSel?'checked':''} onchange="if(this.checked)S.selected.add('${key}');else S.selected.delete('${key}');document.querySelector('.select-count').textContent=S.selected.size+' selected'"/></td>
-      <td><strong>${r.firstName} ${r.lastName}</strong></td>
-      <td style="font-size:12px">${r.title||'-'}</td>
-      <td style="font-size:12px">${r.company||'-'}</td>
-      <td style="font-size:11px;color:var(--text2)">${r.location||'-'}</td>
-      <td style="font-size:11px;color:${r.email?'var(--green)':'var(--red)'}">${r.email||'No email'}</td>
-      <td>${r.linkedinUrl?`<a href="${r.linkedinUrl}" target="_blank" style="font-size:11px;color:#0077b5">View -></a>`:'-'}</td>
-    </tr>`;
-  }).join('')}
-  ${S.filtered.length>100?`<tr><td colspan="7" style="text-align:center;color:var(--text2);font-size:12px;padding:14px">Showing 100 of ${S.filtered.length}. Export CSV to see all.</td></tr>`:''}
-  </tbody>`;
+  var tWrap=mk('div',null);tWrap.style.overflowX='auto';
+  var table=mk('table',null);
+  table.innerHTML='<thead><tr><th>Select</th><th>Name</th><th>Job Title</th><th>Company</th><th>Location</th><th>Email</th><th>LinkedIn</th></tr></thead>';
+  var tBody=mk('tbody',null);
+  buildTable(tBody,S.filtered);
+  table.appendChild(tBody);tWrap.appendChild(table);rc.appendChild(tWrap);
 
-  tw.appendChild(selectAll);tw.appendChild(table);
-  rc.appendChild(tw);
-
-  const nextDiv=document.createElement('div');nextDiv.style.cssText='text-align:right;margin-top:14px';
-  const nb=document.createElement('button');nb.className='btn btn-primary';nb.textContent='Compose Messages ->';
-  nb.onclick=()=>{
-    const selContacts=S.filtered.filter(r=>{const key=r.email||r.firstName+r.lastName;return S.selected.has(key);});
-    if(!selContacts.length){alert('Select at least one connection first.');return;}
-    S.enriched=selContacts;
-    switchTab('compose',document.querySelectorAll('.tab')[2]);
-  };
-  nextDiv.appendChild(nb);rc.appendChild(nextDiv);
+  var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
+  var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Compose Messages ->';
+  nextBtn.addEventListener('click',function(){
+    var sel=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName);});
+    if(!sel.length){alert('Select at least one connection first.');return;}
+    S.filtered=sel;
+    document.querySelectorAll('.tab-btn')[2].click();
+  });
+  nextRow.appendChild(nextBtn);rc.appendChild(nextRow);
   wrap.appendChild(rc);
-  return wrap;
+}
+
+function buildTable(tbody,rows){
+  tbody.innerHTML='';
+  rows.slice(0,150).forEach(function(r,i){
+    var key=r.email||r.firstName+r.lastName+i;
+    var isSel=S.selected.has(key);
+    var tr=mk('tr',null);
+    var td0=mk('td',null);
+    var cb=document.createElement('input');cb.type='checkbox';cb.checked=isSel;cb.style.cssText='width:14px;height:14px;accent-color:var(--blue);cursor:pointer';
+    cb.addEventListener('change',function(e){
+      var sc=document.getElementById('sel-count');
+      if(e.target.checked)S.selected.add(key);else S.selected.delete(key);
+      if(sc)sc.textContent=S.selected.size+' selected';
+    });
+    td0.appendChild(cb);tr.appendChild(td0);
+    tr.innerHTML+=('<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td>'+(r.linkedinUrl?('<a href="'+esc(r.linkedinUrl)+'" target="_blank" style="font-size:11px;color:#0077b5">View</a>'):'-')+'</td>');
+    tbody.insertBefore(tr,tbody.firstChild);tbody.insertBefore(tr,null);
+    tbody.appendChild(tr);
+  });
 }
 
 function applyFilters(){
-  S.filtered=S.raw.filter(r=>{
+  S.filtered=S.raw.filter(function(r){
     if(S.filters.titles.length){
-      const titleMatch=S.filters.titles.some(t=>r.title&&r.title.toLowerCase().includes(t.toLowerCase()));
-      if(!titleMatch)return false;
+      var match=S.filters.titles.some(function(t){return r.title&&r.title.toLowerCase().indexOf(t.toLowerCase())>=0;});
+      if(!match)return false;
     }
     if(S.filters.locations.length){
-      const locMatch=S.filters.locations.some(l=>r.location&&r.location.toLowerCase().includes(l.toLowerCase()));
-      if(!locMatch)return false;
+      var match2=S.filters.locations.some(function(l){return r.location&&r.location.toLowerCase().indexOf(l.toLowerCase())>=0;});
+      if(!match2)return false;
     }
     if(S.filters.companies.length){
-      const coMatch=S.filters.companies.some(c=>r.company&&r.company.toLowerCase().includes(c.toLowerCase()));
-      if(!coMatch)return false;
+      var match3=S.filters.companies.some(function(c){return r.company&&r.company.toLowerCase().indexOf(c.toLowerCase())>=0;});
+      if(!match3)return false;
     }
     if(S.filters.keywords){
-      const kw=S.filters.keywords.toLowerCase();
-      if(!((r.title&&r.title.toLowerCase().includes(kw))||(r.company&&r.company.toLowerCase().includes(kw))))return false;
+      var kw=S.filters.keywords.toLowerCase();
+      if(!((r.title&&r.title.toLowerCase().indexOf(kw)>=0)||(r.company&&r.company.toLowerCase().indexOf(kw)>=0)))return false;
     }
     return true;
   });
 }
 
 async function enrichEmails(btn){
-  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Enriching...';
-  const noEmail=S.filtered.filter(r=>!r.email);
-  let found=0;
-  for(const r of noEmail){
-    if(!r.firstName||!r.lastName||!r.company)continue;
+  var orig=btn.textContent;btn.disabled=true;btn.textContent='Enriching...';
+  var noEmail=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName;});
+  var found=0;
+  for(var i=0;i<noEmail.length;i++){
+    var r=noEmail[i];
     try{
-      const resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})});
-      const data=await resp.json();
+      var resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||''}})});
+      var data=await resp.json();
       if(data.email){r.email=data.email;found++;}
     }catch(e){}
-    await new Promise(x=>setTimeout(x,300));
+    await delay(300);
   }
-  btn.disabled=false;btn.textContent='🔍 Find Missing Emails';
-  switchTab('filter',document.querySelectorAll('.tab')[1]);
-  if(found)alert('✅ Found '+found+' email addresses!');
-  else alert('No additional emails found. Try the Find Leads page for more enrichment options.');
+  btn.disabled=false;btn.textContent=orig;
+  showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+  alert(found>0?('Found '+found+' email addresses!'):'No additional emails found. Try the Find Leads page for more enrichment options.');
 }
 
-// -- TAB 3: COMPOSE -----------------------------------------
-function renderCompose(){
-  const wrap=document.createElement('div');
-  const contacts=S.enriched.length?S.enriched:S.filtered.slice(0,10);
+// ========== STEP 3: COMPOSE ==========
+function renderCompose(wrap){
+  var contacts=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName)||S.selected.size===0;});
+  if(!contacts.length)contacts=S.filtered.slice(0,20);
+
+  if(!S.raw.length){
+    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3>Upload connections first</h3><p>Go to Step 1</p></div></div>';
+    return;
+  }
 
   // Channel selector
-  const cc=document.createElement('div');cc.className='card';
-  cc.innerHTML='<div class="card-title">Outreach Channel</div>';
-  const channelRow=document.createElement('div');channelRow.className='flex';channelRow.style.marginBottom='14px';
-  [['both','📧+💼 Email + LinkedIn Message','Send both a cold email AND a LinkedIn message'],['email','📧 Email Only','Send personalized cold emails via SendGrid'],['linkedin','💼 LinkedIn Message Only','Generate messages to send on LinkedIn']].forEach(([v,l,d])=>{
-    const card=document.createElement('div');card.style.cssText='flex:1;padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid '+(S.channel===v?'var(--blue)':'var(--border)')+';background:'+(S.channel===v?'rgba(59,130,246,.1)':'var(--glass)')+';transition:all .2s;min-width:180px';
-    card.innerHTML='<p style="font-weight:700;margin-bottom:3px;color:'+(S.channel===v?'var(--blue)':'var(--text)')+'">'+l+'</p><p style="font-size:11px;color:var(--text2)">'+d+'</p>';
-    card.onclick=()=>{S.channel=v;renderCompose();switchTab('compose',document.querySelectorAll('.tab')[2]);};
-    channelRow.appendChild(card);
+  var cc=mk('div','card');cc.appendChild(mkTitle('Choose Outreach Channel'));
+  var chRow=mk('div','flex');chRow.style.flexWrap='wrap';
+  var channels=[{v:'both',icon:'📧+💼',label:'Email + LinkedIn',desc:'Send both a cold email AND a LinkedIn message'},{v:'email',icon:'📧',label:'Email Only',desc:'Personalized cold emails via SendGrid'},{v:'linkedin',icon:'💼',label:'LinkedIn Only',desc:'Messages to paste on LinkedIn'}];
+  channels.forEach(function(ch){
+    var card=mk('div','ch-card'+(S.channel===ch.v?' active':''));
+    card.innerHTML='<div style="font-size:18px;margin-bottom:4px">'+ch.icon+'</div><div style="font-weight:700;font-size:13px;margin-bottom:3px;color:'+(S.channel===ch.v?'var(--blue)':'var(--text)')+'">'+ch.label+(S.channel===ch.v?' ✓':'')+'</div><div style="font-size:11px;color:var(--text2)">'+ch.desc+'</div>';
+    card.addEventListener('click',function(){S.channel=ch.v;renderCompose(wrap);});
+    chRow.appendChild(card);
   });
-  cc.appendChild(channelRow);
+  cc.appendChild(chRow);
 
-  // Sender + angle
-  const sg=document.createElement('div');sg.className='g2';sg.style.marginBottom='12px';
-  [{k:'name',l:'Your Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@company.com'},{k:'company',l:'Company',p:'Velorah'}].slice(0,S.channel==='linkedin'?1:3).forEach(f=>{
-    const d=document.createElement('div');
-    d.innerHTML='<label class="lbl">'+f.l+'</label>';
-    const inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
-    inp.addEventListener('input',e=>S.sender[f.k]=e.target.value);
+  // Sender
+  cc.appendChild(mk('div',null)).style.height='14px';
+  var sg=mk('div','g3');sg.style.marginTop='0';
+  [{k:'name',l:'Your Name',p:'Alex Rivera'},{k:'email',l:'Sender Email',p:'alex@company.com'},{k:'company',l:'Company',p:'Velorah'}].forEach(function(f){
+    var d=mk('div',null);
+    d.appendChild(mkLbl(f.l));
+    var inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
+    inp.addEventListener('input',function(e){S.sender[f.k]=e.target.value;});
     d.appendChild(inp);sg.appendChild(d);
   });
   cc.appendChild(sg);
 
-  // Email angle
-  const af=document.createElement('div');af.style.marginBottom='12px';
-  af.innerHTML='<label class="lbl">Message Angle</label>';
-  const as=document.createElement('select');as.value=S.emailAngle;
-  [['pain','Pain-Focused - Lead with their risk'],['roi','ROI-Focused - Lead with cost/savings'],['question','Question-Based - Open with a question'],['insight','Insight-Led - Open with a data point'],['connection','Connection-Based - Reference LinkedIn connection']].forEach(([v,l])=>{
-    const o=document.createElement('option');o.value=v;o.textContent=l;if(v===S.emailAngle)o.selected=true;as.appendChild(o);
+  // Angle selector
+  var ac=mk('div',null);ac.style.marginTop='14px';
+  ac.appendChild(mkLbl('Message Angle'));
+  var angleGrid=mk('div','g2');angleGrid.style.marginTop='6px';
+  var angles=[{v:'connection',e:'🤝',n:'Connection-Based',d:'Warm opener referencing LinkedIn connection'},{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific business risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with financial impact and savings'},{v:'question',e:'❓',n:'Question-Based',d:'Open with a sharp business question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Open with a surprising industry insight'}];
+  angles.forEach(function(a){
+    var card=mk('div','angle-card'+(S.angle===a.v?' active':''));
+    card.innerHTML='<span style="font-size:16px">'+a.e+'</span> <strong style="font-size:13px;color:'+(S.angle===a.v?'var(--blue)':'var(--text)')+'">'+a.n+(S.angle===a.v?' ✓':'')+'</strong><p style="font-size:11px;color:var(--text2);margin-top:3px">'+a.d+'</p>';
+    card.addEventListener('click',function(){S.angle=a.v;renderCompose(wrap);});
+    angleGrid.appendChild(card);
   });
-  as.addEventListener('change',e=>S.emailAngle=e.target.value);
-  af.appendChild(as);cc.appendChild(af);
+  ac.appendChild(angleGrid);cc.appendChild(ac);
   wrap.appendChild(cc);
 
-  // Generate button
-  const genCard=document.createElement('div');genCard.className='card';
-  genCard.innerHTML=`<div class="fb"><div><p style="font-weight:700;margin-bottom:4px">Generate Messages for ${contacts.length} Connections</p><p style="font-size:12px;color:var(--text2)">AI creates personalized ${S.channel==='linkedin'?'LinkedIn messages':S.channel==='email'?'cold emails':'emails + LinkedIn messages'} for each connection</p></div></div>`;
+  // Generate
+  var gc=mk('div','card');
+  var gRow=mk('div','fb');
+  var gInfo=mk('div',null);
+  var gTitle=mk('p',null);gTitle.style.cssText='font-weight:700;margin-bottom:3px';gTitle.textContent='Generate Messages for '+contacts.length+' Connections';
+  var gSub=mk('p',null);gSub.style.cssText='font-size:12px;color:var(--text2)';gSub.textContent='AI creates personalized '+(S.channel==='linkedin'?'LinkedIn messages':S.channel==='email'?'emails':'emails + LinkedIn messages')+' for each connection';
+  gInfo.appendChild(gTitle);gInfo.appendChild(gSub);gRow.appendChild(gInfo);
+
+  if(!S.generating){
+    var genBtn=mk('button','btn btn-primary');genBtn.textContent='🤖 Generate All Messages';
+    genBtn.addEventListener('click',function(){generateAll(contacts,wrap);});
+    gRow.appendChild(genBtn);
+  }
+  gc.appendChild(gRow);
 
   if(S.generating){
-    const prog=document.createElement('div');prog.style.marginTop='14px';
-    const pct=contacts.length?Math.round(S.genProgress/contacts.length*100):0;
-    prog.innerHTML='<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="color:var(--text2)">'+S.genProgress+' of '+contacts.length+' generated</span><span style="color:var(--cyan);font-family:\'IBM Plex Mono\',monospace;font-weight:700">'+pct+'%</span></div><div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct+'%"></div></div>';
-    genCard.appendChild(prog);
-  }else{
-    const gb=document.createElement('button');gb.className='btn btn-primary';gb.style.marginTop='12px';
-    gb.textContent='🤖 Generate All Messages';
-    gb.onclick=()=>generateMessages(contacts,gb);
-    genCard.appendChild(gb);
+    var pct=contacts.length?Math.round(S.genProgress/contacts.length*100):0;
+    var prog=mk('div',null);prog.style.marginTop='14px';
+    var pInfo=mk('div','fb');pInfo.style.marginBottom='6px';
+    var pL=mk('span',null);pL.style.cssText='font-size:12px;color:var(--text2)';pL.textContent=S.genProgress+' of '+contacts.length+' generated';
+    var pR=mk('span',null);pR.style.cssText='font-size:12px;font-weight:700;color:var(--cyan);font-family:\'IBM Plex Mono\',monospace';pR.textContent=pct+'%';
+    pInfo.appendChild(pL);pInfo.appendChild(pR);
+    var pbar=mk('div','pbar');var pfill=mk('div','pfill');pfill.style.width=pct+'%';pbar.appendChild(pfill);
+    prog.appendChild(pInfo);prog.appendChild(pbar);gc.appendChild(prog);
   }
-  wrap.appendChild(genCard);
+  wrap.appendChild(gc);
 
-  // Generated messages preview
+  // Preview messages
   if(S.messages.length){
-    const mc=document.createElement('div');mc.className='card';
-    mc.innerHTML='<div class="card-title">Generated Messages ('+S.messages.length+')</div>';
-    S.messages.slice(0,5).forEach(m=>{
-      const mDiv=document.createElement('div');mDiv.style.cssText='border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden';
-      mDiv.innerHTML=`<div style="padding:10px 14px;background:rgba(13,21,38,.5);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-        <strong>${m.contact.firstName} ${m.contact.lastName}</strong>
-        <span style="font-size:11px;color:var(--text2)">${m.contact.title||''} ${m.contact.company?'@ '+m.contact.company:''}</span>
-      </div>`;
-      if(S.channel!=='linkedin'&&m.email){
-        mDiv.innerHTML+=`<div style="padding:10px 14px;border-bottom:1px solid var(--border)"><p style="font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">📧 EMAIL</p><p style="font-weight:600;font-size:13px;margin-bottom:4px">${m.email.subject}</p><p style="font-size:12px;color:var(--text2)">${m.email.body.substring(0,120)}...</p></div>`;
+    var pre=mk('div','card');pre.appendChild(mkTitle('Generated Messages ('+S.messages.length+')'));
+    S.messages.slice(0,3).forEach(function(m){
+      var mDiv=mk('div',null);mDiv.style.cssText='border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden';
+      var mHdr=mk('div',null);mHdr.style.cssText='padding:10px 14px;background:rgba(13,21,38,.5);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center';
+      var mName=mk('strong',null);mName.textContent=m.contact.firstName+' '+m.contact.lastName;
+      var mMeta=mk('span',null);mMeta.style.cssText='font-size:11px;color:var(--text2)';mMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
+      mHdr.appendChild(mName);mHdr.appendChild(mMeta);mDiv.appendChild(mHdr);
+      if(m.email&&S.channel!=='linkedin'){
+        var eBox=mk('div',null);eBox.style.cssText='padding:10px 14px;border-bottom:1px solid var(--border)';
+        eBox.innerHTML='<p style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Email</p><p style="font-weight:700;font-size:13px;margin-bottom:3px">'+esc(m.email.subject)+'</p><p style="font-size:12px;color:var(--text2)">'+esc(m.email.body.substring(0,100))+'...</p>';
+        mDiv.appendChild(eBox);
       }
-      if(S.channel!=='email'&&m.linkedin){
-        mDiv.innerHTML+=`<div style="padding:10px 14px"><p style="font-size:11px;color:#0077b5;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">💼 LINKEDIN MESSAGE</p><p style="font-size:12px;color:var(--text2)">${m.linkedin}</p></div>`;
+      if(m.linkedin&&S.channel!=='email'){
+        var lBox=mk('div',null);lBox.style.cssText='padding:10px 14px';
+        lBox.innerHTML='<p style="font-size:11px;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">LinkedIn ('+m.linkedin.length+' chars)</p><p style="font-size:12px;color:var(--text2)">'+esc(m.linkedin.substring(0,120))+'...</p>';
+        mDiv.appendChild(lBox);
       }
-      mc.appendChild(mDiv);
+      pre.appendChild(mDiv);
     });
-    if(S.messages.length>5)mc.innerHTML+=`<p style="font-size:12px;color:var(--text2);text-align:center;padding:8px">...and ${S.messages.length-5} more in Step 4</p>`;
-    const nb2=document.createElement('div');nb2.style.cssText='text-align:right;margin-top:12px';
-    const nb2b=document.createElement('button');nb2b.className='btn btn-primary';nb2b.textContent='Send Campaign ->';
-    nb2b.onclick=()=>switchTab('send',document.querySelectorAll('.tab')[3]);
-    nb2.appendChild(nb2b);mc.appendChild(nb2);
-    wrap.appendChild(mc);
+    if(S.messages.length>3){var more=mk('p',null);more.style.cssText='font-size:12px;color:var(--text2);text-align:center;padding:8px';more.textContent='...and '+(S.messages.length-3)+' more in Step 4';pre.appendChild(more);}
+    var nRow=mk('div',null);nRow.style.cssText='text-align:right;margin-top:12px';
+    var nBtn=mk('button','btn btn-primary');nBtn.textContent='Review & Send ->';
+    nBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[3].click();});
+    nRow.appendChild(nBtn);pre.appendChild(nRow);
+    wrap.appendChild(pre);
   }
-  return wrap;
 }
 
-async function generateMessages(contacts,btn){
+async function generateAll(contacts,wrap){
   S.generating=true;S.genProgress=0;S.messages=[];
-  switchTab('compose',document.querySelectorAll('.tab')[2]);
-  for(let i=0;i<contacts.length;i++){
-    const r=contacts[i];
-    const name=r.firstName+' '+r.lastName;
-    const isConnection=true;
-    // Generate email
-    let emailResult=null;
+  renderCompose(wrap);
+  for(var i=0;i<contacts.length;i++){
+    var r=contacts[i];
+    var emailResult=null;
     if(S.channel!=='linkedin'){
       try{
-        const prompt=buildEmailPrompt(r,isConnection);
-        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:r.company,industry:''})});
-        const data=await resp.json();
-        let txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
-        const js=txt.indexOf('{');const je=txt.lastIndexOf('}');
+        var prompt=buildPrompt(r);
+        var resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:r.company||'',industry:''})});
+        var d=await resp.json();
+        var txt=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').replace(/BACKTICK_JSON|BACKTICK/g,'').trim();
+        var js=txt.indexOf('{');var je=txt.lastIndexOf('}');
         if(js>=0&&je>js)emailResult=JSON.parse(txt.substring(js,je+1));
       }catch(e){}
     }
-    // Generate LinkedIn message (always shorter)
-    const liMsg=buildLinkedInMessage(r,emailResult);
+    var liMsg=buildLinkedIn(r,emailResult);
     S.messages.push({contact:r,email:emailResult,linkedin:liMsg});
     S.genProgress=i+1;
-    switchTab('compose',document.querySelectorAll('.tab')[2]);
-    await new Promise(x=>setTimeout(x,4000));
+    renderCompose(wrap);
+    await delay(4000);
   }
   S.generating=false;
-  switchTab('compose',document.querySelectorAll('.tab')[2]);
+  renderCompose(wrap);
 }
 
-function buildEmailPrompt(r,isConnection){
-  const angles={connection:'You are connected on LinkedIn which gives you a warm opener.',pain:'Lead with their operational risk.',roi:'Lead with financial impact and savings.',question:'Open with a sharp business question.',insight:'Open with a surprising industry insight.'};
-  return`You are an expert B2B sales copywriter. ${angles[S.emailAngle]||angles.connection}
-
-Write a personalized cold email from a LinkedIn connection:
-- To: ${r.firstName} ${r.lastName}, ${r.title||'professional'} at ${r.company||'their company'}
-- From: ${S.sender.name}, ${S.sender.company}
-- Context: You are connected on LinkedIn
-- Product: Velorah - AI-Powered Cold Email & Cybersecurity Risk Assessment
-- Tone: Warm but professional, reference the LinkedIn connection naturally
-
-Rules: Under 150 words, 3 paragraphs, soft CTA for 15-min call.
-JSON only: {"subject":"...","body":"..."}`;
+function buildPrompt(r){
+  var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with their most pressing business risk.',roi:'Lead with financial impact and ROI.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising industry data point.'};
+  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, peer-to-peer, reference LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
 }
 
-function buildLinkedInMessage(r,emailResult){
-  const name=r.firstName||'there';
-  if(emailResult){
-    // Convert email to LinkedIn format (shorter, more casual)
-    const body=emailResult.body||'';
-    const firstPara=body.split('\n\n')[0]||body.substring(0,100);
-    const clean=firstPara.replace(/Dear.*?,\s*/,'').replace(/Hi.*?,\s*/,'').trim();
-    return`Hi ${name}, ${clean.substring(0,180)}... Would love to connect on this - open to a quick 15-min chat? -${S.sender.name}`;
+function buildLinkedIn(r,email){
+  var name=r.firstName||'there';
+  if(email&&email.body){
+    var body=email.body||'';
+    var first=body.split('\n\n')[0]||body;
+    first=first.replace(/^(Hi|Dear|Hello)\s+\w+[,.]?\s*/i,'').trim();
+    var msg='Hi '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
+    return msg.substring(0,300);
   }
-  return`Hi ${name}, I noticed your work in ${r.title?'the '+r.title+' space':'your industry'} and thought Velorah's AI risk assessment platform might be relevant to you. Open to a quick 15-min chat? -${S.sender.name}`;
+  return ('Hi '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
 }
 
-// -- TAB 4: SEND ---------------------------------------------
-function renderSend(){
-  const wrap=document.createElement('div');
+// ========== STEP 4: SEND ==========
+function renderSend(wrap){
   if(!S.messages.length){
-    const empty=document.createElement('div');empty.className='card';
-    empty.innerHTML='<div class="empty"><div class="empty-icon">🤖</div><h3 style="margin-bottom:8px">No messages generated yet</h3><p>Go to Step 3 and generate your messages first.</p></div>';
-    wrap.appendChild(empty);return wrap;
+    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">🤖</div><h3 style="margin-bottom:8px">No messages generated yet</h3><p>Go to Step 3 and generate your messages first.</p></div></div>';
+    return;
   }
+
+  var withEmail=S.messages.filter(function(m){return m.email&&m.contact.email;}).length;
+  var withLi=S.messages.filter(function(m){return m.linkedin;}).length;
 
   // Stats
-  const statsDiv=document.createElement('div');statsDiv.className='stats-row';statsDiv.style.marginBottom='14px';
-  [{v:S.messages.length,l:'Total',c:'var(--blue)'},{v:S.messages.filter(m=>m.email).length,l:'With Email',c:'var(--green)'},{v:S.messages.filter(m=>m.linkedin).length,l:'LinkedIn Msg',c:'#0077b5'},{v:S.messages.filter(m=>m.contact.email).length,l:'Have Email',c:'var(--cyan)'}].forEach(s=>{
-    const sc=document.createElement('div');sc.className='stat';
-    sc.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';
-    statsDiv.appendChild(sc);
+  var sg=mk('div','g4');sg.style.marginBottom='14px';
+  [{v:S.messages.length,l:'Total',c:'var(--blue)'},{v:withEmail,l:'With Email',c:'var(--green)'},{v:withLi,l:'LinkedIn Msgs',c:'#0077b5'},{v:S.messages.filter(function(m){return m.contact.email;}).length,l:'Have Email',c:'var(--cyan)'}].forEach(function(s){
+    var sc=mk('div','stat');
+    var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
+    var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
+    sc.appendChild(sv);sc.appendChild(sl);sg.appendChild(sc);
   });
-  wrap.appendChild(statsDiv);
+  wrap.appendChild(sg);
 
   // Action bar
-  const ac=document.createElement('div');ac.className='card';ac.style.marginBottom='12px';
-  ac.innerHTML='<div class="card-title">Launch Campaign</div>';
-  const actRow=document.createElement('div');actRow.className='flex';actRow.style.flexWrap='wrap';
+  var ac=mk('div','card');ac.style.marginBottom='12px';ac.appendChild(mkTitle('Launch Campaign'));
+  var aRow=mk('div','flex');
+
   if(S.channel!=='linkedin'){
-    const emailBtn=document.createElement('button');emailBtn.className='btn btn-primary';
-    emailBtn.textContent='📧 Send Emails to Campaign Agent ->';
-    emailBtn.onclick=()=>{
-      const withEmail=S.messages.filter(m=>m.contact.email&&m.email);
-      if(!withEmail.length){alert('No contacts have email addresses. Try email enrichment in Step 2.');return;}
-      const hdrs=['First Name','Last Name','Email','Company','Job Title'];
-      const rows=withEmail.map(m=>[m.contact.firstName,m.contact.lastName,m.contact.email,m.contact.company,m.contact.title]);
-      const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-      sessionStorage.setItem('velorah_leads_csv',csv);
-      sessionStorage.setItem('velorah_leads_count',withEmail.length);
-      sessionStorage.setItem('velorah_li_messages',JSON.stringify(withEmail.map(m=>({email:m.contact.email,subject:m.email.subject,body:m.email.body}))));
-      alert('✅ '+withEmail.length+' contacts sent to Campaign Agent!');
+    var emailBtn=mk('button','btn btn-primary');emailBtn.textContent='📧 Send Emails via Campaign Agent ->';
+    emailBtn.addEventListener('click',function(){
+      var withEm=S.messages.filter(function(m){return m.contact.email&&m.email;});
+      if(!withEm.length){alert('No contacts have email addresses. Enrich emails in Step 2 first.');return;}
+      var hdrs='First Name,Last Name,Email,Company,Job Title\n';
+      var rows=withEm.map(function(m){return '"'+m.contact.firstName+'","'+m.contact.lastName+'","'+m.contact.email+'","'+m.contact.company+'","'+m.contact.title+'"';}).join('\n');
+      sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+      sessionStorage.setItem('velorah_leads_count',withEm.length);
+      alert('Sending '+withEm.length+' contacts to Campaign Agent!');
       window.location.href='/app.html?from=linkedin';
-    };
-    actRow.appendChild(emailBtn);
+    });
+    aRow.appendChild(emailBtn);
   }
-  const expBtn=document.createElement('button');expBtn.className='btn';expBtn.textContent='v Export CSV';
-  expBtn.onclick=()=>exportMessages();
-  actRow.appendChild(expBtn);
-  ac.appendChild(actRow);
+
+  var expBtn=mk('button','btn');expBtn.textContent='Export CSV';
+  expBtn.addEventListener('click',function(){exportCSV();});
+  aRow.appendChild(expBtn);
+  ac.appendChild(aRow);
   wrap.appendChild(ac);
 
-  // Message list
-  S.messages.forEach((m,idx)=>{
-    const card=document.createElement('div');card.className='card';card.style.marginBottom='10px';
+  // Individual message cards
+  S.messages.forEach(function(m,idx){
+    var card=mk('div','card');card.style.marginBottom='10px';
 
-    // Contact header
-    const hdr=document.createElement('div');hdr.className='fb';hdr.style.marginBottom='12px';
-    hdr.innerHTML=`<div class="flex"><div style="width:36px;height:36px;border-radius:50%;background:rgba(0,119,181,.15);border:1px solid rgba(0,119,181,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0077b5">${(m.contact.firstName[0]||'?')+(m.contact.lastName[0]||'')}</div><div><p style="font-weight:700">${m.contact.firstName} ${m.contact.lastName}</p><p style="font-size:12px;color:var(--text2)">${m.contact.title||''} ${m.contact.company?'@ '+m.contact.company:''}</p></div></div>
-    <div class="flex">${m.contact.linkedinUrl?`<a href="${m.contact.linkedinUrl}" target="_blank" class="btn btn-li btn-sm">💼 Open LinkedIn</a>`:''}${m.contact.email?`<a href="mailto:${m.contact.email}" class="btn btn-sm" style="border-color:var(--green);color:var(--green)">📧 Open Email</a>`:''}</div>`;
-    card.appendChild(hdr);
+    // Header
+    var hdr=mk('div','fb');hdr.style.marginBottom='14px';
+    var avi=mk('div',null);avi.style.cssText='width:38px;height:38px;border-radius:50%;background:rgba(0,119,181,.15);border:1px solid rgba(0,119,181,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0077b5;font-size:13px;flex-shrink:0';
+    avi.textContent=(m.contact.firstName[0]||'?')+(m.contact.lastName[0]||'?');
+    var info=mk('div',null);info.style.flex='1';
+    var iName=mk('p',null);iName.style.fontWeight='700';iName.textContent=m.contact.firstName+' '+m.contact.lastName;
+    var iMeta=mk('p',null);iMeta.style.cssText='font-size:12px;color:var(--text2)';iMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
+    info.appendChild(iName);info.appendChild(iMeta);
 
-    const msgPanel=document.createElement('div');msgPanel.className='msg-panel';
+    var btns=mk('div','flex');
+    if(m.contact.linkedinUrl){
+      var liBtn=mk('a','btn btn-li btn-sm');liBtn.href=m.contact.linkedinUrl;liBtn.target='_blank';liBtn.textContent='View LinkedIn';btns.appendChild(liBtn);
+    }
+    if(m.contact.email){
+      var emBtn=mk('a','btn btn-sm');emBtn.href='mailto:'+m.contact.email;emBtn.style.cssText='border-color:var(--green);color:var(--green)';emBtn.textContent='Email Directly';btns.appendChild(emBtn);
+    }
+    hdr.appendChild(avi);hdr.appendChild(info);hdr.appendChild(btns);card.appendChild(hdr);
 
-    // Email message
-    if(S.channel!=='linkedin'&&m.email){
-      const emailBox=document.createElement('div');emailBox.className='msg-box';
-      emailBox.innerHTML=`<div class="msg-box-title" style="color:var(--green)">📧 Email Message</div>
-      <p style="font-weight:700;font-size:13px;margin-bottom:6px">${m.email.subject}</p>`;
-      const bodyArea=document.createElement('textarea');bodyArea.value=m.email.body;bodyArea.style.cssText='min-height:120px;font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(16,185,129,.2)';
-      bodyArea.addEventListener('input',e=>S.messages[idx].email.body=e.target.value);
-      emailBox.appendChild(bodyArea);
-      msgPanel.appendChild(emailBox);
+    // Message grid
+    var msgGrid=mk('div','msg-grid');
+
+    // Email box
+    if(m.email&&S.channel!=='linkedin'){
+      var eBox=mk('div','msg-box');
+      var eT=mk('p',null);eT.style.cssText='font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';eT.textContent='📧 Email Message';
+      var eSubj=mk('p',null);eSubj.style.cssText='font-weight:700;font-size:13px;margin-bottom:6px';eSubj.textContent=m.email.subject;
+      var eArea=document.createElement('textarea');eArea.value=m.email.body;eArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(16,185,129,.2);min-height:130px';
+      eArea.addEventListener('input',function(e){S.messages[idx].email.body=e.target.value;});
+      eBox.appendChild(eT);eBox.appendChild(eSubj);eBox.appendChild(eArea);
+      msgGrid.appendChild(eBox);
     }
 
-    // LinkedIn message
-    if(S.channel!=='email'&&m.linkedin){
-      const liBox=document.createElement('div');liBox.className='msg-box';
-      liBox.innerHTML=`<div class="msg-box-title" style="color:#0077b5">💼 LinkedIn Message</div>
-      <p style="font-size:11px;color:var(--text2);margin-bottom:6px">${m.linkedin.length} chars ${m.linkedin.length>300?'<span style="color:var(--red)">(LinkedIn limit: 300)</span>':''}</p>`;
-      const liArea=document.createElement('textarea');liArea.value=m.linkedin;liArea.style.cssText='min-height:100px;font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(0,119,181,.2)';
-      liArea.addEventListener('input',e=>S.messages[idx].linkedin=e.target.value);
-      liBox.appendChild(liArea);
+    // LinkedIn box
+    if(m.linkedin&&S.channel!=='email'){
+      var lBox=mk('div','msg-box');
+      var lT=mk('p',null);lT.style.cssText='font-size:11px;font-weight:700;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';lT.textContent='💼 LinkedIn Message';
+      var lLen=mk('p',null);lLen.style.cssText='font-size:11px;color:var(--text2);margin-bottom:6px';lLen.textContent=m.linkedin.length+'/300 chars '+(m.linkedin.length>300?'OVER LIMIT!':'OK');
+      if(m.linkedin.length>300)lLen.style.color='var(--red)';
+      var lArea=document.createElement('textarea');lArea.value=m.linkedin;lArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(0,119,181,.2);min-height:100px';
+      lArea.addEventListener('input',function(e){
+        S.messages[idx].linkedin=e.target.value.substring(0,300);
+        lLen.textContent=e.target.value.length+'/300 chars';
+        if(e.target.value.length>300){lLen.style.color='var(--red)';lArea.value=e.target.value.substring(0,300);}else lLen.style.color='var(--text2)';
+      });
+      lBox.appendChild(lT);lBox.appendChild(lLen);lBox.appendChild(lArea);
 
-      const copyBtn=document.createElement('button');copyBtn.className='btn btn-sm btn-li';copyBtn.style.marginTop='8px';
-      copyBtn.textContent='📋 Copy & Open LinkedIn';
-      copyBtn.onclick=()=>{
-        navigator.clipboard.writeText(m.linkedin).then(()=>{
-          if(m.contact.linkedinUrl){window.open(m.contact.linkedinUrl,'_blank');setTimeout(()=>alert('Message copied! Paste it in the LinkedIn message box.'),500);}
-          else{alert('Message copied! Now open their LinkedIn profile and paste.');}
+      // Copy + Open LinkedIn button
+      var copyBtn=mk('button','btn btn-li btn-sm');copyBtn.style.marginTop='8px';copyBtn.textContent='📋 Copy & Open LinkedIn Profile';
+      copyBtn.addEventListener('click',function(){
+        navigator.clipboard.writeText(m.linkedin).then(function(){
+          if(m.contact.linkedinUrl){
+            window.open(m.contact.linkedinUrl,'_blank');
+            setTimeout(function(){alert('Message copied to clipboard! Paste it in the LinkedIn message box on the profile page.');},400);
+          } else {
+            alert('Message copied! Now find their LinkedIn profile and paste the message.');
+          }
+        }).catch(function(){
+          var tmp=document.createElement('textarea');tmp.value=m.linkedin;document.body.appendChild(tmp);tmp.select();document.execCommand('copy');document.body.removeChild(tmp);
+          if(m.contact.linkedinUrl)window.open(m.contact.linkedinUrl,'_blank');
+          alert('Message copied! Paste it on their LinkedIn profile.');
         });
-      };
-      liBox.appendChild(copyBtn);
-      msgPanel.appendChild(liBox);
+      });
+      lBox.appendChild(copyBtn);
+      msgGrid.appendChild(lBox);
     }
 
-    card.appendChild(msgPanel);
+    card.appendChild(msgGrid);
     wrap.appendChild(card);
   });
-  return wrap;
 }
 
-function exportMessages(){
-  const hdrs=['First Name','Last Name','Email','Company','Title','LinkedIn URL','Email Subject','Email Body','LinkedIn Message'];
-  const rows=S.messages.map(m=>[m.contact.firstName,m.contact.lastName,m.contact.email||'',m.contact.company||'',m.contact.title||'',m.contact.linkedinUrl||'',m.email?m.email.subject:'',m.email?m.email.body:'',m.linkedin||'']);
-  const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='linkedin_campaign_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+function exportCSV(){
+  var hdrs=['First Name','Last Name','Email','Company','Title','LinkedIn URL','Email Subject','Email Body','LinkedIn Message'];
+  var rows=S.messages.map(function(m){return[m.contact.firstName,m.contact.lastName,m.contact.email||'',m.contact.company||'',m.contact.title||'',m.contact.linkedinUrl||'',m.email?m.email.subject:'',m.email?m.email.body:'',m.linkedin||''];});
+  var csv=[hdrs].concat(rows).map(function(r){return r.map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='linkedin_campaign_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
+
+// ========== HELPERS ==========
+function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
+function mkTitle(t){var el=mk('div','card-title');el.textContent=t;return el;}
+function mkLbl(t){var el=mk('label','lbl');el.textContent=t;return el;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
