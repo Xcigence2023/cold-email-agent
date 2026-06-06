@@ -27,6 +27,11 @@
   status = 302
 
 [[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
   from = "/app"
   to = "/app.html"
   status = 200
