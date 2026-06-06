@@ -59,7 +59,7 @@ exports.handler = async function(event) {
     }
 
     try {
-      const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+      const res = await fetch('https://api.apollo.io/v1/contacts/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ exports.handler = async function(event) {
         try {
           const errData = JSON.parse(responseText);
           errMsg = errData.message || errData.error || errMsg;
-          if (res.status === 422) errMsg = 'Apollo API key may be invalid or plan does not support this search. Check your Apollo.io account.';
+          if (res.status === 422) errMsg = 'Apollo API key does not have permission for this endpoint. Go to Apollo → API Keys → create a new key with contacts/search permission.';
           if (res.status === 401) errMsg = 'Apollo API key is invalid. Please check APOLLO_API_KEY in Netlify environment variables.';
         } catch(e) {}
         return { statusCode: res.status, headers, body: JSON.stringify({ error: errMsg }) };
