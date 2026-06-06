@@ -1,197 +1,485 @@
-exports.handler = async function(event) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Velorah — Find Leads</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--r:8px;--rl:12px;--blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--green:#15803d;--green-bg:#f0fdf4}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f5f5f0;--text2:#aeaeb2;--border:#3a3a3c;--border2:#48484a}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 1.5rem;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.topbar nav{display:flex;align-items:center;gap:16px}
+.topbar nav a{font-size:13px;color:var(--text2);text-decoration:none;font-weight:500;padding:4px 8px;border-radius:6px}
+.topbar nav a:hover{background:var(--bg2);color:var(--text)}
+.topbar nav a.active{color:var(--blue);background:var(--blue-bg)}
+.page{display:grid;grid-template-columns:320px 1fr;gap:1rem;max-width:1200px;margin:0 auto;padding:1.5rem;align-items:start}
+@media(max-width:800px){.page{grid-template-columns:1fr}}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+.card+.card{margin-top:12px}
+label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:5px;margin-top:12px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1)}
+.btn{cursor:pointer;font-size:13px;font-weight:700;padding:9px 18px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap;transition:all .15s}
+.btn:hover{background:var(--bg2)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-success{background:var(--green-bg);border-color:#86efac;color:var(--green)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:500;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.tag button{background:none;border:none;cursor:pointer;color:var(--blue);font-size:14px;line-height:1;padding:0}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg2)}
+.chip.active{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.contact-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;transition:border-color .15s}
+.contact-card:hover{border-color:var(--blue-border)}
+.contact-card.selected{border-color:var(--blue);background:var(--blue-bg)}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.source-badge{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:700}
+.src-apollo{background:#ff6b35;color:#fff}
+.src-hunter{background:#00bfff;color:#fff}
+.src-lusha{background:#7c3aed;color:#fff}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;border:1px solid var(--border)}
+.stat-val{font-size:20px;font-weight:700}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:2px}
+.progress-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.section-title{font-size:15px;font-weight:700;margin-bottom:12px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.info-box{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--blue);margin-top:8px;line-height:1.5}
+.empty-state{text-align:center;padding:3rem;color:var(--text2)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+</style>
+</head>
+<body>
 
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <strong>✉️ Velorah</strong>
+    <nav>
+      <a href="/app.html">🚀 Campaigns</a>
+      <a href="/find-leads.html" class="active">🔍 Find Leads</a>
+      <a href="/history.html">📋 History</a>
+    </nav>
+  </div>
+  <div class="flex">
+    <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
+    <button class="btn btn-sm" onclick="signOut()">Sign out</button>
+  </div>
+</div>
 
-  const APOLLO_KEY  = process.env.APOLLO_API_KEY;
-  const HUNTER_KEY  = process.env.HUNTER_API_KEY;
-  const LUSHA_KEY   = process.env.LUSHA_API_KEY;
+<div class="page">
 
-  let action, searchParams, contact;
-  try {
-    const body = JSON.parse(event.body || '{}');
-    action = body.action || 'search';
-    searchParams = body.searchParams || {};
-    contact = body.contact || {};
-  } catch(e) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
+  <!-- LEFT: Search Panel -->
+  <div>
+    <div class="card">
+      <p class="section-title">🔍 Find Decision Makers</p>
+
+      <!-- Source selector -->
+      <label>Data Source</label>
+      <div class="chip-group">
+        <span class="chip active" id="src-apollo" onclick="toggleSource('apollo')">🟠 Apollo.io</span>
+        <span class="chip" id="src-hunter" onclick="toggleSource('hunter')">🔵 Hunter.io</span>
+        <span class="chip" id="src-lusha" onclick="toggleSource('lusha')">🟣 Lusha</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Job Titles -->
+      <label>Job Titles</label>
+      <div class="tag-list" id="title-tags"></div>
+      <div class="flex" style="margin-top:8px">
+        <input type="text" id="title-input" placeholder="Add title + press Enter" style="flex:1"/>
+        <button class="btn btn-sm" onclick="addTitle()">Add</button>
+      </div>
+
+      <!-- Quick title presets -->
+      <div class="chip-group" style="margin-top:8px">
+        <span class="chip" onclick="addPreset('CISO')">CISO</span>
+        <span class="chip" onclick="addPreset('CTO')">CTO</span>
+        <span class="chip" onclick="addPreset('CEO')">CEO</span>
+        <span class="chip" onclick="addPreset('VP of Security')">VP Security</span>
+        <span class="chip" onclick="addPreset('Chief Cybersecurity Officer')">CCO</span>
+        <span class="chip" onclick="addPreset('Security Manager')">Security Mgr</span>
+        <span class="chip" onclick="addPreset('Head of Information Security')">Head InfoSec</span>
+        <span class="chip" onclick="addPreset('Security Lead')">Security Lead</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Industry -->
+      <label>Industry (optional)</label>
+      <input type="text" id="industry-input" placeholder="e.g. Healthcare, Finance, Technology"/>
+
+      <!-- Company Size -->
+      <label>Company Size</label>
+      <div class="chip-group">
+        <span class="chip" id="sz-1,10" onclick="toggleSize('1,10')">1-10</span>
+        <span class="chip" id="sz-11,50" onclick="toggleSize('11,50')">11-50</span>
+        <span class="chip" id="sz-51,200" onclick="toggleSize('51,200')">51-200</span>
+        <span class="chip" id="sz-201,1000" onclick="toggleSize('201,1000')">201-1K</span>
+        <span class="chip" id="sz-1001,5000" onclick="toggleSize('1001,5000')">1K-5K</span>
+        <span class="chip" id="sz-5001,10000" onclick="toggleSize('5001,10000')">5K-10K</span>
+        <span class="chip" id="sz-10001,+" onclick="toggleSize('10001,+')">10K+</span>
+      </div>
+
+      <!-- Location -->
+      <label>Location (optional)</label>
+      <input type="text" id="location-input" placeholder="e.g. United States, Canada, United Kingdom"/>
+
+      <!-- Keywords -->
+      <label>Keywords (optional)</label>
+      <input type="text" id="keywords-input" placeholder="e.g. cybersecurity, compliance, HIPAA"/>
+
+      <!-- Results per page -->
+      <label>Results per search</label>
+      <select id="perpage-select">
+        <option value="25">25 contacts</option>
+        <option value="50">50 contacts</option>
+        <option value="100">100 contacts</option>
+      </select>
+
+      <div class="info-box" style="margin-top:12px">
+        Apollo.io searches 275M+ verified B2B contacts. Hunter.io and Lusha enrich emails and social profiles for selected contacts.
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;margin-top:14px;font-size:14px" onclick="searchLeads()" id="search-btn">
+        🔍 Search Leads
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results Panel -->
+  <div>
+
+    <!-- Stats -->
+    <div class="stat-row" id="stats-row" style="display:none">
+      <div class="stat-box"><div class="stat-val" id="stat-found">0</div><div class="stat-lbl">Found</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:#15803d" id="stat-emails">0</div><div class="stat-lbl">With Email</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--blue)" id="stat-selected">0</div><div class="stat-lbl">Selected</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:#7e22ce" id="stat-enriched">0</div><div class="stat-lbl">Enriched</div></div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="card fb" id="action-bar" style="display:none;margin-bottom:12px">
+      <div class="flex">
+        <button class="btn btn-sm" onclick="selectAll()">☑ Select All</button>
+        <button class="btn btn-sm" onclick="selectNone()">☐ Deselect All</button>
+        <button class="btn btn-sm" onclick="enrichSelected()" id="enrich-btn">🔍 Enrich Emails</button>
+      </div>
+      <div class="flex">
+        <button class="btn btn-sm btn-success" onclick="sendToAgent()" id="send-agent-btn">✉️ Send to Campaign Agent →</button>
+        <button class="btn btn-sm" onclick="exportSelected()">↓ Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="fb" id="pagination" style="display:none;margin-bottom:10px">
+      <span id="result-count" style="font-size:13px;color:var(--text2)"></span>
+      <div class="flex">
+        <button class="btn btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+        <span id="page-info" style="font-size:13px;font-weight:700"></span>
+        <button class="btn btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+      </div>
+    </div>
+
+    <!-- Results list -->
+    <div id="results-container">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3 style="margin-bottom:8px">Find Decision Makers</h3>
+        <p>Search for CISOs, CTOs, VPs of Security and other decision makers using Apollo.io, Hunter.io and Lusha.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let _session=null;
+
+// State
+let titles=['CISO','CTO','CEO','VP of Security','Chief Cybersecurity Officer','Security Manager'];
+let sizes=[];
+let contacts=[];
+let selectedIds=new Set();
+let sources=new Set(['apollo']);
+let currentPage=1;
+let totalPages=1;
+let totalResults=0;
+
+// Init
+async function init(){
+  const{data:{session}}=await sbClient.auth.getSession();
+  if(!session){window.location.href='/login.html';return;}
+  _session=session;
+  document.getElementById('user-email').textContent=session.user.email;
+  renderTitleTags();
+}
+
+// Source toggle
+function toggleSource(src){
+  if(sources.has(src))sources.delete(src);else sources.add(src);
+  ['apollo','hunter','lusha'].forEach(s=>{
+    document.getElementById('src-'+s).className='chip'+(sources.has(s)?' active':'');
+  });
+}
+
+// Size toggle
+function toggleSize(sz){
+  if(sizes.includes(sz))sizes=sizes.filter(s=>s!==sz);
+  else sizes.push(sz);
+  ['1,10','11,50','51,200','201,1000','1001,5000','5001,10000','10001,+'].forEach(s=>{
+    const el=document.getElementById('sz-'+s);
+    if(el)el.className='chip'+(sizes.includes(s)?' active':'');
+  });
+}
+
+// Title tags
+function renderTitleTags(){
+  const container=document.getElementById('title-tags');
+  container.innerHTML=titles.map((t,i)=>`<span class="tag">${t}<button onclick="removeTitle(${i})">×</button></span>`).join('');
+}
+function addTitle(){
+  const inp=document.getElementById('title-input');
+  const val=inp.value.trim();
+  if(val&&!titles.includes(val)){titles.push(val);renderTitleTags();}
+  inp.value='';
+}
+function removeTitle(i){titles.splice(i,1);renderTitleTags();}
+function addPreset(t){if(!titles.includes(t)){titles.push(t);renderTitleTags();}}
+document.getElementById('title-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTitle();});
+
+// SEARCH
+async function searchLeads(page){
+  currentPage=page||1;
+  const btn=document.getElementById('search-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Searching...';
+  document.getElementById('results-container').innerHTML='<div class="empty-state"><span class="spin"></span><p style="margin-top:12px">Searching Apollo.io database...</p></div>';
+
+  const perPage=parseInt(document.getElementById('perpage-select').value);
+  const industry=document.getElementById('industry-input').value.trim();
+  const location=document.getElementById('location-input').value.trim();
+  const keywords=document.getElementById('keywords-input').value.trim();
+
+  try{
+    const resp=await fetch('/.netlify/functions/find-leads',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
+      body:JSON.stringify({
+        action:'search',
+        searchParams:{
+          titles,
+          industries:industry?[industry]:[],
+          companySizes:sizes,
+          locations:location?[location]:[],
+          keywords,
+          page:currentPage,
+          perPage
+        }
+      })
+    });
+    const data=await resp.json();
+    if(data.error){throw new Error(data.error);}
+
+    contacts=data.contacts||[];
+    totalResults=data.total||contacts.length;
+    totalPages=data.totalPages||1;
+    renderResults();
+    updateStats();
+  }catch(e){
+    document.getElementById('results-container').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Search failed</h3><p style="color:red;margin-top:8px">${e.message}</p></div>`;
+  }
+  btn.disabled=false;btn.textContent='🔍 Search Leads';
+}
+
+function changePage(dir){
+  currentPage=Math.max(1,Math.min(totalPages,currentPage+dir));
+  searchLeads(currentPage);
+}
+
+// RENDER RESULTS
+function renderResults(){
+  const container=document.getElementById('results-container');
+  document.getElementById('stats-row').style.display='grid';
+  document.getElementById('action-bar').style.display='flex';
+  document.getElementById('pagination').style.display=totalPages>1?'flex':'none';
+  document.getElementById('result-count').textContent=`Showing ${contacts.length} of ${totalResults.toLocaleString()} results`;
+  document.getElementById('page-info').textContent=`Page ${currentPage} of ${totalPages}`;
+  document.getElementById('prev-btn').disabled=currentPage<=1;
+  document.getElementById('next-btn').disabled=currentPage>=totalPages;
+
+  if(!contacts.length){
+    container.innerHTML='<div class="empty-state"><div class="empty-icon">😕</div><h3>No contacts found</h3><p>Try different titles, industry or location filters.</p></div>';
+    return;
   }
 
-  // ── APOLLO SEARCH ─────────────────────────────────────────
-  if (action === 'search') {
-    if (!APOLLO_KEY) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: 'APOLLO_API_KEY not configured. Go to Netlify → Environment Variables and add APOLLO_API_KEY with your Apollo.io API key.'
-        })
-      };
+  container.innerHTML='';
+  contacts.forEach(c=>{
+    const isSelected=selectedIds.has(c.id);
+    const card=document.createElement('div');
+    card.className='contact-card'+(isSelected?' selected':'');
+    card.onclick=()=>toggleSelect(c.id,card);
+
+    const initials=(c.firstName?c.firstName[0]:'')+(c.lastName?c.lastName[0]:'');
+    const emailBadge=c.email?`<span class="badge" style="background:#f0fdf4;color:#15803d">✉ ${c.email}</span>`:`<span class="badge" style="background:#f3f4f6;color:#6b7280">No email</span>`;
+    const linkedinBtn=c.linkedin?`<a href="${c.linkedin}" target="_blank" onclick="e=>e.stopPropagation()" style="font-size:11px;color:#1d4ed8">LinkedIn ↗</a>`:'';
+    const twitterBtn=c.twitter?`<a href="${c.twitter}" target="_blank" style="font-size:11px;color:#1d4ed8">Twitter ↗</a>`:'';
+
+    card.innerHTML=`
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" style="margin-top:3px;width:auto" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleSelect('${c.id}',this.closest('.contact-card'))"/>
+        <div class="avatar">${initials||'?'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-weight:700">${c.fullName||'Unknown'}</span>
+            <span class="source-badge src-${c.source}">${c.source}</span>
+            ${c.emailStatus==='verified'?'<span class="badge" style="background:#f0fdf4;color:#15803d;font-size:10px">✓ Verified</span>':''}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${c.title||''}${c.company?' · <strong style="color:var(--text)">'+c.company+'</strong>':''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">
+            ${emailBadge}
+            ${c.industry?`<span class="badge" style="background:var(--bg2);color:var(--text2)">${c.industry}</span>`:''}
+            ${c.companySize?`<span class="badge" style="background:var(--bg2);color:var(--text2)">👥 ${Number(c.companySize).toLocaleString()}</span>`:''}
+            ${c.location?`<span class="badge" style="background:var(--bg2);color:var(--text2)">📍 ${c.location}</span>`:''}
+          </div>
+          <div style="display:flex;gap:10px">${linkedinBtn}${twitterBtn}${c.phone?`<span style="font-size:11px;color:var(--text2)">📞 ${c.phone}</span>`:''}</div>
+        </div>
+        <div style="flex-shrink:0">
+          ${!c.email?`<button class="btn btn-sm" onclick="event.stopPropagation();enrichOne('${c.id}')" style="font-size:11px">Find Email</button>`:''}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleSelect(id,card){
+  if(selectedIds.has(id)){selectedIds.delete(id);card.classList.remove('selected');card.querySelector('input[type=checkbox]').checked=false;}
+  else{selectedIds.add(id);card.classList.add('selected');card.querySelector('input[type=checkbox]').checked=true;}
+  updateStats();
+}
+function selectAll(){contacts.forEach(c=>selectedIds.add(c.id));renderResults();updateStats();}
+function selectNone(){selectedIds.clear();renderResults();updateStats();}
+
+function updateStats(){
+  const withEmail=contacts.filter(c=>c.email).length;
+  const enriched=contacts.filter(c=>c._enriched).length;
+  document.getElementById('stat-found').textContent=totalResults.toLocaleString();
+  document.getElementById('stat-emails').textContent=withEmail;
+  document.getElementById('stat-selected').textContent=selectedIds.size;
+  document.getElementById('stat-enriched').textContent=enriched;
+}
+
+// ENRICH EMAILS
+async function enrichSelected(){
+  const toEnrich=contacts.filter(c=>selectedIds.has(c.id)&&!c.email);
+  if(!toEnrich.length){alert('All selected contacts already have emails, or none selected without emails.');return;}
+
+  const btn=document.getElementById('enrich-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Enriching ('+toEnrich.length+')...';
+
+  let enriched=0;
+  for(const c of toEnrich){
+    // Try Hunter.io first
+    if(sources.has('hunter')){
+      try{
+        const resp=await fetch('/.netlify/functions/find-leads',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
+          body:JSON.stringify({action:'find-email',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company,domain:c.website?new URL(c.website).hostname:''}})
+        });
+        const data=await resp.json();
+        if(data.email){c.email=data.email;c.emailStatus='hunter';c._enriched=true;enriched++;}
+      }catch(e){}
     }
 
-    const titles = searchParams.titles || [
-      'CISO', 'Chief Information Security Officer', 'CTO', 'CEO',
-      'VP of Security', 'VP of IT', 'Chief Security Officer',
-      'Chief Cybersecurity Officer', 'Security Manager', 'Security Lead',
-      'Head of Information Security', 'Director of Security'
-    ];
-
-    const apolloPayload = {
-      page: searchParams.page || 1,
-      per_page: Math.min(searchParams.perPage || 25, 100),
-      person_titles: titles
-    };
-
-    if (searchParams.locations && searchParams.locations.length > 0) {
-      apolloPayload.person_locations = searchParams.locations;
+    // Try Lusha if no email found
+    if(!c.email&&sources.has('lusha')){
+      try{
+        const resp=await fetch('/.netlify/functions/find-leads',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
+          body:JSON.stringify({action:'enrich',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})
+        });
+        const data=await resp.json();
+        if(data.email){c.email=data.email;c.twitter=c.twitter||data.twitter;c.linkedin=c.linkedin||data.linkedin;c._enriched=true;enriched++;}
+      }catch(e){}
     }
-    if (searchParams.keywords) {
-      apolloPayload.q_keywords = searchParams.keywords;
-    }
-    if (searchParams.companySizes && searchParams.companySizes.length > 0) {
-      apolloPayload.organization_num_employees_ranges = searchParams.companySizes;
-    }
-
-    try {
-      const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'x-api-key': APOLLO_KEY
-        },
-        body: JSON.stringify(apolloPayload)
-      });
-
-      const responseText = await res.text();
-
-      if (!res.ok) {
-        let errMsg = 'Apollo API error ' + res.status;
-        try {
-          const errData = JSON.parse(responseText);
-          errMsg = errData.message || errData.error || errMsg;
-          if (res.status === 422) errMsg = 'Apollo API key may be invalid or plan does not support this search. Check your Apollo.io account.';
-          if (res.status === 401) errMsg = 'Apollo API key is invalid. Please check APOLLO_API_KEY in Netlify environment variables.';
-        } catch(e) {}
-        return { statusCode: res.status, headers, body: JSON.stringify({ error: errMsg }) };
-      }
-
-      const data = JSON.parse(responseText);
-      const contacts = (data.people || []).map(p => ({
-        id: p.id || Math.random().toString(36).substr(2),
-        firstName: p.first_name || '',
-        lastName: p.last_name || '',
-        fullName: p.name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim(),
-        title: p.title || '',
-        company: p.organization ? p.organization.name || '' : '',
-        industry: p.organization ? p.organization.industry || '' : '',
-        companySize: p.organization ? String(p.organization.estimated_num_employees || '') : '',
-        location: [p.city, p.country].filter(Boolean).join(', '),
-        email: p.email || '',
-        emailStatus: p.email_status || '',
-        linkedin: p.linkedin_url || '',
-        twitter: p.twitter_url || '',
-        phone: p.phone_numbers && p.phone_numbers[0] ? p.phone_numbers[0].sanitized_number || '' : '',
-        website: p.organization ? p.organization.website_url || '' : '',
-        source: 'apollo'
-      }));
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          contacts,
-          total: data.pagination ? data.pagination.total_entries || contacts.length : contacts.length,
-          page: data.pagination ? data.pagination.page || 1 : 1,
-          totalPages: data.pagination ? data.pagination.total_pages || 1 : 1
-        })
-      };
-    } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Apollo search failed: ' + e.message }) };
-    }
+    await new Promise(r=>setTimeout(r,200));
   }
 
-  // ── HUNTER EMAIL FIND ──────────────────────────────────────
-  if (action === 'find-email') {
-    if (!HUNTER_KEY) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'HUNTER_API_KEY not configured in Netlify environment variables.' }) };
-    }
+  renderResults();updateStats();
+  btn.disabled=false;btn.textContent='🔍 Enrich Emails';
+  alert(`Enrichment complete: ${enriched} email(s) found out of ${toEnrich.length} contacts.`);
+}
 
-    const { firstName, lastName, company, domain } = contact;
-    if (!firstName || !lastName || (!company && !domain)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName, lastName and company or domain are required' }) };
-    }
-
-    try {
-      let url = 'https://api.hunter.io/v2/email-finder'
-        + '?first_name=' + encodeURIComponent(firstName)
-        + '&last_name=' + encodeURIComponent(lastName)
-        + '&api_key=' + HUNTER_KEY;
-      if (domain) url += '&domain=' + encodeURIComponent(domain);
-      else url += '&company=' + encodeURIComponent(company);
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.data && data.data.email) {
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            email: data.data.email,
-            score: data.data.score || 0,
-            status: data.data.verification ? data.data.verification.status : 'unknown',
-            source: 'hunter'
-          })
-        };
-      }
-      return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Email not found by Hunter.io' }) };
-    } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Hunter.io error: ' + e.message }) };
-    }
+async function enrichOne(id){
+  const c=contacts.find(x=>x.id===id);
+  if(!c)return;
+  if(sources.has('hunter')){
+    try{
+      const resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},body:JSON.stringify({action:'find-email',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})});
+      const data=await resp.json();
+      if(data.email){c.email=data.email;c._enriched=true;renderResults();updateStats();return;}
+    }catch(e){}
   }
-
-  // ── LUSHA ENRICH ──────────────────────────────────────────
-  if (action === 'enrich') {
-    if (!LUSHA_KEY) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'LUSHA_API_KEY not configured in Netlify environment variables.' }) };
-    }
-
-    const { firstName, lastName, company } = contact;
-    if (!firstName || !lastName) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName required' }) };
-    }
-
-    try {
-      let url = 'https://api.lusha.com/person'
-        + '?firstName=' + encodeURIComponent(firstName)
-        + '&lastName=' + encodeURIComponent(lastName);
-      if (company) url += '&company=' + encodeURIComponent(company);
-
-      const res = await fetch(url, { headers: { 'api_key': LUSHA_KEY } });
-      const data = await res.json();
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          email: data.emailAddresses && data.emailAddresses[0] ? data.emailAddresses[0].email : null,
-          phone: data.phoneNumbers && data.phoneNumbers[0] ? data.phoneNumbers[0].localNumber : null,
-          twitter: data.twitterHandle || null,
-          linkedin: data.linkedinUrl || null,
-          source: 'lusha'
-        })
-      };
-    } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Lusha error: ' + e.message }) };
-    }
+  if(sources.has('lusha')){
+    try{
+      const resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},body:JSON.stringify({action:'enrich',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})});
+      const data=await resp.json();
+      if(data.email){c.email=data.email;c._enriched=true;renderResults();updateStats();return;}
+    }catch(e){}
   }
+  alert('Email not found for this contact.');
+}
 
-  return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid action. Use: search, find-email, or enrich' }) };
-};
+// SEND TO CAMPAIGN AGENT
+function sendToAgent(){
+  const selected=contacts.filter(c=>selectedIds.has(c.id)&&c.email);
+  if(!selected.length){alert('Please select contacts with email addresses first. Use "Enrich Emails" to find missing emails.');return;}
+
+  // Build CSV and store in sessionStorage for app.html to pick up
+  const headers=['First Name','Last Name','Email','Company','Job Title','Industry','Company Size','LinkedIn','Twitter'];
+  const rows=selected.map(c=>[c.firstName,c.lastName,c.email,c.company,c.title,c.industry,c.companySize||'',c.linkedin||'',c.twitter||'']);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  sessionStorage.setItem('velorah_leads_csv',csv);
+  sessionStorage.setItem('velorah_leads_count',selected.length);
+  alert(selected.length+' contacts ready! Redirecting to Campaign Agent...');
+  window.location.href='/app.html?from=find-leads';
+}
+
+// EXPORT CSV
+function exportSelected(){
+  const selected=contacts.filter(c=>selectedIds.has(c.id));
+  if(!selected.length){alert('Select contacts to export.');return;}
+  const hdrs=['First Name','Last Name','Email','Company','Job Title','Industry','Company Size','Location','LinkedIn','Twitter','Phone','Source'];
+  const rows=selected.map(c=>[c.firstName,c.lastName,c.email||'',c.company,c.title,c.industry,c.companySize||'',c.location||'',c.linkedin||'',c.twitter||'',c.phone||'',c.source]);
+  const csv=[hdrs,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='velorah_leads_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+
+init();
+</script>
+</body>
+</html>
