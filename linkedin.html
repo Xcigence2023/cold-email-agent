@@ -451,21 +451,70 @@ function applyFilters(){
 }
 
 async function enrichEmails(btn){
-  var orig=btn.textContent;btn.disabled=true;btn.textContent='Enriching...';
+  var orig=btn.textContent;
   var noEmail=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName;});
-  var found=0;
+  if(!noEmail.length){alert('All selected contacts already have email addresses.');return;}
+
+  // Check if contacts have company names
+  var noCompany=noEmail.filter(function(r){return !r.company;});
+  if(noCompany.length===noEmail.length){
+    alert('Email enrichment requires company names. Your LinkedIn export may not include company data. Try uploading a more complete CSV or use the Find Leads page to search by job title.');
+    return;
+  }
+
+  btn.disabled=true;
+  var found=0;var tried=0;var errors=[];
+
   for(var i=0;i<noEmail.length;i++){
     var r=noEmail[i];
+    if(!r.firstName||!r.lastName){continue;}
+    tried++;
+    btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
+
+    // Try Hunter.io first
     try{
-      var resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||''}})});
-      var data=await resp.json();
-      if(data.email){r.email=data.email;found++;}
-    }catch(e){}
-    await delay(300);
+      var resp=await fetch('/.netlify/functions/find-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',domain:''}})
+      });
+      if(resp.ok){
+        var data=await resp.json();
+        if(data.email){r.email=data.email;found++;continue;}
+        if(data.error)errors.push('Hunter: '+data.error);
+      }
+    }catch(e){errors.push('Hunter error: '+e.message);}
+
+    // Try Lusha as fallback
+    if(!r.email&&r.company){
+      try{
+        var resp2=await fetch('/.netlify/functions/find-leads',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'enrich',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})
+        });
+        if(resp2.ok){
+          var data2=await resp2.json();
+          if(data2.email){r.email=data2.email;found++;}
+        }
+      }catch(e){}
+    }
+    await delay(400);
   }
+
   btn.disabled=false;btn.textContent=orig;
   showTab('filter',document.querySelectorAll('.tab-btn')[1]);
-  alert(found>0?('Found '+found+' email addresses!'):'No additional emails found. Try the Find Leads page for more enrichment options.');
+
+  if(found>0){
+    alert('Email enrichment complete! Found '+found+' email addresses out of '+tried+' contacts searched.');
+  } else {
+    var msg='No emails found for '+tried+' contacts.\n\nCommon reasons:\n';
+    msg+='1. HUNTER_API_KEY or LUSHA_API_KEY not set in Netlify environment variables\n';
+    msg+='2. Hunter.io free plan limit reached (25/month)\n';
+    msg+='3. These contacts haven\'t shared their emails publicly\n\n';
+    msg+='Check Netlify -> Environment Variables for HUNTER_API_KEY and LUSHA_API_KEY.';
+    alert(msg);
+  }
 }
 
 // ========== STEP 3: COMPOSE ==========
