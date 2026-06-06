@@ -9,147 +9,151 @@ exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  const APOLLO_KEY  = process.env.APOLLO_API_KEY;
-  const HUNTER_KEY  = process.env.HUNTER_API_KEY;
-  const LUSHA_KEY   = process.env.LUSHA_API_KEY;
+  const APOLLO_KEY = process.env.APOLLO_API_KEY;
+  const HUNTER_KEY = process.env.HUNTER_API_KEY;
+  const LUSHA_KEY  = process.env.LUSHA_API_KEY;
 
   let action, searchParams, contact;
   try {
     const body = JSON.parse(event.body || '{}');
-    action = body.action || 'search';
+    action       = body.action || 'search';
     searchParams = body.searchParams || {};
-    contact = body.contact || {};
+    contact      = body.contact || {};
   } catch(e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
-  // ── APOLLO SEARCH ─────────────────────────────────────────
+  // ── APOLLO PEOPLE SEARCH ──────────────────────────────────
   if (action === 'search') {
-    if (!APOLLO_KEY) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error: 'APOLLO_API_KEY not configured. Go to Netlify → Environment Variables and add APOLLO_API_KEY with your Apollo.io API key.'
-        })
-      };
-    }
+    if (!APOLLO_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'APOLLO_API_KEY not configured in Netlify environment variables.' }) };
 
     const titles = searchParams.titles || [
-      'CISO', 'Chief Information Security Officer', 'CTO', 'CEO',
-      'VP of Security', 'VP of IT', 'Chief Security Officer',
-      'Chief Cybersecurity Officer', 'Security Manager', 'Security Lead',
-      'Head of Information Security', 'Director of Security'
+      'CISO','Chief Information Security Officer','CTO','Chief Technology Officer',
+      'CEO','Chief Executive Officer','VP of Security','VP of IT',
+      'Vice President of Security','Vice President of IT',
+      'Chief Security Officer','Chief Cybersecurity Officer',
+      'Security Manager','Security Lead','Security Director',
+      'Head of Information Security','Director of Security',
+      'Director of Information Security','Director of IT',
+      'Head of Cybersecurity','Cybersecurity Manager',
+      'Information Security Manager','IT Security Manager',
+      'Security Architect','Chief Information Officer','CIO'
     ];
 
-    const apolloPayload = {
-      page: searchParams.page || 1,
+    const basePayload = {
+      page:     searchParams.page    || 1,
       per_page: Math.min(searchParams.perPage || 25, 100),
       person_titles: titles
     };
 
-    if (searchParams.locations && searchParams.locations.length > 0) {
-      apolloPayload.person_locations = searchParams.locations;
-    }
-    if (searchParams.keywords) {
-      apolloPayload.q_keywords = searchParams.keywords;
-    }
-    if (searchParams.companySizes && searchParams.companySizes.length > 0) {
-      apolloPayload.organization_num_employees_ranges = searchParams.companySizes;
-    }
+    if (searchParams.locations    && searchParams.locations.length > 0)    basePayload.person_locations = searchParams.locations;
+    if (searchParams.keywords)                                               basePayload.q_keywords = searchParams.keywords;
+    if (searchParams.companySizes && searchParams.companySizes.length > 0)  basePayload.organization_num_employees_ranges = searchParams.companySizes;
 
-    try {
-      const res = await fetch('https://api.apollo.io/v1/contacts/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'x-api-key': APOLLO_KEY
-        },
-        body: JSON.stringify(apolloPayload)
-      });
+    // All Apollo endpoints to try in order
+    const endpoints = [
+      { url: 'https://api.apollo.io/v1/mixed_people/search',   label: 'mixed_people' },
+      { url: 'https://api.apollo.io/v1/contacts/search',        label: 'contacts' },
+      { url: 'https://api.apollo.io/v1/people/search',          label: 'people' },
+      { url: 'https://api.apollo.io/api/v1/mixed_people/search',label: 'api/mixed_people' },
+      { url: 'https://api.apollo.io/api/v1/contacts/search',    label: 'api/contacts' },
+      { url: 'https://api.apollo.io/api/v1/people/search',      label: 'api/people' },
+    ];
 
-      const responseText = await res.text();
+    // Auth methods to try
+    const authVariants = [
+      (key) => ({ 'x-api-key': key }),
+      (key) => ({ 'X-Api-Key': key }),
+      (key) => ({ 'Authorization': 'Bearer ' + key }),
+    ];
 
-      if (!res.ok) {
-        let errMsg = 'Apollo API error ' + res.status;
+    const errors = [];
+
+    for (const ep of endpoints) {
+      for (const authFn of authVariants) {
         try {
-          const errData = JSON.parse(responseText);
-          errMsg = errData.message || errData.error || errMsg;
-          if (res.status === 422) errMsg = 'Apollo API key does not have permission for this endpoint. Go to Apollo → API Keys → create a new key with contacts/search permission.';
-          if (res.status === 401) errMsg = 'Apollo API key is invalid. Please check APOLLO_API_KEY in Netlify environment variables.';
-        } catch(e) {}
-        return { statusCode: res.status, headers, body: JSON.stringify({ error: errMsg }) };
+          const payload = Object.assign({}, basePayload);
+          const res = await fetch(ep.url, {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }, authFn(APOLLO_KEY)),
+            body: JSON.stringify(payload)
+          });
+
+          if (res.status === 404 || res.status === 405) continue;
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            let msg = ep.label + ' ' + res.status;
+            try { const d = JSON.parse(text); msg += ': ' + (d.message || d.error || ''); } catch(e) {}
+            errors.push(msg);
+            continue;
+          }
+
+          const data = JSON.parse(text);
+          const people = data.people || data.contacts || data.results || [];
+
+          if (!people.length && data.pagination && data.pagination.total_entries === 0) {
+            return { statusCode: 200, headers, body: JSON.stringify({ contacts: [], total: 0, page: 1, totalPages: 0, message: 'No contacts found for these filters. Try broader search terms.' }) };
+          }
+
+          const contacts = people.map(p => ({
+            id:          p.id || Math.random().toString(36).substr(2, 9),
+            firstName:   p.first_name  || '',
+            lastName:    p.last_name   || '',
+            fullName:    p.name        || ((p.first_name||'')+' '+(p.last_name||'')).trim(),
+            title:       p.title       || '',
+            company:     p.organization ? p.organization.name || '' : '',
+            industry:    p.organization ? p.organization.industry || '' : '',
+            companySize: p.organization ? String(p.organization.estimated_num_employees || '') : '',
+            location:    [p.city, p.state, p.country].filter(Boolean).join(', '),
+            email:       p.email        || '',
+            emailStatus: p.email_status || '',
+            linkedin:    p.linkedin_url || '',
+            twitter:     p.twitter_url  || '',
+            phone:       p.phone_numbers && p.phone_numbers[0] ? p.phone_numbers[0].sanitized_number || '' : '',
+            website:     p.organization ? p.organization.website_url || '' : '',
+            source:      'apollo',
+            endpoint:    ep.label
+          }));
+
+          return { statusCode: 200, headers, body: JSON.stringify({
+            contacts,
+            total:      data.pagination ? data.pagination.total_entries || contacts.length : contacts.length,
+            page:       data.pagination ? data.pagination.page          || 1 : 1,
+            totalPages: data.pagination ? data.pagination.total_pages   || 1 : 1,
+            endpoint:   ep.label
+          })};
+
+        } catch(e) {
+          errors.push(ep.label + ': ' + e.message);
+          continue;
+        }
       }
-
-      const data = JSON.parse(responseText);
-      const contacts = (data.people || []).map(p => ({
-        id: p.id || Math.random().toString(36).substr(2),
-        firstName: p.first_name || '',
-        lastName: p.last_name || '',
-        fullName: p.name || ((p.first_name || '') + ' ' + (p.last_name || '')).trim(),
-        title: p.title || '',
-        company: p.organization ? p.organization.name || '' : '',
-        industry: p.organization ? p.organization.industry || '' : '',
-        companySize: p.organization ? String(p.organization.estimated_num_employees || '') : '',
-        location: [p.city, p.country].filter(Boolean).join(', '),
-        email: p.email || '',
-        emailStatus: p.email_status || '',
-        linkedin: p.linkedin_url || '',
-        twitter: p.twitter_url || '',
-        phone: p.phone_numbers && p.phone_numbers[0] ? p.phone_numbers[0].sanitized_number || '' : '',
-        website: p.organization ? p.organization.website_url || '' : '',
-        source: 'apollo'
-      }));
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          contacts,
-          total: data.pagination ? data.pagination.total_entries || contacts.length : contacts.length,
-          page: data.pagination ? data.pagination.page || 1 : 1,
-          totalPages: data.pagination ? data.pagination.total_pages || 1 : 1
-        })
-      };
-    } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Apollo search failed: ' + e.message }) };
     }
+
+    // All endpoints failed
+    return { statusCode: 403, headers, body: JSON.stringify({
+      error: 'Could not access Apollo API. Errors: ' + errors.slice(0,3).join(' | ') + '. Please check: 1) APOLLO_API_KEY is correct in Netlify env vars 2) Your API key has search permissions at developer.apollo.io/keys'
+    })};
   }
 
-  // ── HUNTER EMAIL FIND ──────────────────────────────────────
+  // ── HUNTER EMAIL FINDER ───────────────────────────────────
   if (action === 'find-email') {
-    if (!HUNTER_KEY) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'HUNTER_API_KEY not configured in Netlify environment variables.' }) };
-    }
-
+    if (!HUNTER_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'HUNTER_API_KEY not configured in Netlify environment variables.' }) };
     const { firstName, lastName, company, domain } = contact;
-    if (!firstName || !lastName || (!company && !domain)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName, lastName and company or domain are required' }) };
-    }
-
+    if (!firstName || !lastName || (!company && !domain)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName, lastName and company or domain are required' }) };
     try {
       let url = 'https://api.hunter.io/v2/email-finder'
         + '?first_name=' + encodeURIComponent(firstName)
-        + '&last_name=' + encodeURIComponent(lastName)
-        + '&api_key=' + HUNTER_KEY;
-      if (domain) url += '&domain=' + encodeURIComponent(domain);
-      else url += '&company=' + encodeURIComponent(company);
-
-      const res = await fetch(url);
+        + '&last_name='  + encodeURIComponent(lastName)
+        + '&api_key='    + HUNTER_KEY;
+      if (domain)  url += '&domain='  + encodeURIComponent(domain);
+      else         url += '&company=' + encodeURIComponent(company);
+      const res  = await fetch(url);
       const data = await res.json();
-
       if (data.data && data.data.email) {
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            email: data.data.email,
-            score: data.data.score || 0,
-            status: data.data.verification ? data.data.verification.status : 'unknown',
-            source: 'hunter'
-          })
-        };
+        return { statusCode: 200, headers, body: JSON.stringify({ email: data.data.email, score: data.data.score || 0, source: 'hunter' }) };
       }
       return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Email not found by Hunter.io' }) };
     } catch(e) {
@@ -157,37 +161,25 @@ exports.handler = async function(event) {
     }
   }
 
-  // ── LUSHA ENRICH ──────────────────────────────────────────
+  // ── LUSHA ENRICHMENT ──────────────────────────────────────
   if (action === 'enrich') {
-    if (!LUSHA_KEY) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'LUSHA_API_KEY not configured in Netlify environment variables.' }) };
-    }
-
+    if (!LUSHA_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'LUSHA_API_KEY not configured in Netlify environment variables.' }) };
     const { firstName, lastName, company } = contact;
-    if (!firstName || !lastName) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName required' }) };
-    }
-
+    if (!firstName || !lastName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName are required' }) };
     try {
       let url = 'https://api.lusha.com/person'
         + '?firstName=' + encodeURIComponent(firstName)
-        + '&lastName=' + encodeURIComponent(lastName);
+        + '&lastName='  + encodeURIComponent(lastName);
       if (company) url += '&company=' + encodeURIComponent(company);
-
-      const res = await fetch(url, { headers: { 'api_key': LUSHA_KEY } });
+      const res  = await fetch(url, { headers: { 'api_key': LUSHA_KEY } });
       const data = await res.json();
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          email: data.emailAddresses && data.emailAddresses[0] ? data.emailAddresses[0].email : null,
-          phone: data.phoneNumbers && data.phoneNumbers[0] ? data.phoneNumbers[0].localNumber : null,
-          twitter: data.twitterHandle || null,
-          linkedin: data.linkedinUrl || null,
-          source: 'lusha'
-        })
-      };
+      return { statusCode: 200, headers, body: JSON.stringify({
+        email:   data.emailAddresses  && data.emailAddresses[0]  ? data.emailAddresses[0].email           : null,
+        phone:   data.phoneNumbers    && data.phoneNumbers[0]    ? data.phoneNumbers[0].localNumber        : null,
+        twitter: data.twitterHandle || null,
+        linkedin:data.linkedinUrl   || null,
+        source: 'lusha'
+      })};
     } catch(e) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Lusha error: ' + e.message }) };
     }
