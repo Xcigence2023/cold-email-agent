@@ -3,300 +3,533 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah — Email History</title>
+<title>Velorah — Email Analytics</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--r:8px;--rl:12px}
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f5f5f0;--text2:#aeaeb2;--border:#3a3a3c;--border2:#48484a}}
+:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--green:#15803d;--green-bg:#f0fdf4;--red:#dc2626;--red-bg:#fff1f2;--r:8px;--rl:12px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 1.5rem;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.topbar-left a{font-size:13px;color:#1d4ed8;text-decoration:none;font-weight:500}
-.topbar-left a:hover{text-decoration:underline}
-.page{max-width:1100px;margin:0 auto;padding:1.5rem}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.topbar-nav{display:flex;gap:4px}
+.topbar-nav a{font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;text-decoration:none;color:var(--text2)}
+.topbar-nav a:hover{background:var(--bg2);color:var(--text)}
+.topbar-nav a.active{background:var(--blue-bg);color:var(--blue)}
+.page{max-width:1200px;margin:0 auto;padding:1.5rem}
 .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem}
-input,select{font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
-input:focus,select:focus{outline:none;border-color:#1d4ed8}
 .btn{cursor:pointer;font-size:13px;font-weight:600;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap}
 .btn:hover{background:var(--bg2)}
-.btn-primary{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.btn-ai{background:linear-gradient(135deg,#7c3aed,#1d4ed8);color:#fff;border:none}
+.btn-ai:hover{opacity:.9}
+.btn-sm{padding:4px 10px;font-size:12px}
 .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1rem}
-@media(max-width:600px){.stat-grid{grid-template-columns:1fr 1fr}}
-.stat-card{background:var(--bg2);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--border)}
-.stat-val{font-size:24px;font-weight:700;line-height:1}
-.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px}
+input,select{font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1rem}
+@media(max-width:900px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px;text-align:center}
+.stat-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--text2);font-weight:500}
+.stat-sub{font-size:10px;color:var(--text2);margin-top:2px}
+/* RATE BAR */
+.rate-wrap{margin:4px 0 0}
+.rate-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden}
+.rate-fill{height:100%;border-radius:2px;transition:width .5s}
+/* TABLE */
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);background:var(--bg2);white-space:nowrap}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);background:var(--bg2);white-space:nowrap;cursor:pointer}
+th:hover{color:var(--text)}
 td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:hover td{background:var(--bg2)}
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:space-between;flex-wrap:wrap}
-.loading{text-align:center;padding:3rem;color:var(--text2)}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-opened{background:#dcfce7;color:#15803d}
+.b-clicked{background:#dbeafe;color:#1d4ed8}
+.b-delivered{background:#fef9c3;color:#854d0e}
+.b-bounced{background:#fee2e2;color:#dc2626}
+.b-pending{background:#f3f4f6;color:#6b7280}
+.b-unsubscribed{background:#fce7f3;color:#9d174d}
+/* AI SCORE */
+.score-hot{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border:1px solid #fcd34d}
+.score-warm{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid var(--blue-border)}
+.score-cold{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:#f3f4f6;color:#6b7280;border:1px solid var(--border)}
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.donut{position:relative;width:100px;height:100px;flex-shrink:0}
+.donut svg{transform:rotate(-90deg)}
+.donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.donut-label span{font-size:9px;color:var(--text2);font-weight:500}
+.legend{display:flex;flex-direction:column;gap:6px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+/* HOT LEAD CARD */
+.hot-card{border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;transition:border-color .15s;position:relative;overflow:hidden}
+.hot-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.hot-card.tier-hot::before{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.hot-card.tier-warm::before{background:var(--blue)}
+.hot-card.tier-cold::before{background:var(--border2)}
+/* SPIN */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* PROGRESS */
+.progress-mini{display:flex;align-items:center;gap:6px;font-size:11px}
+.pm-bar{width:60px;height:4px;border-radius:2px;background:var(--border);overflow:hidden}
+.pm-fill{height:100%;border-radius:2px}
+/* EMPTY */
 .empty{text-align:center;padding:3rem;color:var(--text2)}
-.empty-icon{font-size:36px;margin-bottom:12px}
-.search-bar{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;margin-bottom:14px;align-items:center}
-@media(max-width:600px){.search-bar{grid-template-columns:1fr}}
-.tag{font-size:11px;padding:2px 6px;border-radius:3px;background:var(--bg2);color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.empty-icon{font-size:40px;margin-bottom:12px}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="topbar-left">
-    <strong>✉️ Velorah</strong>
-    <a href="/app.html">← Back to Campaigns</a>
-    <span id="user-email" style="color:var(--text2);font-size:12px"></span>
+  <div class="flex">
+    <strong style="font-size:15px">✉️ Velorah</strong>
+    <nav class="topbar-nav">
+      <a href="/app.html">🚀 Campaigns</a>
+      <a href="/find-leads.html">🔍 Find Leads</a>
+      <a href="/history.html" class="active">📋 History</a>
+    </nav>
   </div>
   <div class="flex">
-    <button class="btn" onclick="exportCSV()">↓ Export CSV</button>
-    <button class="btn" onclick="refreshTracking()">🔄 Refresh Tracking</button>
-    <button class="btn" onclick="signOut()" style="color:var(--text2)">Sign out</button>
+    <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
+    <button class="btn btn-sm btn-ai" onclick="runAIPrediction()" id="ai-btn">🤖 AI Predict Interest</button>
+    <button class="btn btn-sm" onclick="refreshTracking()" id="refresh-btn">🔄 Refresh Tracking</button>
+    <button class="btn btn-sm" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="btn btn-sm" onclick="signOut()">Sign out</button>
   </div>
 </div>
 
 <div class="page">
+  <!-- Header -->
   <div class="fb" style="margin-bottom:1rem">
     <div>
-      <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">📋 Email Send History</h1>
-      <p style="font-size:13px;color:var(--text2)">All emails sent from your campaigns</p>
+      <h1 style="font-size:20px;font-weight:700;margin-bottom:4px">📊 Email Analytics</h1>
+      <p id="last-updated" style="font-size:12px;color:var(--text2)">Loading...</p>
     </div>
-  </div>
-
-  <!-- Stats -->
-  <div class="stat-grid" id="stats-grid">
-    <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total Sent</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#15803d" id="stat-opened">—</div><div class="stat-lbl">🟢 Opened</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#1d4ed8" id="stat-clicked">—</div><div class="stat-lbl">🔵 Clicked</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#854d0e" id="stat-delivered">—</div><div class="stat-lbl">🟡 Delivered</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#dc2626" id="stat-bounced">—</div><div class="stat-lbl">🔴 Bounced</div></div>
-  </div>
-
-  <!-- Filters -->
-  <div class="card" style="margin-bottom:12px">
-    <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Search by name, email, company..." oninput="debounceSearch()"/>
-      <select id="status-filter" onchange="loadHistory(0)">
-        <option value="">All Statuses</option>
-        <option value="sent">Sent</option>
-        <option value="scheduled">Scheduled</option>
-        <option value="failed">Failed</option>
-      </select>
-      <select id="tracking-filter" onchange="loadHistory(0)">
-        <option value="">All Tracking</option>
+    <!-- Filters -->
+    <div class="flex">
+      <input type="text" id="search-inp" placeholder="Search name, email, company..." style="width:220px" oninput="applyFilters()"/>
+      <select id="status-filter" onchange="applyFilters()">
+        <option value="">All Status</option>
         <option value="opened">Opened</option>
         <option value="clicked">Clicked</option>
         <option value="delivered">Delivered</option>
         <option value="bounced">Bounced</option>
         <option value="pending">Pending</option>
       </select>
-      <button class="btn btn-primary" onclick="loadHistory(0)">Search</button>
+      <select id="campaign-filter" onchange="applyFilters()">
+        <option value="">All Campaigns</option>
+      </select>
     </div>
   </div>
 
-  <!-- Table -->
-  <div class="card" id="table-container">
-    <div class="loading">Loading history...</div>
+  <!-- Stats Row -->
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="s-total">-</div><div class="stat-lbl">Total Sent</div></div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#15803d" id="s-opened">-</div>
+      <div class="stat-lbl">Opened</div>
+      <div class="rate-wrap"><div class="rate-bar"><div class="rate-fill" id="s-open-bar" style="background:#15803d;width:0%"></div></div></div>
+      <div class="stat-sub" id="s-open-pct">0%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#1d4ed8" id="s-clicked">-</div>
+      <div class="stat-lbl">Clicked</div>
+      <div class="rate-wrap"><div class="rate-bar"><div class="rate-fill" id="s-click-bar" style="background:#1d4ed8;width:0%"></div></div></div>
+      <div class="stat-sub" id="s-click-pct">0%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#854d0e" id="s-delivered">-</div>
+      <div class="stat-lbl">Delivered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#dc2626" id="s-bounced">-</div>
+      <div class="stat-lbl">Bounced</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#9d174d" id="s-unsub">-</div>
+      <div class="stat-lbl">Unsubscribed</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('all',this)">All Emails</div>
+    <div class="tab" onclick="switchTab('hot',this)">🔥 Hot Leads</div>
+    <div class="tab" onclick="switchTab('opened',this)">👁 Opened</div>
+    <div class="tab" onclick="switchTab('clicked',this)">🔵 Clicked</div>
+    <div class="tab" onclick="switchTab('pending',this)">⚪ Not Opened</div>
+  </div>
+
+  <!-- Main content -->
+  <div id="main-content">
+    <div class="card"><div class="empty"><div class="spin"></div><p style="margin-top:12px">Loading email history...</p></div></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="fb" id="pagination" style="display:none;margin-top:12px">
+    <span id="page-info" style="font-size:13px;color:var(--text2)"></span>
+    <div class="flex">
+      <button class="btn btn-sm" id="prev-btn" onclick="changePage(-1)">← Prev</button>
+      <button class="btn btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+    </div>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
-const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
+const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
 let _session=null;
-let _records=[];
-let _total=0;
-let _offset=0;
-const PAGE_SIZE=50;
-let _searchTimer=null;
+let allRecords=[];
+let filtered=[];
+let predictions={};
+let currentTab='all';
+let currentPage=1;
+const PAGE=50;
 
 async function init(){
   const{data:{session}}=await sbClient.auth.getSession();
   if(!session){window.location.href='/login.html';return;}
   _session=session;
   document.getElementById('user-email').textContent=session.user.email;
-  await loadHistory(0);
+  await loadHistory();
 }
 
-function debounceSearch(){
-  clearTimeout(_searchTimer);
-  _searchTimer=setTimeout(()=>loadHistory(0),500);
-}
-
-async function loadHistory(offset){
-  _offset=offset||0;
-  const container=document.getElementById('table-container');
-  container.innerHTML='<div class="loading">⏳ Loading...</div>';
-
-  const search=document.getElementById('search-input').value.trim();
-  const status=document.getElementById('status-filter').value;
-  const tracking=document.getElementById('tracking-filter').value;
-
-  let url=`/.netlify/functions/email-history?limit=${PAGE_SIZE}&offset=${_offset}`;
-  if(search)url+='&search='+encodeURIComponent(search);
-  if(status)url+='&status='+status;
-  if(tracking)url+='&tracking='+tracking;
-
+async function loadHistory(){
   try{
-    const resp=await fetch(url,{headers:{'Authorization':'Bearer '+_session.access_token}});
+    const resp=await fetch('/.netlify/functions/email-history?limit=1000',{
+      headers:{'Authorization':'Bearer '+_session.access_token}
+    });
     const data=await resp.json();
-    _records=data.records||[];
-    _total=data.total||0;
-    renderTable();
+    allRecords=data.records||[];
+    document.getElementById('last-updated').textContent='Last updated: '+new Date().toLocaleString()+' · '+allRecords.length+' total emails';
+    populateCampaignFilter();
     updateStats();
+    applyFilters();
   }catch(e){
-    container.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><p>Failed to load history: '+e.message+'</p></div>';
+    document.getElementById('main-content').innerHTML='<div class="card"><div class="empty"><div class="empty-icon">⚠️</div><p>Failed to load: '+e.message+'</p></div></div>';
   }
 }
 
-function trackingBadge(t,s){
-  if(t==='opened')  return'<span class="badge" style="background:#dcfce7;color:#15803d">🟢 Opened</span>';
-  if(t==='clicked') return'<span class="badge" style="background:#dbeafe;color:#1d4ed8">🔵 Clicked</span>';
-  if(t==='delivered')return'<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 Delivered</span>';
-  if(t==='bounced') return'<span class="badge" style="background:#fee2e2;color:#dc2626">🔴 Bounced</span>';
-  if(s==='scheduled')return'<span class="badge" style="background:#f3e8ff;color:#7e22ce">⏰ Scheduled</span>';
-  if(s==='failed')  return'<span class="badge" style="background:#fee2e2;color:#dc2626">🔴 Failed</span>';
-  return'<span class="badge" style="background:#f3f4f6;color:#6b7280">⚪ Pending</span>';
-}
-
-function rowBg(t,s){
-  if(t==='opened')  return'#f0fdf4';
-  if(t==='clicked') return'#eff6ff';
-  if(t==='delivered'||s==='sent') return'#fefce8';
-  if(t==='bounced'||s==='failed') return'#fff1f2';
-  if(s==='scheduled') return'#faf5ff';
-  return'';
-}
-
-function renderTable(){
-  const container=document.getElementById('table-container');
-  if(!_records.length){
-    container.innerHTML='<div class="empty"><div class="empty-icon">📭</div><h3 style="margin-bottom:8px">No emails found</h3><p style="color:var(--text2)">Send your first campaign to see history here.</p></div>';
-    return;
-  }
-
-  let html=`
-    <table>
-      <thead>
-        <tr>
-          <th>Date Sent</th>
-          <th>Campaign</th>
-          <th>Recipient</th>
-          <th>Company</th>
-          <th>Subject</th>
-          <th>Status</th>
-          <th>Opened</th>
-          <th>Clicked</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  _records.forEach(r=>{
-    const bg=rowBg(r.tracking_status,r.status);
-    const sentDate=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Scheduled';
-    const openedDate=r.opened_at?new Date(r.opened_at).toLocaleString():'—';
-    const clickedDate=r.clicked_at?new Date(r.clicked_at).toLocaleString():'—';
-    html+=`
-      <tr style="${bg?'background:'+bg:''}">
-        <td style="white-space:nowrap;font-size:12px">${sentDate}</td>
-        <td><span class="tag">${r.campaign_name||'—'}</span></td>
-        <td>
-          <div style="font-weight:600">${r.recipient_name||'—'}</div>
-          <div style="font-size:11px;color:var(--text2)">${r.recipient_email||''}</div>
-        </td>
-        <td style="font-size:12px">${r.company||'—'}</td>
-        <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.subject||''}">${r.subject||'—'}</td>
-        <td>${trackingBadge(r.tracking_status,r.status)}</td>
-        <td style="font-size:11px;color:var(--text2)">${openedDate}</td>
-        <td style="font-size:11px;color:var(--text2)">${clickedDate}</td>
-      </tr>
-    `;
-  });
-
-  html+='</tbody></table>';
-
-  // Pagination
-  const totalPages=Math.ceil(_total/PAGE_SIZE);
-  const currentPage=Math.floor(_offset/PAGE_SIZE)+1;
-  html+=`
-    <div class="pagination">
-      <span style="font-size:13px;color:var(--text2)">Showing ${_offset+1}–${Math.min(_offset+PAGE_SIZE,_total)} of ${_total} emails</span>
-      <div class="flex">
-        ${currentPage>1?'<button class="btn" onclick="loadHistory('+(_offset-PAGE_SIZE)+')">← Prev</button>':''}
-        <span style="font-size:13px;font-weight:600">Page ${currentPage} of ${totalPages}</span>
-        ${currentPage<totalPages?'<button class="btn" onclick="loadHistory('+(_offset+PAGE_SIZE)+')">Next →</button>':''}
-      </div>
-    </div>
-  `;
-
-  container.innerHTML=html;
+function populateCampaignFilter(){
+  const campaigns=[...new Set(allRecords.map(r=>r.campaign_name).filter(Boolean))];
+  const sel=document.getElementById('campaign-filter');
+  sel.innerHTML='<option value="">All Campaigns</option>';
+  campaigns.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 }
 
 function updateStats(){
-  const total=_total;
-  const opened=_records.filter(r=>r.tracking_status==='opened').length;
-  const clicked=_records.filter(r=>r.tracking_status==='clicked').length;
-  const delivered=_records.filter(r=>r.tracking_status==='delivered').length;
-  const bounced=_records.filter(r=>r.tracking_status==='bounced').length;
-  document.getElementById('stat-total').textContent=total;
-  document.getElementById('stat-opened').textContent=opened;
-  document.getElementById('stat-clicked').textContent=clicked;
-  document.getElementById('stat-delivered').textContent=delivered;
-  document.getElementById('stat-bounced').textContent=bounced;
+  const total=allRecords.length;
+  const opened=allRecords.filter(r=>r.tracking_status==='opened').length;
+  const clicked=allRecords.filter(r=>r.tracking_status==='clicked').length;
+  const delivered=allRecords.filter(r=>r.tracking_status==='delivered'||r.status==='sent').length;
+  const bounced=allRecords.filter(r=>r.tracking_status==='bounced').length;
+  const unsub=allRecords.filter(r=>r.tracking_status==='unsubscribed').length;
+  const openPct=total>0?Math.round(opened/total*100):0;
+  const clickPct=total>0?Math.round(clicked/total*100):0;
+
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-opened').textContent=opened;
+  document.getElementById('s-clicked').textContent=clicked;
+  document.getElementById('s-delivered').textContent=delivered;
+  document.getElementById('s-bounced').textContent=bounced;
+  document.getElementById('s-unsub').textContent=unsub;
+  document.getElementById('s-open-bar').style.width=openPct+'%';
+  document.getElementById('s-click-bar').style.width=clickPct+'%';
+  document.getElementById('s-open-pct').textContent=openPct+'% open rate';
+  document.getElementById('s-click-pct').textContent=clickPct+'% click rate';
 }
 
+function applyFilters(){
+  const search=document.getElementById('search-inp').value.toLowerCase();
+  const status=document.getElementById('status-filter').value;
+  const campaign=document.getElementById('campaign-filter').value;
+
+  filtered=allRecords.filter(r=>{
+    if(status&&r.tracking_status!==status)return false;
+    if(campaign&&r.campaign_name!==campaign)return false;
+    if(currentTab==='hot'&&!predictions[r.id])return false;
+    if(currentTab==='hot'&&predictions[r.id]&&predictions[r.id].tier==='cold')return false;
+    if(currentTab==='opened'&&r.tracking_status!=='opened')return false;
+    if(currentTab==='clicked'&&r.tracking_status!=='clicked')return false;
+    if(currentTab==='pending'&&r.tracking_status!=='pending')return false;
+    if(search){
+      const str=(r.recipient_name+r.recipient_email+r.company+r.campaign_name).toLowerCase();
+      if(!str.includes(search))return false;
+    }
+    return true;
+  });
+
+  currentPage=1;
+  renderContent();
+}
+
+function switchTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function changePage(dir){
+  const total=Math.ceil(filtered.length/PAGE);
+  currentPage=Math.max(1,Math.min(total,currentPage+dir));
+  renderContent();
+}
+
+function renderContent(){
+  const container=document.getElementById('main-content');
+
+  if(!filtered.length){
+    container.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">📭</div><h3 style="margin-bottom:8px">No emails found</h3><p>Send your first campaign or adjust filters.</p></div></div>';
+    document.getElementById('pagination').style.display='none';
+    return;
+  }
+
+  if(currentTab==='hot')renderHotLeads(container);
+  else renderTable(container);
+
+  // Pagination
+  const total=Math.ceil(filtered.length/PAGE);
+  const pag=document.getElementById('pagination');
+  if(total>1){
+    pag.style.display='flex';
+    document.getElementById('page-info').textContent='Showing '+(((currentPage-1)*PAGE)+1)+'-'+Math.min(currentPage*PAGE,filtered.length)+' of '+filtered.length;
+    document.getElementById('prev-btn').disabled=currentPage<=1;
+    document.getElementById('next-btn').disabled=currentPage>=total;
+  } else pag.style.display='none';
+}
+
+function trackBadge(r){
+  const t=r.tracking_status;const s=r.status;
+  if(t==='opened')     return'<span class="badge b-opened">🟢 Opened</span>';
+  if(t==='clicked')    return'<span class="badge b-clicked">🔵 Clicked</span>';
+  if(t==='delivered')  return'<span class="badge b-delivered">🟡 Delivered</span>';
+  if(t==='bounced')    return'<span class="badge b-bounced">🔴 Bounced</span>';
+  if(t==='unsubscribed')return'<span class="badge b-unsubscribed">🚫 Unsubscribed</span>';
+  if(s==='scheduled')  return'<span class="badge" style="background:#f3e8ff;color:#7e22ce">⏰ Scheduled</span>';
+  return'<span class="badge b-pending">⚪ Pending</span>';
+}
+
+function aiScoreBadge(id){
+  const p=predictions[id];
+  if(!p)return'';
+  if(p.tier==='hot')  return'<span class="score-hot">🔥 '+p.score+' Hot</span>';
+  if(p.tier==='warm') return'<span class="score-warm">🌡 '+p.score+' Warm</span>';
+  return'<span class="score-cold">❄ '+p.score+' Cold</span>';
+}
+
+function fmtDate(d){
+  if(!d)return'—';
+  const dt=new Date(d);
+  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function renderTable(container){
+  const page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
+  let html=`<div class="card" style="padding:0;overflow:hidden">
+  <table>
+    <thead><tr>
+      <th>Recipient</th>
+      <th>Campaign</th>
+      <th>Subject</th>
+      <th>Status</th>
+      <th>Date Sent</th>
+      <th>Opened At</th>
+      <th>Clicked At</th>
+      <th>AI Score</th>
+    </tr></thead><tbody>`;
+
+  page.forEach(r=>{
+    const bg=r.tracking_status==='opened'?'#f0fdf4':r.tracking_status==='clicked'?'#eff6ff':r.tracking_status==='bounced'?'#fff1f2':'';
+    html+=`<tr style="${bg?'background:'+bg:''}">
+      <td>
+        <div style="font-weight:700">${r.recipient_name||'—'}</div>
+        <div style="font-size:11px;color:var(--text2)">${r.recipient_email||''}</div>
+        <div style="font-size:11px;color:var(--text2)">${r.company||''} ${r.title?'· '+r.title:''}</div>
+      </td>
+      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.campaign_name||'—'}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.subject||''}">${r.subject||'—'}</td>
+      <td>${trackBadge(r)}</td>
+      <td style="font-size:11px;white-space:nowrap">${fmtDate(r.sent_at)}</td>
+      <td style="font-size:11px;white-space:nowrap;color:var(--green)">${r.opened_at?fmtDate(r.opened_at):'—'}</td>
+      <td style="font-size:11px;white-space:nowrap;color:var(--blue)">${r.clicked_at?fmtDate(r.clicked_at):'—'}</td>
+      <td>${aiScoreBadge(r.id)}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  container.innerHTML=html;
+}
+
+function renderHotLeads(container){
+  const page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
+  if(!page.length){
+    container.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🤖</div><h3 style="margin-bottom:8px">No hot leads yet</h3><p>Click "AI Predict Interest" to analyse your recipients and identify the most likely to convert.</p></div></div>';
+    return;
+  }
+
+  // Sort by AI score
+  const sorted=[...page].sort((a,b)=>{
+    const sa=predictions[a.id]?predictions[a.id].score:0;
+    const sb=predictions[b.id]?predictions[b.id].score:0;
+    return sb-sa;
+  });
+
+  let html='<div>';
+  sorted.forEach(r=>{
+    const p=predictions[r.id];
+    const tier=p?p.tier:'cold';
+    html+=`<div class="hot-card tier-${tier}" style="margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="font-weight:700;font-size:14px">${r.recipient_name||'Unknown'}</span>
+            ${aiScoreBadge(r.id)}
+            ${trackBadge(r)}
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${r.title||''}${r.company?' at <strong style="color:var(--text)">'+r.company+'</strong>':''} ${r.industry?'· '+r.industry:''}</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px">✉️ ${r.recipient_email||'—'}</div>
+          ${p?`
+          <div style="font-size:12px;background:var(--bg2);border-radius:var(--r);padding:8px 10px;margin-top:8px">
+            <p style="margin-bottom:4px"><strong>Why:</strong> ${p.reason||''}</p>
+            <p style="margin-bottom:4px"><strong>Interest:</strong> ${p.interest||''}</p>
+            <p><strong>Next action:</strong> <span style="color:var(--blue);font-weight:600">${p.action||''}</span></p>
+          </div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${r.sent_at?'<p style="font-size:11px;color:var(--text2)">Sent: '+fmtDate(r.sent_at)+'</p>':''}
+          ${r.opened_at?'<p style="font-size:11px;color:var(--green)">Opened: '+fmtDate(r.opened_at)+'</p>':''}
+          ${r.clicked_at?'<p style="font-size:11px;color:var(--blue)">Clicked: '+fmtDate(r.clicked_at)+'</p>':''}
+          <a href="mailto:${r.recipient_email}" style="display:inline-block;margin-top:8px;padding:5px 12px;background:var(--blue);color:white;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none">Reply Now →</a>
+        </div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+// ── AI PREDICTION ──────────────────────────────────────────
+async function runAIPrediction(){
+  const engaged=allRecords.filter(r=>r.tracking_status==='opened'||r.tracking_status==='clicked');
+  if(!engaged.length){alert('No opened or clicked emails to analyse. Refresh tracking first.');return;}
+
+  const btn=document.getElementById('ai-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analysing '+engaged.length+' leads...';
+
+  try{
+    const leadsForAI=engaged.map(r=>({
+      id:r.id,
+      name:r.recipient_name||'Unknown',
+      title:r.title||r.recipient_name||'',
+      company:r.company||'',
+      industry:r.industry||'',
+      companySize:r.company_size||'',
+      trackingStatus:r.tracking_status,
+      clicked:r.tracking_status==='clicked',
+      openCount:r.open_count||1,
+      subject:r.subject||''
+    }));
+
+    // Process in batches of 20
+    const BATCH=20;
+    for(let i=0;i<leadsForAI.length;i+=BATCH){
+      const batch=leadsForAI.slice(i,i+BATCH);
+      btn.textContent='Analysing '+(i+batch.length)+' of '+leadsForAI.length+'...';
+      const resp=await fetch('/.netlify/functions/analyze-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({leads:batch})
+      });
+      const data=await resp.json();
+      if(data.predictions){
+        data.predictions.forEach((p,idx)=>{
+          const lead=batch[p.index!=null?p.index:idx];
+          if(lead)predictions[lead.id]=p;
+        });
+      }
+    }
+
+    // Switch to hot leads tab
+    currentTab='hot';
+    document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===1);});
+    applyFilters();
+    alert('AI analysis complete! Showing '+Object.keys(predictions).length+' scored leads.');
+  }catch(e){
+    alert('AI prediction failed: '+e.message);
+  }
+  btn.disabled=false;btn.innerHTML='🤖 AI Predict Interest';
+}
+
+// ── TRACKING REFRESH ───────────────────────────────────────
 async function refreshTracking(){
-  const btn=document.querySelector('[onclick="refreshTracking()"]');
-  if(btn){btn.textContent='Refreshing...';btn.disabled=true;}
-  const emails=_records.filter(r=>r.tracking_status==='pending'||r.tracking_status==='delivered').map(r=>({email:r.recipient_email,messageId:r.message_id}));
-  if(emails.length){
-    try{
+  const btn=document.getElementById('refresh-btn');
+  btn.disabled=true;btn.textContent='Refreshing...';
+
+  const toCheck=allRecords.filter(r=>!r.tracking_status||r.tracking_status==='pending'||r.tracking_status==='delivered');
+  if(!toCheck.length){btn.disabled=false;btn.textContent='🔄 Refresh Tracking';alert('All emails already have tracking data.');return;}
+
+  try{
+    // Check in batches of 50
+    const BATCH=50;
+    for(let i=0;i<toCheck.length;i+=BATCH){
+      const batch=toCheck.slice(i,i+BATCH);
       const resp=await fetch('/.netlify/functions/check-tracking',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({emails})
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({emails:batch.map(r=>({email:r.recipient_email,messageId:r.message_id||''}))})
       });
       const data=await resp.json();
       if(data.results){
         Object.entries(data.results).forEach(([email,status])=>{
-          const r=_records.find(r=>r.recipient_email===email);
+          const r=allRecords.find(r=>r.recipient_email===email);
           if(r)r.tracking_status=status;
         });
-        renderTable();updateStats();
       }
-    }catch(e){}
-  }
-  if(btn){btn.textContent='🔄 Refresh Tracking';btn.disabled=false;}
+    }
+    updateStats();applyFilters();
+    document.getElementById('last-updated').textContent='Tracking refreshed: '+new Date().toLocaleString();
+    alert('Tracking updated for '+toCheck.length+' emails.');
+  }catch(e){alert('Refresh failed: '+e.message);}
+  btn.disabled=false;btn.textContent='🔄 Refresh Tracking';
 }
 
+// ── EXPORT ────────────────────────────────────────────────
 function exportCSV(){
-  if(!_records.length){alert('No records to export.');return;}
-  const headers=['Date Sent','Campaign','Recipient Name','Email','Company','Title','Subject','Status','Tracking','Opened At','Clicked At'];
-  const rows=_records.map(r=>[
-    r.sent_at?new Date(r.sent_at).toLocaleString():'Scheduled',
-    r.campaign_name||'',r.recipient_name||'',r.recipient_email||'',
-    r.company||'',r.title||'',r.subject||'',r.status||'',
-    r.tracking_status||'',
-    r.opened_at?new Date(r.opened_at).toLocaleString():'',
-    r.clicked_at?new Date(r.clicked_at).toLocaleString():''
-  ]);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  if(!filtered.length){alert('No data to export.');return;}
+  const hdrs=['Date Sent','Campaign','Name','Email','Company','Title','Industry','Subject','Status','Tracking','Opened At','Clicked At','AI Score','AI Tier','AI Action'];
+  const rows=filtered.map(r=>{
+    const p=predictions[r.id];
+    return[
+      r.sent_at?new Date(r.sent_at).toLocaleString():'Scheduled',
+      r.campaign_name||'',r.recipient_name||'',r.recipient_email||'',
+      r.company||'',r.title||'',r.industry||'',r.subject||'',
+      r.status||'',r.tracking_status||'',
+      r.opened_at?new Date(r.opened_at).toLocaleString():'',
+      r.clicked_at?new Date(r.clicked_at).toLocaleString():'',
+      p?p.score:'',p?p.tier:'',p?p.action:''
+    ];
+  });
+  const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='email_history_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='velorah_analytics_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
 
-async function signOut(){
-  await sbClient.auth.signOut();
-  window.location.href='/login.html';
-}
-
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
 </script>
 </body>
 </html>
+y
