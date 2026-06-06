@@ -212,10 +212,8 @@ async function callAI(lead){
   const industry=lead[S.colMap.industry]||'technology';
   const sz=lead[S.colMap.companySize]||'';
   const rev=lead[S.colMap.revenue]||'';
-  const aKey=(_session&&_session._anthropicKey)||'';
-  if(!aKey)throw new Error('Please enter your Anthropic API key in Step 2 (Configure).');
   const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown: {"subject":"...","body":"..."}';
-  const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company,industry,companySize:sz,revenue:rev,researchMode:S.researchMode,anthropicKey:aKey})});
+  const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company,industry,companySize:sz,revenue:rev,researchMode:S.researchMode})});
   const txt=await resp.text();
   if(!resp.ok){let e='HTTP '+resp.status;try{const d=JSON.parse(txt);e=d.error||e;}catch(ex){}throw new Error(e);}
   const data=JSON.parse(txt);
@@ -336,14 +334,7 @@ function p1(){
   });
   sc.appendChild(sg);
 
-  // Anthropic API Key
-  const akDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Anthropic API Key *'));
-  const akInp=document.createElement('input');akInp.type='password';akInp.placeholder='sk-ant-api03-... (from console.anthropic.com)';
-  akInp.value=(_session&&_session._anthropicKey)||'';
-  akInp.addEventListener('input',e=>{if(_session)_session._anthropicKey=e.target.value;});
-  akDiv.appendChild(akInp);
-  const akTip=h('div',{cls:'tip'});akTip.innerHTML='Get from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys. Starts with <strong>sk-ant-</strong>. Required to generate emails.';
-  akDiv.appendChild(akTip);sc.appendChild(akDiv);
+  // Anthropic API key handled server-side via platform key
 
   // Attachments
   const attDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Attachments (up to 5 files, sent with every email)'));
@@ -406,11 +397,11 @@ function p1(){
   wrap.appendChild(rc);
 
   // Actions
-  const canGo=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&(_session&&_session._anthropicKey);
+  const canGo=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
   const acts=h('div',{cls:'fb',style:{marginTop:'14px'}},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
     h('button',{cls:'btn btn-primary',style:{opacity:canGo()?1:.5},onClick:()=>{
-      if(!canGo()){alert('Please fill in: Email column, Company column, Your Name, Your Email, and Anthropic API Key.');return;}
+      if(!canGo()){alert('Please fill in: Email column, Company column, Your Name, and Your Email.');return;}
       S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};
       saveUserKeys();draw();runGenerate();
     }},'Generate '+S.leads.length+' Emails →')
@@ -507,11 +498,10 @@ function p3(){
       if(!subj){alert('Enter a subject first.');return;}
       this.disabled=true;this.textContent='Rewriting...';
       const sz=lead[S.colMap.companySize]||'';const rev=lead[S.colMap.revenue]||'';
-      const aKey=(_session&&_session._anthropicKey)||'';
-      const nm=getName(lead);const co=lead[S.colMap.company]||'';const ttl2=lead[S.colMap.title]||'';const ind2=lead[S.colMap.industry]||'';
+          const nm=getName(lead);const co=lead[S.colMap.company]||'';const ttl2=lead[S.colMap.title]||'';const ind2=lead[S.colMap.industry]||'';
       const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite ONLY the email body (no subject) that directly follows this subject:\nSUBJECT: "'+subj+'"\n\nLead: '+nm+', '+ttl2+' at '+co+' ('+ind2+')\nFrom: '+S.sender.name+', '+S.sender.company+'\n\nRespond ONLY with valid JSON: {"body":"..."}';
       try{
-        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:co,industry:ind2,researchMode:false,anthropicKey:aKey})});
+        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:co,industry:ind2,researchMode:false})});
         const txt=await resp.text();const data=JSON.parse(txt);
         let out='';for(const b of(data.content||[])){if(b.type==='text')out+=b.text;}
         out=out.replace(/```json|```/g,'').trim();
@@ -717,7 +707,7 @@ async function initAuth(){
     try{
       const resp=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});
       const{keys}=await resp.json();
-      if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._anthropicKey=keys.anthropic_key||'';_session._sendgridKey=keys.sendgrid_key||'';}
+      if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}
     }catch(e){}
     draw();
     // Check for leads imported from find-leads page
@@ -730,7 +720,7 @@ async function initAuth(){
 
 async function saveUserKeys(){
   if(!_session||!_session.access_token)return;
-  try{await fetch('/.netlify/functions/user-keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({anthropic_key:_session._anthropicKey||'',sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
+  try{await fetch('/.netlify/functions/user-keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
 }
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
