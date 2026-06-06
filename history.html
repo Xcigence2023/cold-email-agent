@@ -207,7 +207,7 @@ async function init(){
 
 async function loadHistory(){
   try{
-    const resp=await fetch('/.netlify/functions/email-history?limit=1000',{
+    const resp=await fetch('/.netlify/functions/email_history?limit=1000',{
       headers:{'Authorization':'Bearer '+_session.access_token}
     });
     const data=await resp.json();
@@ -532,4 +532,3 @@ init();
 </script>
 </body>
 </html>
-y
