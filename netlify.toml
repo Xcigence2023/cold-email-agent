@@ -4,23 +4,9 @@
 
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "APP_URL"
+  NODE_VERSION = "18"
 
 [functions]
-  node_bundler = "esbuild"
-
-[functions."generate"]
-  timeout = 26
-
-[functions."send-bulk"]
-  timeout = 26
-
-[functions."find-leads"]
-  timeout = 26
-
-[functions."visitor-track"]
-  timeout = 26
-
-[functions."analyze-leads"]
   timeout = 26
 
 [[redirects]]
