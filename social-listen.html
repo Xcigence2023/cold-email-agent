@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <meta charset="UTF-8"/>
+<meta name="theme-color" content="#070c18"/>
+<meta name="robots" content="noindex,nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah - Social Lead Discovery</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Velorah - Athena One - Velorah</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -118,9 +122,9 @@ input::placeholder{color:var(--text3)}
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
       <a href="/linkedin.html">LinkedIn</a>
-      <a href="/find-leads.html">Find Leads</a>
-      <a href="/social-listen.html" class="active">Social Listen</a>
-      <a href="/visitors.html">Visitors</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html" class="active">Athena One</a>
+      <a href="/visitors.html">Argus Watch</a>
       <a href="/history.html">History</a>
     </nav>
   </div>
@@ -619,6 +623,33 @@ Respond ONLY in JSON: {"steps":["step 1","step 2"],"message":"outreach message",
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
+</script>
+
+<script>
+// Performance: debounce helper
+function debounce(fn, ms) {
+  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
+}
+// Performance: lazy-load non-critical content
+if ('IntersectionObserver' in window) {
+  var lazyObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
+  });
+  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
+}
+// Performance: prevent duplicate fetch on rapid clicks
+window._fetchCache = window._fetchCache || {};
+window.cachedFetch = function(url, opts, ttlMs) {
+  var key = url + JSON.stringify(opts&&opts.body||'');
+  var cached = window._fetchCache[key];
+  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
+  return fetch(url, opts).then(function(r) {
+    return r.clone().json().then(function(data) {
+      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
+      return r;
+    }).catch(function(){ return r; });
+  });
+};
 </script>
 </body>
 </html>
