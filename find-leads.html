@@ -80,6 +80,7 @@ tr:hover td{background:rgba(59,130,246,.04)}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html" class="active">Koios Intel</a>
       <a href="/social-listen.html">Athena One</a>
@@ -215,6 +216,7 @@ tr:hover td{background:rgba(59,130,246,.04)}
         <button class="btn btn-sm" onclick="selectAll()">Select All</button>
         <button class="btn btn-sm" onclick="clearSel()">Clear</button>
         <button class="btn btn-sm btn-green" onclick="sendToCampaign()">&#x2709; Send to Campaign</button>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;color:#fff;font-weight:700" onclick="launchAres()">&#x1F6E1; Launch with Ares</button>
         <button class="btn btn-sm" onclick="exportCSV()">&#x2193; Export CSV</button>
       </div>
     </div>
@@ -410,6 +412,18 @@ function exportCSV(){
   var rows=allContacts.map(function(c){return[c.firstName||'',c.lastName||'',c.email||'',c.company||'',c.title||'',c.location||'',c.companySize||'','Koios Intel'];});
   var csv=[hdrs].concat(rows).map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='koios_intel_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+
+function launchAres(){
+  var sel=allContacts.filter(function(ct,i){return selected.has(ct.email||i)&&ct.email&&ct.email!=='Not found';});
+  if(!sel.length){alert('Select contacts with verified emails first.');return;}
+  var hdrs='First Name,Last Name,Email,Company,Job Title,Industry\n';
+  var rows=sel.map(function(ct){return[ct.firstName||'',ct.lastName||'',ct.email||'',ct.company||'',ct.title||'',ct.industry||''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+  sessionStorage.setItem('velorah_leads_count',sel.length);
+  sessionStorage.setItem('velorah_source','koios');
+  window.location.href='/campaign-video.html';
 }
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
