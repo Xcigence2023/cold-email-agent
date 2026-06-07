@@ -186,4 +186,25 @@ exports.handler = async function(event) {
   }
 
   return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid action. Use: search, find-email, or enrich' }) };
-};
+};  // APOLLO PEOPLE MATCH - find email by name + company
+  if (action === 'match') {
+    if (!APOLLO_KEY) return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: 'APOLLO_API_KEY not configured' }) };
+    const { firstName, lastName, company, linkedinUrl } = contact;
+    if (!firstName || !lastName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName required' }) };
+    try {
+      const payload = { first_name: firstName, last_name: lastName, reveal_personal_emails: true, reveal_phone_number: false };
+      if (company) payload.organization_name = company;
+      if (linkedinUrl) payload.linkedin_url = linkedinUrl;
+      const res = await fetch('https://api.apollo.io/v1/people/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'x-api-key': APOLLO_KEY },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Apollo match ' + res.status }) };
+      const data = await res.json();
+      const person = data.person || {};
+      const email = person.email || (person.personal_emails && person.personal_emails[0]) || null;
+      return { statusCode: 200, headers, body: JSON.stringify({ email, title: person.title||null, source: 'apollo' }) };
+    } catch(e) { return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: e.message }) }; }
+  }
+
