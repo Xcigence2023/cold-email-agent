@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta name="theme-color" content="#070c18"/>
+<meta name="robots" content="noindex,nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Velorah — Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -201,7 +203,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     <a class="feature-card" href="/find-leads.html" style="--card-glow:rgba(6,182,212,.08);--card-border:rgba(6,182,212,.4);--card-shadow:rgba(6,182,212,.3)">
       <span class="fc-badge" style="background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)">AI</span>
       <span class="fc-icon">🔍</span>
-      <div class="fc-title">Find Leads</div>
+      <div class="fc-title">Koios Intel</div>
       <div class="fc-desc">Search 275M+ B2B contacts on Apollo.io by job title, industry, company size and location. Enrich missing emails via Hunter.io and Lusha.</div>
       <div class="fc-action" style="color:var(--cyan)">Search Contacts <span>-></span></div>
     </a>
@@ -222,17 +224,17 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
     <a class="feature-card" href="/visitors.html" style="--card-glow:rgba(139,92,246,.08);--card-border:rgba(139,92,246,.4);--card-shadow:rgba(139,92,246,.3)">
       <span class="fc-badge" style="background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3)">LIVE</span>
       <span class="fc-icon">🌐</span>
-      <div class="fc-title">Website Visitor Intelligence</div>
+      <div class="fc-title">Argus Watch</div>
       <div class="fc-desc">See which companies are visiting your website in real time. Auto-identify decision makers at those companies and launch targeted outreach campaigns.</div>
-      <div class="fc-action" style="color:var(--purple)">View Visitors <span>-></span></div>
+      <div class="fc-action" style="color:var(--purple)">Launch Argus <span>-></span></div>
     </a>
 
     <a class="feature-card" href="/social-listen.html" style="--card-glow:rgba(245,158,11,.08);--card-border:rgba(245,158,11,.4);--card-shadow:rgba(245,158,11,.3)">
       <span class="fc-badge" style="background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)">NEW</span>
       <span class="fc-icon">📡</span>
-      <div class="fc-title">Social Lead Discovery</div>
+      <div class="fc-title">Athena One</div>
       <div class="fc-desc">Find people on Reddit, Hacker News and online forums who are actively discussing problems you solve or looking for products like yours. Filter by buying intent.</div>
-      <div class="fc-action" style="color:var(--gold)">Find Discussions <span>-></span></div>
+      <div class="fc-action" style="color:var(--gold)">Launch Athena <span>-></span></div>
     </a>
     <a class="feature-card" href="/history.html" style="--card-glow:rgba(245,158,11,.08);--card-border:rgba(245,158,11,.4);--card-shadow:rgba(245,158,11,.3)">
       <span class="fc-icon">🤖</span>
@@ -285,8 +287,8 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <a href="/find-leads.html" class="qa-btn">
         <div class="qa-icon" style="background:rgba(6,182,212,.15)">🔍</div>
         <div class="qa-text">
-          <div class="qa-title">Find New Leads</div>
-          <div class="qa-desc">Search Apollo.io for decision makers</div>
+          <div class="qa-title">Koios Intel</div>
+          <div class="qa-desc">Search 275M+ verified B2B contacts</div>
         </div>
         <span class="qa-arrow">-></span>
       </a>
@@ -294,8 +296,8 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <a href="/visitors.html" class="qa-btn">
         <div class="qa-icon" style="background:rgba(139,92,246,.15)">🌐</div>
         <div class="qa-text">
-          <div class="qa-title">Website Visitors</div>
-          <div class="qa-desc">See who is visiting your site right now</div>
+          <div class="qa-title">Argus Watch</div>
+          <div class="qa-desc">Live website visitor intelligence</div>
         </div>
         <span class="qa-arrow">-></span>
       </a>
@@ -303,8 +305,8 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <a href="/social-listen.html" class="qa-btn">
         <div class="qa-icon" style="background:rgba(245,158,11,.15)">📡</div>
         <div class="qa-text">
-          <div class="qa-title">Social Lead Discovery</div>
-          <div class="qa-desc">Find leads on Reddit and forums</div>
+          <div class="qa-title">Athena One</div>
+          <div class="qa-desc">Social intelligence across all platforms</div>
         </div>
         <span class="qa-arrow">-></span>
       </a>
@@ -411,6 +413,33 @@ async function signOut(){
 }
 
 init();
+</script>
+
+<script>
+// Performance: debounce helper
+function debounce(fn, ms) {
+  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
+}
+// Performance: lazy-load non-critical content
+if ('IntersectionObserver' in window) {
+  var lazyObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
+  });
+  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
+}
+// Performance: prevent duplicate fetch on rapid clicks
+window._fetchCache = window._fetchCache || {};
+window.cachedFetch = function(url, opts, ttlMs) {
+  var key = url + JSON.stringify(opts&&opts.body||'');
+  var cached = window._fetchCache[key];
+  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
+  return fetch(url, opts).then(function(r) {
+    return r.clone().json().then(function(data) {
+      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
+      return r;
+    }).catch(function(){ return r; });
+  });
+};
 </script>
 </body>
 </html>
