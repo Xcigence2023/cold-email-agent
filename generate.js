@@ -1,142 +1,116 @@
+/**
+ * generate.js - Optimized AI email generation
+ * - Rate limited: 30 requests/minute per user
+ * - Input validation and sanitization
+ * - Retry on overload with exponential backoff
+ * - Parallel research calls
+ */
+
+const MAX_PROMPT_LEN  = 8000;
+const MAX_COMPANY_LEN = 200;
+
+const rateLimitStore = new Map();
+function checkRate(id) {
+  const now = Date.now();
+  const rec = rateLimitStore.get(id) || { count: 0, resetAt: now + 60000 };
+  if (now > rec.resetAt) { rec.count = 0; rec.resetAt = now + 60000; }
+  rec.count++;
+  rateLimitStore.set(id, rec);
+  return rec.count <= 30;
+}
+
 exports.handler = async function(event) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff'
   };
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  let prompt, company, industry, researchMode, anthropicKey, companySize, revenue;
+  // Rate limit by IP
+  const ip = (event.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  if (!checkRate(ip)) {
+    return { statusCode: 429, headers, body: JSON.stringify({ error: 'Rate limit exceeded. Please wait before generating more emails.' }) };
+  }
+
+  let prompt, company, industry, researchMode, companySize, revenue;
   try {
-    const parsed = JSON.parse(event.body);
-    prompt = parsed.prompt;
-    company = parsed.company || '';
-    industry = parsed.industry || '';
-    researchMode = parsed.researchMode || false;
-    companySize = parsed.companySize || '';
-    revenue = parsed.revenue || '';
-    anthropicKey = parsed.anthropicKey || process.env.ANTHROPIC_API_KEY || '';
-    if (!anthropicKey) return { statusCode: 400, headers, body: JSON.stringify({ error: 'No Anthropic API key provided. Please add your key in Step 2 (Configure).' }) };
+    const body = JSON.parse(event.body || '{}');
+    // Sanitize all inputs
+    prompt       = String(body.prompt || '').substring(0, MAX_PROMPT_LEN);
+    company      = String(body.company || '').substring(0, MAX_COMPANY_LEN).replace(/[<>]/g, '');
+    industry     = String(body.industry || '').substring(0, 100).replace(/[<>]/g, '');
+    researchMode = body.researchMode === true;
+    companySize  = String(body.companySize || '').substring(0, 50).replace(/[^0-9,+\-\s]/g, '');
+    revenue      = String(body.revenue || '').substring(0, 50).replace(/[<>]/g, '');
     if (!prompt) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing prompt' }) };
-  } catch (e) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON: ' + e.message }) };
+  } catch(e) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request body' }) };
   }
 
-  // Inject company size context
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'API not configured' }) };
+
   if (companySize || revenue) {
-    prompt += '\n\nCOMPANY SIZE CONTEXT: ' +
-      (companySize ? 'Employees: ' + companySize + '. ' : '') +
-      (revenue ? 'Annual Revenue: ' + revenue + '. ' : '') +
-      'Calibrate language and statistics to match this company scale.';
+    prompt += '\n\nCOMPANY SIZE: ' + companySize + (revenue ? ' | Revenue: ' + revenue : '') + '. Calibrate language to this scale.';
   }
 
-  // Helper: call Anthropic with exponential backoff retry for overload
-  async function callAnthropic(messages, useSearch, maxTokens, retries) {
-    retries = retries || 0;
-    const body = {
-      model: 'claude-sonnet-4-6',  // Using Sonnet — more reliable, less overloaded
-      max_tokens: maxTokens || 800,
-      messages
-    };
-    if (useSearch) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
-
+  // Claude call with exponential backoff
+  async function callClaude(messages, maxTokens, attempt) {
+    attempt = attempt || 0;
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(body)
+      headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: maxTokens || 800, messages })
     });
-
-    // Handle overload (529) and rate limit (429) with backoff
-    if ((res.status === 529 || res.status === 429) && retries < 3) {
-      const waitMs = Math.pow(2, retries) * 3000; // 3s, 6s, 12s
-      await new Promise(r => setTimeout(r, waitMs));
-      return callAnthropic(messages, useSearch, maxTokens, retries + 1);
+    if ((res.status === 529 || res.status === 429) && attempt < 3) {
+      await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 4000));
+      return callClaude(messages, maxTokens, attempt + 1);
     }
-
     const data = await res.json();
-    if (!res.ok) throw new Error('Anthropic error ' + res.status + ': ' + (data.error?.message || JSON.stringify(data)));
-
-    // Extract text from content blocks (handles tool-use responses)
-    if (!data.content || !Array.isArray(data.content)) return '';
-    return data.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    if (!res.ok) throw new Error('API error ' + res.status + ': ' + (data.error?.message || ''));
+    return data;
   }
 
   try {
     let enrichedPrompt = prompt;
 
-    // Research mode — with graceful fallback
+    // Research mode — parallel calls, graceful fallback
     if (researchMode && company) {
-      let companyResearch = '';
-      let cyberNews = '';
-
-      try {
-        companyResearch = await callAnthropic([{
-          role: 'user',
-          content: 'Search for "' + company + '" company in ' + industry + ' industry. Find their main business, recent news, compliance challenges, and security posture. 120 words max.'
-        }], true, 600);
-      } catch(e) {
-        // Graceful fallback — research failed, continue without it
-        console.log('Company research failed, continuing without:', e.message);
-        companyResearch = '';
+      const [companyRes, industryRes] = await Promise.allSettled([
+        callClaude([{ role: 'user', content: 'In 60 words: what does "' + company + '" do in ' + industry + '? Any recent news?' }], 250),
+        callClaude([{ role: 'user', content: 'In 50 words: biggest business risk for ' + industry + ' companies in 2025?' }], 200)
+      ]);
+      const companyInfo = companyRes.status === 'fulfilled'
+        ? (companyRes.value?.content?.[0]?.text || '') : '';
+      const industryInfo = industryRes.status === 'fulfilled'
+        ? (industryRes.value?.content?.[0]?.text || '') : '';
+      if (companyInfo || industryInfo) {
+        enrichedPrompt += '\n\nCOMPANY CONTEXT: ' + companyInfo + '\nINDUSTRY RISK: ' + industryInfo + '\nUse one specific detail from above to personalize.';
       }
-
-      try {
-        cyberNews = await callAnthropic([{
-          role: 'user',
-          content: 'What are the 2 most recent cybersecurity threats or compliance changes affecting the ' + industry + ' industry in 2025? 80 words max.'
-        }], true, 400);
-      } catch(e) {
-        console.log('News search failed, continuing without:', e.message);
-        cyberNews = '';
-      }
-
-      if (companyResearch || cyberNews) {
-        enrichedPrompt += '\n\nCOMPANY RESEARCH:\n' + (companyResearch || 'Not available') +
-          '\n\nLATEST INDUSTRY NEWS:\n' + (cyberNews || 'Not available') +
-          '\n\nUSE the above to personalize with real, specific context only.';
-      }
-      // If both failed, just generate a good email without research — no error thrown
     }
 
-    // Generate final email with retry
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: enrichedPrompt }]
-      })
-    });
+    // Add human touch instructions
+    enrichedPrompt += `
 
-    // Handle overload on final generation
-    if (res.status === 529 || res.status === 429) {
-      const waitMs = 5000;
-      await new Promise(r => setTimeout(r, waitMs));
-      const retry = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: enrichedPrompt }] })
-      });
-      const text = await retry.text();
-      return { statusCode: retry.status, headers, body: text };
-    }
+HUMAN TOUCH REQUIREMENTS — MANDATORY:
+- Open with something SPECIFIC and unexpected about their company or role (not generic)
+- Use natural contractions (you're, we've, don't, I'd)
+- Write 1 imperfect sentence — real humans don't write perfect copy
+- Add one brief personal observation: "I noticed...", "What stood out to me was...", "I've been following..."
+- Vary sentence length — short punchy sentences mixed with longer ones
+- NO corporate words: leverage, synergy, scalable, robust, holistic, streamline, game-changer
+- End like a human: casual, warm, no pressure. E.g. "Would it make sense to grab 15 minutes?" or "Happy to show you what we've built — no deck, just a quick demo."
+- Sign off with just first name. No "Best regards", no title in body
+- Under 165 words total`;
 
-    const text = await res.text();
-    return { statusCode: res.status, headers, body: text };
-
-  } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    const result = await callClaude([{ role: 'user', content: enrichedPrompt }], 1000);
+    return { statusCode: 200, headers, body: JSON.stringify(result) };
+  } catch(e) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
   }
 };
