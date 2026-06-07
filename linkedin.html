@@ -94,6 +94,7 @@ tr:hover td{background:rgba(59,130,246,.04)}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
       <a href="/linkedin.html" class="active">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
       <a href="/social-listen.html">Athena One</a>
@@ -710,6 +711,19 @@ function renderSend(wrap){
       window.location.href='/app.html?from=linkedin';
     });
     aRow.appendChild(emailBtn);
+    var aresLiBtn=mk('button','btn btn-sm');
+    aresLiBtn.style.cssText='background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;color:#fff;font-weight:700';
+    aresLiBtn.textContent='Launch with Ares';
+    aresLiBtn.addEventListener('click',function(){
+      var withEm2=S.messages.filter(function(m){return m.contact.email&&m.email;});
+      if(!withEm2.length){alert('No contacts with emails. Enrich in Step 2 first.');return;}
+      var rows2=withEm2.map(function(m){return[m.contact.firstName||'',m.contact.lastName||'',m.contact.email||'',m.contact.company||'',m.contact.title||'',''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+      sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows2);
+      sessionStorage.setItem('velorah_leads_count',withEm2.length);
+      sessionStorage.setItem('velorah_source','linkedin');
+      window.location.href='/campaign-video.html';
+    });
+    aRow.appendChild(aresLiBtn);
   }
 
   var expBtn=mk('button','btn');expBtn.textContent='Export CSV';
