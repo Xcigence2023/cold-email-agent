@@ -188,11 +188,15 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
       <div class="brand-logo">✉</div>
       <span class="brand-name">Velorah</span>
     </div>
-    <nav class="nav" id="topbar-nav" style="display:none">
-      <a href="/app.html" class="active">🚀 Campaigns</a>
-      <a href="/find-leads.html">🔍 Find Leads</a>
-      <a href="/visitors.html">🌐 Visitors</a>
-      <a href="/history.html">📋 History</a>
+    <nav class="nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html" class="active">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html">Argus Watch</a>
+      <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="topbar-right" id="topbar-right" style="display:none">
@@ -689,7 +693,17 @@ function p4(){
   }
 
   launcher.appendChild(h('div',{cls:'flex',style:{marginTop:'16px'}},
-    h('button',{cls:'btn btn-launch',onClick:async()=>{
+    h('button',{cls:'btn',style:{background:'linear-gradient(135deg,#ef4444,#f59e0b)',border:'none',color:'#fff',fontWeight:'700',padding:'10px 18px',borderRadius:'var(--r)',cursor:'pointer'},onClick:()=>{
+    const ap=S.emails.filter(e=>e.approved&&!e.error);
+    if(!ap.length){alert('No approved emails.');return;}
+    const hdrs='First Name,Last Name,Email,Company,Job Title\n';
+    const rows=ap.map(e=>[getName(e.lead).split(' ')[0]||'',getName(e.lead).split(' ').slice(1).join(' ')||'',e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+    sessionStorage.setItem('velorah_leads_count',ap.length);
+    sessionStorage.setItem('velorah_source','app');
+    window.location.href='/campaign-video.html';
+  }},'Launch with Ares'),
+h('button',{cls:'btn btn-launch',onClick:async()=>{
       if(!approved.length){alert('No approved emails to send.');return;}
       const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails now?';
       if(!confirm(label))return;
