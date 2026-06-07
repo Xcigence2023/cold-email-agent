@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <meta charset="UTF-8"/>
+<meta name="theme-color" content="#070c18"/>
+<meta name="robots" content="noindex,nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Velorah - LinkedIn Campaign Agent</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -90,9 +94,10 @@ tr:hover td{background:rgba(59,130,246,.04)}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
-      <a href="/find-leads.html">Find Leads</a>
       <a href="/linkedin.html" class="active">LinkedIn</a>
-      <a href="/visitors.html">Visitors</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html">Argus Watch</a>
       <a href="/history.html">History</a>
     </nav>
   </div>
@@ -194,7 +199,7 @@ function renderImport(wrap){
   });
 
   var warn=mk('div','warn');warn.style.marginTop='12px';
-  warn.textContent='Note: LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Hunter.io and Lusha.';
+  warn.textContent='Note: LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Koios Intel and Koios Intel.';
   card.appendChild(warn);
   wrap.appendChild(card);
 
@@ -374,7 +379,7 @@ function renderFilter(wrap){
 
   if(noEmail>0){
     var eb=mk('button','btn btn-primary btn-sm');eb.style.marginBottom='12px';
-    eb.textContent='🔍 Find '+noEmail+' Missing Emails via Hunter.io + Lusha';
+    eb.textContent='🔍 Find '+noEmail+' Missing Emails via Koios Intel';
     eb.addEventListener('click',function(){enrichEmails(eb);});
     rc.appendChild(eb);
   }
@@ -471,32 +476,35 @@ async function enrichEmails(btn){
     tried++;
     btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
 
-    // Try Hunter.io first
+    // Try Koios Intel people match first (most accurate)
     try{
-      var resp=await fetch('/.netlify/functions/find-leads',{
+      var ra=await fetch('/.netlify/functions/find-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'match',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',linkedinUrl:r.linkedinUrl||''}})
+      });
+      if(ra.ok){var da=await ra.json();if(da.email){r.email=da.email;r._source='apollo';found++;continue;}}
+    }catch(e){}
+
+    // Try Koios Intel second
+    try{
+      var rh=await fetch('/.netlify/functions/find-leads',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',domain:''}})
       });
-      if(resp.ok){
-        var data=await resp.json();
-        if(data.email){r.email=data.email;found++;continue;}
-        if(data.error)errors.push('Hunter: '+data.error);
-      }
-    }catch(e){errors.push('Hunter error: '+e.message);}
+      if(rh.ok){var dh=await rh.json();if(dh.email){r.email=dh.email;r._source='hunter';found++;continue;}if(dh.error)errors.push('Enrichment: '+dh.error);}
+    }catch(e){errors.push('Enrichment error');}
 
-    // Try Lusha as fallback
+    // Try Koios Intel last
     if(!r.email&&r.company){
       try{
-        var resp2=await fetch('/.netlify/functions/find-leads',{
+        var rl=await fetch('/.netlify/functions/find-leads',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({action:'enrich',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})
         });
-        if(resp2.ok){
-          var data2=await resp2.json();
-          if(data2.email){r.email=data2.email;found++;}
-        }
+        if(rl.ok){var dl=await rl.json();if(dl.email){r.email=dl.email;r._source='lusha';found++;}}
       }catch(e){}
     }
     await delay(400);
@@ -510,7 +518,7 @@ async function enrichEmails(btn){
   } else {
     var msg='No emails found for '+tried+' contacts.\n\nCommon reasons:\n';
     msg+='1. HUNTER_API_KEY or LUSHA_API_KEY not set in Netlify environment variables\n';
-    msg+='2. Hunter.io free plan limit reached (25/month)\n';
+    msg+='2. Koios Intel free plan limit reached (25/month)\n';
     msg+='3. These contacts haven\'t shared their emails publicly\n\n';
     msg+='Check Netlify -> Environment Variables for HUNTER_API_KEY and LUSHA_API_KEY.';
     alert(msg);
@@ -801,6 +809,33 @@ function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
+</script>
+
+<script>
+// Performance: debounce helper
+function debounce(fn, ms) {
+  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
+}
+// Performance: lazy-load non-critical content
+if ('IntersectionObserver' in window) {
+  var lazyObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
+  });
+  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
+}
+// Performance: prevent duplicate fetch on rapid clicks
+window._fetchCache = window._fetchCache || {};
+window.cachedFetch = function(url, opts, ttlMs) {
+  var key = url + JSON.stringify(opts&&opts.body||'');
+  var cached = window._fetchCache[key];
+  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
+  return fetch(url, opts).then(function(r) {
+    return r.clone().json().then(function(data) {
+      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
+      return r;
+    }).catch(function(){ return r; });
+  });
+};
 </script>
 </body>
 </html>
