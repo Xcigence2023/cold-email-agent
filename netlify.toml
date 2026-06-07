@@ -25,6 +25,9 @@
 [functions."social-listen"]
   timeout = 26
 
+[functions."video-agent"]
+  timeout = 26
+
 # ── GLOBAL SECURITY HEADERS ───────────────────────────────
 [[headers]]
   for = "/*"
@@ -37,24 +40,18 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
 # ── HTML PAGE HEADERS ─────────────────────────────────────
+# Updated CSP: allows jsdelivr (Supabase SDK + sourcemaps) and all required services
 [[headers]]
   for = "/*.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sendgrid.com https://api.apollo.io https://api.hunter.io https://api.lusha.com https://www.reddit.com https://hn.algolia.com https://www.googleapis.com https://api.stackexchange.com https://dev.to https://api.github.com https://api.search.brave.com https://ipinfo.io;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sendgrid.com https://api.apollo.io https://api.hunter.io https://api.lusha.com https://www.reddit.com https://hn.algolia.com https://www.googleapis.com https://api.stackexchange.com https://dev.to https://api.github.com https://api.search.brave.com https://ipinfo.io https://image.pollinations.ai https://api.d-id.com https://api-inference.huggingface.co https://*.hf.space https://huggingface.co https://cdn.jsdelivr.net; worker-src blob:; frame-src 'none';"
 
-# ── JS FILES CACHE ────────────────────────────────────────
+# ── STATIC ASSET CACHE ────────────────────────────────────
 [[headers]]
   for = "/velorah-tracker.js"
   [headers.values]
     Cache-Control = "public, max-age=3600"
-
-# ── NETLIFY FUNCTION HEADERS ──────────────────────────────
-[[headers]]
-  for = "/.netlify/functions/*"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
 
 # ── REDIRECTS ─────────────────────────────────────────────
 [[redirects]]
