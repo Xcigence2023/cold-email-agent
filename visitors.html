@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="theme-color" content="#070c18"/>
+<meta name="robots" content="noindex,nofollow"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Velorah — Argus Watch - Velorah</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--green:#15803d;--green-bg:#f0fdf4;--red:#dc2626;--r:8px;--rl:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;height:52px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.topbar-nav{display:flex;gap:4px}
+.topbar-nav a{font-size:13px;font-weight:500;padding:5px 10px;border-radius:6px;text-decoration:none;color:var(--text2)}
+.topbar-nav a:hover{background:var(--bg2);color:var(--text)}
+.topbar-nav a.active{background:var(--blue-bg);color:var(--blue)}
+.page{max-width:1200px;margin:0 auto;padding:1.5rem}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:12px}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap;transition:all .15s}
+.btn:hover{background:var(--bg2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+.btn-launch{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-launch:hover{opacity:.9}
+.btn-ai{background:linear-gradient(135deg,#7c3aed,#1d4ed8);color:#fff;border:none}
+.btn-sm{padding:5px 10px;font-size:12px}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+input,select{font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1rem}
+@media(max-width:800px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px;text-align:center}
+.stat-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--text2)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border);background:var(--bg2);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--bg2)}
+.badge{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.cb{width:14px;height:14px;cursor:pointer}
+.company-row{border-left:3px solid var(--blue-border);padding-left:8px}
+.install-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-family:'SF Mono',monospace;font-size:12px;color:var(--text);margin-top:8px;word-break:break-all}
+.tag{font-size:11px;padding:2px 6px;border-radius:3px;background:var(--bg2);color:var(--text2)}
+.empty{text-align:center;padding:3rem;color:var(--text2)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="flex">
+    <strong style="font-size:15px">✉️ Velorah</strong>
+    <nav class="topbar-nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html" class="active">Argus Watch</a>
+      <a href="/history.html">History</a>
+    </nav>
+  </div>
+  <div class="flex">
+    <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
+    <button class="btn btn-sm btn-ai" onclick="launchToSelected()" id="launch-btn">🚀 Email Selected Companies</button>
+    <button class="btn btn-sm btn-primary" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="btn btn-sm" onclick="loadVisitors()">🔄 Refresh</button>
+    <button class="btn btn-sm" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Install instructions -->
+  <div class="card" id="install-card">
+    <div class="fb">
+      <div>
+        <h2 style="font-size:15px;font-weight:700;margin-bottom:4px">&#x1F441; Argus Watch</h2>
+        <p style="font-size:13px;color:var(--text2)">Add this script to every page of your website to start capturing visitor company data.</p>
+      </div>
+      <button class="btn btn-sm" onclick="document.getElementById('install-card').style.display='none'">Dismiss</button>
+    </div>
+    <div class="install-box" id="install-code">
+&lt;!-- Add before &lt;/body&gt; on every page of xcigence.com --&gt;
+&lt;script src="/velorah-tracker.js"&gt;&lt;/script&gt;</div>
+    <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="copyInstall()">📋 Copy Install Code</button>
+    <p style="font-size:12px;color:var(--text2);margin-top:8px">Also set <strong>IPINFO_TOKEN</strong> in Netlify env vars (free at <a href="https://ipinfo.io" target="_blank" style="color:var(--blue)">ipinfo.io</a> — 50,000 lookups/month). Optional: <strong>CLEARBIT_API_KEY</strong> for richer company data.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="s-total">-</div><div class="stat-lbl">Total Visits</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--blue)" id="s-companies">-</div><div class="stat-lbl">Unique Companies</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="s-countries">-</div><div class="stat-lbl">Countries</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#7e22ce" id="s-contacted">-</div><div class="stat-lbl">Contacted</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#c2410c" id="s-today">-</div><div class="stat-lbl">Today</div></div>
+  </div>
+
+  <!-- Filters + action bar -->
+  <div class="card">
+    <div class="fb" style="margin-bottom:12px">
+      <div class="flex">
+        <input type="text" id="search-inp" placeholder="Search company, city, country..." style="width:220px" oninput="applyFilters()"/>
+        <select id="country-filter" onchange="applyFilters()">
+          <option value="">All Countries</option>
+        </select>
+        <select id="contacted-filter" onchange="applyFilters()">
+          <option value="">All Visitors</option>
+          <option value="false">Not Yet Contacted</option>
+          <option value="true">Already Contacted</option>
+        </select>
+        <select id="view-mode">
+          <option value="company">Group by Company</option>
+          <option value="visit">All Visits</option>
+        </select>
+      </div>
+      <div class="flex">
+        <button class="btn btn-sm" onclick="selectAll()">☑ Select All</button>
+        <button class="btn btn-sm" onclick="selectNone()">☐ None</button>
+        <span id="selected-count" style="font-size:12px;color:var(--text2)">0 selected</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div id="table-wrap">
+      <div class="empty"><div class="spin"></div><p style="margin-top:12px">Loading visitors...</p></div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="fb" id="pagination" style="display:none;margin-top:12px">
+      <span id="page-info" style="font-size:13px;color:var(--text2)"></span>
+      <div class="flex">
+        <button class="btn btn-sm" id="prev-btn" onclick="changePage(-1)">← Prev</button>
+        <button class="btn btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+let _session=null, allVisits=[], filtered=[], selected=new Set();
+let currentPage=1; const PAGE=50;
+
+async function init(){
+  const{data:{session}}=await sbClient.auth.getSession();
+  if(!session){window.location.href='/login.html';return;}
+  _session=session;
+  document.getElementById('user-email').textContent=session.user.email;
+  await loadVisitors();
+}
+
+async function loadVisitors(){
+  try{
+    const resp=await fetch('${SB_URL}/rest/v1/website_visitors?order=visited_at.desc&limit=5000',{
+      headers:{'Authorization':'Bearer ${_session.access_token}','apikey':SB_KEY}
+    });
+    allVisits=await resp.json();
+    if(!Array.isArray(allVisits))allVisits=[];
+    updateStats();
+    populateCountryFilter();
+    applyFilters();
+  }catch(e){
+    document.getElementById('table-wrap').innerHTML='<div class="empty"><div class="empty-icon">!</div><p>Could not load visitors. Make sure the website_visitors table exists in Supabase.</p></div>';
+  }
+}
+
+function updateStats(){
+  const today=new Date().toISOString().slice(0,10);
+  const companies=new Set(allVisits.map(v=>v.company_name).filter(Boolean));
+  const countries=new Set(allVisits.map(v=>v.country).filter(Boolean));
+  const contacted=allVisits.filter(v=>v.contacted).length;
+  const todayCount=allVisits.filter(v=>v.visited_at&&v.visited_at.startsWith(today)).length;
+  document.getElementById('s-total').textContent=allVisits.length;
+  document.getElementById('s-companies').textContent=companies.size;
+  document.getElementById('s-countries').textContent=countries.size;
+  document.getElementById('s-contacted').textContent=contacted;
+  document.getElementById('s-today').textContent=todayCount;
+}
+
+function populateCountryFilter(){
+  const countries=[...new Set(allVisits.map(v=>v.country).filter(Boolean))].sort();
+  const sel=document.getElementById('country-filter');
+  sel.innerHTML='<option value="">All Countries</option>';
+  countries.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+}
+
+function applyFilters(){
+  const search=document.getElementById('search-inp').value.toLowerCase();
+  const country=document.getElementById('country-filter').value;
+  const contacted=document.getElementById('contacted-filter').value;
+  const mode=document.getElementById('view-mode').value;
+
+  let data=allVisits.filter(v=>{
+    if(country&&v.country!==country)return false;
+    if(contacted!=='')if(String(v.contacted)!==contacted)return false;
+    if(search){const s=(v.company_name+v.city+v.country+v.company_domain+v.page).toLowerCase();if(!s.includes(search))return false;}
+    return true;
+  });
+
+  if(mode==='company'){
+    // Group by company
+    const map={};
+    data.forEach(v=>{
+      const key=v.company_name||v.ip||'Unknown';
+      if(!map[key]){map[key]={...v,visitCount:0,pages:[],lastVisit:v.visited_at};}
+      map[key].visitCount++;
+      if(v.page&&!map[key].pages.includes(v.page))map[key].pages.push(v.page);
+      if(v.visited_at>map[key].lastVisit)map[key].lastVisit=v.visited_at;
+    });
+    filtered=Object.values(map).sort((a,b)=>new Date(b.lastVisit)-new Date(a.lastVisit));
+  }else{
+    filtered=data;
+  }
+
+  currentPage=1;
+  renderTable();
+}
+
+function changePage(dir){
+  const total=Math.ceil(filtered.length/PAGE);
+  currentPage=Math.max(1,Math.min(total,currentPage+dir));
+  renderTable();
+}
+
+function renderTable(){
+  const mode=document.getElementById('view-mode').value;
+  const wrap=document.getElementById('table-wrap');
+
+  if(!filtered.length){
+    wrap.innerHTML='<div class="empty"><div class="empty-icon">🌐</div><h3 style="margin-bottom:8px">No visitors yet</h3><p>Install the tracking script on your website to start seeing visitor data.</p></div>';
+    document.getElementById('pagination').style.display='none';
+    return;
+  }
+
+  const page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
+
+  let html='<table><thead><tr><th style="width:30px"><input type="checkbox" class="cb" id="select-all-cb" onchange="toggleSelectAll(this)"/></th>';
+  if(mode==='company'){
+    html+='<th>Company</th><th>Location</th><th>Visits</th><th>Pages Viewed</th><th>Last Visit</th><th>Industry</th><th>Website</th><th>Status</th></tr></thead><tbody>';
+    page.forEach(v=>{
+      const id=v.id||v.company_name;
+      const isSel=selected.has(id);
+      html+='<tr>
+        <td><input type="checkbox" class="cb" data-id="${id}" ${isSel?'checked':''} onchange="toggleSelect('${id}',this)"/></td>
+        <td>
+          <div style="font-weight:700">${v.company_name||'Unknown'}</div>
+          ${v.company_domain?'<div style="font-size:11px;color:var(--blue)"><a href="https://${v.company_domain}" target="_blank">${v.company_domain}</a></div>':''}
+        </td>
+        <td style="font-size:12px">${[v.city,v.region,v.country].filter(Boolean).join(', ')||'-'}</td>
+        <td><span class="badge" style="background:var(--blue-bg);color:var(--blue)">${v.visitCount||1}</span></td>
+        <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(v.pages||[v.page]).slice(0,3).join(' . ')||'-'}</td>
+        <td style="font-size:11px;white-space:nowrap">${v.lastVisit?new Date(v.lastVisit).toLocaleString():'-'}</td>
+        <td style="font-size:12px">${v.company_industry||'-'}</td>
+        <td>${v.company_website?'<a href="${v.company_website}" target="_blank" style="font-size:11px;color:var(--blue)">Website -></a>':'-'}</td>
+        <td>${v.contacted?'<span class="badge" style="background:var(--green-bg);color:var(--green)">OK Contacted</span>':'<span class="badge" style="background:var(--bg2);color:var(--text2)">Not contacted</span>'}</td>
+      </tr>';
+    });
+  }else{
+    html+='<th>Page Visited</th><th>Company</th><th>Location</th><th>Date & Time</th><th>Duration</th><th>Referrer</th></tr></thead><tbody>';
+    page.forEach(v=>{
+      const id=v.id;const isSel=selected.has(id);
+      html+='<tr>
+        <td><input type="checkbox" class="cb" data-id="${id}" ${isSel?'checked':''} onchange="toggleSelect('${id}',this)"/></td>
+        <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.page||'-'}</td>
+        <td>
+          <div style="font-weight:600">${v.company_name||'Unknown'}</div>
+          <div style="font-size:11px;color:var(--text2)">${v.company_domain||''}</div>
+        </td>
+        <td style="font-size:12px">${[v.city,v.country].filter(Boolean).join(', ')||'-'}</td>
+        <td style="font-size:11px;white-space:nowrap">${v.visited_at?new Date(v.visited_at).toLocaleString():'-'}</td>
+        <td style="font-size:12px">${v.time_spent?v.time_spent+'s':'-'}</td>
+        <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.referrer||'Direct'}</td>
+      </tr>';
+    });
+  }
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+
+  const total=Math.ceil(filtered.length/PAGE);
+  const pag=document.getElementById('pagination');
+  if(total>1){
+    pag.style.display='flex';
+    document.getElementById('page-info').textContent='Showing '+(((currentPage-1)*PAGE)+1)+'-'+Math.min(currentPage*PAGE,filtered.length)+' of '+filtered.length;
+    document.getElementById('prev-btn').disabled=currentPage<=1;
+    document.getElementById('next-btn').disabled=currentPage>=total;
+  }else pag.style.display='none';
+
+  document.getElementById('selected-count').textContent=selected.size+' selected';
+}
+
+function toggleSelect(id,cb){
+  if(cb.checked)selected.add(id);else selected.delete(id);
+  document.getElementById('selected-count').textContent=selected.size+' selected';
+}
+function toggleSelectAll(cb){
+  const mode=document.getElementById('view-mode').value;
+  const page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
+  page.forEach(v=>{const id=mode==='company'?(v.id||v.company_name):v.id;if(cb.checked)selected.add(id);else selected.delete(id);});
+  renderTable();
+}
+function selectAll(){filtered.forEach(v=>selected.add(v.id||v.company_name));renderTable();}
+function selectNone(){selected.clear();renderTable();}
+
+// Launch email campaign to selected companies via Koios Intel -> Campaign Agent
+async function launchToSelected(){
+  if(!selected.size){alert('Select at least one company to email.');return;}
+  const toContact=filtered.filter(v=>selected.has(v.id||v.company_name)&&!v.contacted);
+  if(!toContact.length){alert('All selected companies have already been contacted.');return;}
+
+  if(!confirm('Find decision makers at '+toContact.length+' companies on Koios Intel and launch an intro email campaign?'))return;
+
+  const btn=document.getElementById('launch-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Finding decision makers...';
+
+  const leads=[];
+  for(const v of toContact.slice(0,20)){// limit to 20 companies
+    if(!v.company_name&&!v.company_domain)continue;
+    try{
+      const resp=await fetch('/.netlify/functions/find-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+        body:JSON.stringify({
+          action:'search',
+          searchParams:{
+            titles:['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT'],
+            keywords:v.company_name||'',
+            perPage:3
+          }
+        })
+      });
+      const data=await resp.json();
+      if(data.contacts&&data.contacts.length){
+        data.contacts.forEach(c=>{if(c.email)leads.push({...c,sourceCompany:v.company_name,sourceDomain:v.company_domain});});
+      }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,500));
+  }
+
+  if(!leads.length){
+    alert('No contacts found with emails for selected companies. Try enriching with Koios Intel on the Find Leads page.');
+    btn.disabled=false;btn.textContent='🚀 Email Selected Companies';
+    return;
+  }
+
+  // Pass leads to campaign agent
+  const hdrs=['First Name','Last Name','Email','Company','Job Title','Industry','Company Size'];
+  const rows=leads.map(l=>[l.firstName,l.lastName,l.email,l.company,l.title,l.industry,l.companySize||'']);
+  const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  sessionStorage.setItem('velorah_leads_csv',csv);
+  sessionStorage.setItem('velorah_leads_count',leads.length);
+
+  // Mark companies as contacted
+  for(const v of toContact){
+    if(v.id){
+      try{
+        await fetch('${SB_URL}/rest/v1/website_visitors?id=eq.${v.id}',{
+          method:'PATCH',
+          headers:{'Authorization':'Bearer '+_session.access_token,'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({contacted:true,campaign_sent:'visitor-outreach-'+new Date().toISOString().slice(0,10)})
+        });
+      }catch(e){}
+    }
+  }
+
+  alert('OK Found '+leads.length+' contacts at '+toContact.length+' companies. Redirecting to Campaign Agent...');
+  window.location.href='/app.html?from=visitors';
+}
+
+function copyInstall(){
+  const code='<!-- Add before 
+<script>
+// Performance: debounce helper
+function debounce(fn, ms) {
+  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
+}
+// Performance: lazy-load non-critical content
+if ('IntersectionObserver' in window) {
+  var lazyObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
+  });
+  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
+}
+// Performance: prevent duplicate fetch on rapid clicks
+window._fetchCache = window._fetchCache || {};
+window.cachedFetch = function(url, opts, ttlMs) {
+  var key = url + JSON.stringify(opts&&opts.body||'');
+  var cached = window._fetchCache[key];
+  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
+  return fetch(url, opts).then(function(r) {
+    return r.clone().json().then(function(data) {
+      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
+      return r;
+    }).catch(function(){ return r; });
+  });
+};
+}
+</script>
+</body> on every page of xcigence.com -->\n<script src="/velorah-tracker.js"><\/script>`;
+  navigator.clipboard.writeText(code).then(()=>alert('Install code copied! Paste before </body> on every page of your website.'));
+}
+
+function exportCSV(){
+  if(!filtered.length){alert('No data to export.');return;}
+  const hdrs=['Company','Domain','Industry','Size','Website','City','Country','Last Visit','Visit Count','Contacted','Pages'];
+  const rows=filtered.map(v=>[v.company_name||'',v.company_domain||'',v.company_industry||'',v.company_size||'',v.company_website||'',v.city||'',v.country||'',v.lastVisit||v.visited_at||'',v.visitCount||1,v.contacted?'Yes':'No',(v.pages||[v.page]).join('|')]);
+  const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='website_visitors_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+
+async function launchWithAres(){
+  var toContact=filtered.filter(function(v){return S_selected&&S_selected.has(v.id||v.company_name);});
+  if(!toContact.length&&typeof filtered!=='undefined')toContact=filtered.slice(0,20);
+  if(!toContact.length){alert('No visitor data to send to Ares.');return;}
+  var rows=toContact.map(function(v){return [v.company_name||'','','',v.company_name||'','Decision Maker',v.company_industry||''].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(',');});
+  sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows.join('\n'));
+  sessionStorage.setItem('velorah_leads_count',toContact.length);
+  sessionStorage.setItem('velorah_source','argus');
+  window.location.href='/campaign-video.html';
+}
+
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+init();
+</script>
+</body>
+</html>
