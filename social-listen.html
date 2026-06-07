@@ -121,6 +121,7 @@ input::placeholder{color:var(--text3)}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
       <a href="/social-listen.html" class="active">Athena One</a>
@@ -491,6 +492,15 @@ function sendSelected(){
   }
 }
 
+function launchAres(){
+  var sel=selected.size>0?allResults.filter(function(r){return selected.has(r.id);}):allResults.filter(function(r){return r.intent==='buying'||r.intent==='problem';});
+  if(!sel.length){alert('Select results or run a search first.');return;}
+  var rows=sel.map(function(r){return [r.author||'','',(r.contact&&r.contact.email)||'',r.community||r.platform,r.type,'',r.intent].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');});
+  sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows.join('\n'));
+  sessionStorage.setItem('velorah_leads_count',sel.length);
+  sessionStorage.setItem('velorah_source','athena');
+  window.location.href='/campaign-video.html';
+}
 function exportResults(items){
   var toExp=items||(selected.size>0?allResults.filter(function(r){return selected.has(r.id);}):allResults);
   if(!toExp.length){alert('Nothing to export.');return;}
