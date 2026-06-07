@@ -60,6 +60,7 @@ tr:hover td{background:var(--bg2)}
     <nav class="topbar-nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
       <a href="/social-listen.html">Athena One</a>
@@ -414,6 +415,18 @@ function exportCSV(){
   const rows=filtered.map(v=>[v.company_name||'',v.company_domain||'',v.company_industry||'',v.company_size||'',v.company_website||'',v.city||'',v.country||'',v.lastVisit||v.visited_at||'',v.visitCount||1,v.contacted?'Yes':'No',(v.pages||[v.page]).join('|')]);
   const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='website_visitors_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+
+async function launchWithAres(){
+  var toContact=filtered.filter(function(v){return S_selected&&S_selected.has(v.id||v.company_name);});
+  if(!toContact.length&&typeof filtered!=='undefined')toContact=filtered.slice(0,20);
+  if(!toContact.length){alert('No visitor data to send to Ares.');return;}
+  var rows=toContact.map(function(v){return [v.company_name||'','','',v.company_name||'','Decision Maker',v.company_industry||''].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(',');});
+  sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows.join('\n'));
+  sessionStorage.setItem('velorah_leads_count',toContact.length);
+  sessionStorage.setItem('velorah_source','argus');
+  window.location.href='/campaign-video.html';
 }
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
