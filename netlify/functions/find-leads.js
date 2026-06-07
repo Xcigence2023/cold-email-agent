@@ -212,4 +212,3 @@ exports.handler = async function(event) {
     } catch(e) { return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: e.message }) }; }
   }
 
-
