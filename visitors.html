@@ -58,10 +58,13 @@ tr:hover td{background:var(--bg2)}
   <div class="flex">
     <strong style="font-size:15px">✉️ Velorah</strong>
     <nav class="topbar-nav">
-      <a href="/app.html">🚀 Campaigns</a>
-      <a href="/find-leads.html">🔍 Find Leads</a>
-      <a href="/history.html">📋 History</a>
-      <a href="/visitors.html" class="active">🌐 Visitors</a>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html" class="active">Argus Watch</a>
+      <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="flex">
@@ -308,13 +311,13 @@ function toggleSelectAll(cb){
 function selectAll(){filtered.forEach(v=>selected.add(v.id||v.company_name));renderTable();}
 function selectNone(){selected.clear();renderTable();}
 
-// Launch email campaign to selected companies via Apollo → Campaign Agent
+// Launch email campaign to selected companies via Koios Intel → Campaign Agent
 async function launchToSelected(){
   if(!selected.size){alert('Select at least one company to email.');return;}
   const toContact=filtered.filter(v=>selected.has(v.id||v.company_name)&&!v.contacted);
   if(!toContact.length){alert('All selected companies have already been contacted.');return;}
 
-  if(!confirm('Find decision makers at '+toContact.length+' companies on Apollo.io and launch an intro email campaign?'))return;
+  if(!confirm('Find decision makers at '+toContact.length+' companies on Koios Intel and launch an intro email campaign?'))return;
 
   const btn=document.getElementById('launch-btn');
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Finding decision makers...';
@@ -344,7 +347,7 @@ async function launchToSelected(){
   }
 
   if(!leads.length){
-    alert('No contacts found with emails for selected companies. Try enriching with Hunter.io on the Find Leads page.');
+    alert('No contacts found with emails for selected companies. Try enriching with Koios Intel on the Find Leads page.');
     btn.disabled=false;btn.textContent='🚀 Email Selected Companies';
     return;
   }
