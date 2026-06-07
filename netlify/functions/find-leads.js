@@ -3,10 +3,14 @@ exports.handler = async function(event) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'X-Content-Type-Options': 'nosniff'
   };
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+
+  const _rlip = event.headers['x-forwarded-for']||'unknown';
+  if(!_rate(_rlip, 30, 60000)) return {statusCode:429, headers, body:JSON.stringify({error:'Too many requests. Please slow down.'})};
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const APOLLO_KEY = process.env.APOLLO_API_KEY;
@@ -25,7 +29,7 @@ exports.handler = async function(event) {
 
   // ── APOLLO PEOPLE SEARCH ──────────────────────────────────
   if (action === 'search') {
-    if (!APOLLO_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'APOLLO_API_KEY not configured in Netlify environment variables.' }) };
+    if (!APOLLO_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Intelligence database not configured in Netlify environment variables.' }) };
 
     const titles = searchParams.titles || [
       'CISO','Chief Information Security Officer','CTO','Chief Technology Officer',
@@ -50,7 +54,7 @@ exports.handler = async function(event) {
     if (searchParams.keywords)                                               basePayload.q_keywords = searchParams.keywords;
     if (searchParams.companySizes && searchParams.companySizes.length > 0)  basePayload.organization_num_employees_ranges = searchParams.companySizes;
 
-    // All Apollo endpoints to try in order
+    // All Koios endpoints to try in order
     const endpoints = [
       { url: 'https://api.apollo.io/v1/mixed_people/search',   label: 'mixed_people' },
       { url: 'https://api.apollo.io/v1/contacts/search',        label: 'contacts' },
@@ -134,13 +138,13 @@ exports.handler = async function(event) {
 
     // All endpoints failed
     return { statusCode: 403, headers, body: JSON.stringify({
-      error: 'Could not access Apollo API. Errors: ' + errors.slice(0,3).join(' | ') + '. Please check: 1) APOLLO_API_KEY is correct in Netlify env vars 2) Your API key has search permissions at developer.apollo.io/keys'
+      error: 'Could not access Koios API. Errors: ' + errors.slice(0,3).join(' | ') + '. Please check: 1) APOLLO_API_KEY is correct in Netlify env vars 2) Your API key has search permissions at developer.koios-intel/keys'
     })};
   }
 
   // ── HUNTER EMAIL FINDER ───────────────────────────────────
   if (action === 'find-email') {
-    if (!HUNTER_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'HUNTER_API_KEY not configured in Netlify environment variables.' }) };
+    if (!HUNTER_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'KOIOS_PRIMARY_KEY not configured in Netlify environment variables.' }) };
     const { firstName, lastName, company, domain } = contact;
     if (!firstName || !lastName || (!company && !domain)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName, lastName and company or domain are required' }) };
     try {
@@ -153,17 +157,17 @@ exports.handler = async function(event) {
       const res  = await fetch(url);
       const data = await res.json();
       if (data.data && data.data.email) {
-        return { statusCode: 200, headers, body: JSON.stringify({ email: data.data.email, score: data.data.score || 0, source: 'hunter' }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ email: data.data.email, score: data.data.score || 0, source: 'koios-verified' }) };
       }
-      return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Email not found by Hunter.io' }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Email not found by Koios.io' }) };
     } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Hunter.io error: ' + e.message }) };
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Koios.io error: ' + e.message }) };
     }
   }
 
   // ── LUSHA ENRICHMENT ──────────────────────────────────────
   if (action === 'enrich') {
-    if (!LUSHA_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'LUSHA_API_KEY not configured in Netlify environment variables.' }) };
+    if (!LUSHA_KEY) return { statusCode: 400, headers, body: JSON.stringify({ error: 'KOIOS_SECONDARY_KEY not configured in Netlify environment variables.' }) };
     const { firstName, lastName, company } = contact;
     if (!firstName || !lastName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName are required' }) };
     try {
@@ -178,17 +182,17 @@ exports.handler = async function(event) {
         phone:   data.phoneNumbers    && data.phoneNumbers[0]    ? data.phoneNumbers[0].localNumber        : null,
         twitter: data.twitterHandle || null,
         linkedin:data.linkedinUrl   || null,
-        source: 'lusha'
+        source: 'koios-enriched'
       })};
     } catch(e) {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Lusha error: ' + e.message }) };
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Koios error: ' + e.message }) };
     }
   }
 
   return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid action. Use: search, find-email, or enrich' }) };
 };  // APOLLO PEOPLE MATCH - find email by name + company
   if (action === 'match') {
-    if (!APOLLO_KEY) return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: 'APOLLO_API_KEY not configured' }) };
+    if (!APOLLO_KEY) return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: 'Intelligence database not configured' }) };
     const { firstName, lastName, company, linkedinUrl } = contact;
     if (!firstName || !lastName) return { statusCode: 400, headers, body: JSON.stringify({ error: 'firstName and lastName required' }) };
     try {
@@ -200,11 +204,12 @@ exports.handler = async function(event) {
         headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'x-api-key': APOLLO_KEY },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Apollo match ' + res.status }) };
+      if (!res.ok) return { statusCode: 200, headers, body: JSON.stringify({ email: null, message: 'Koios match ' + res.status }) };
       const data = await res.json();
       const person = data.person || {};
       const email = person.email || (person.personal_emails && person.personal_emails[0]) || null;
-      return { statusCode: 200, headers, body: JSON.stringify({ email, title: person.title||null, source: 'apollo' }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ email, title: person.title||null, source: 'koios-intel' }) };
     } catch(e) { return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: e.message }) }; }
   }
+
 
