@@ -384,7 +384,7 @@ function p0(){
       this.disabled=true;this.textContent='Checking...';
       try{
         const emails=S.leads.map(r=>(r[S.colMap.email]||'').trim().toLowerCase()).filter(Boolean);
-        const resp=await fetch('/.netlify/functions/check-duplicates',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({emails})});
+        const resp=await fetch('/.netlify/functions/check_duplicates',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({emails})});
         const data=await resp.json();
         const dr=document.getElementById('dup-result-box');
         S._duplicates=data.duplicates||{};
