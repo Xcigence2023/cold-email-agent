@@ -113,14 +113,30 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .stats-grid{animation:fadeUp .4s ease .1s both}
 .features-grid{animation:fadeUp .4s ease .2s both}
 .bottom-grid{animation:fadeUp .4s ease .3s both}
+
+.topbar a{font-size:12px;font-weight:500;padding:5px 10px;border-radius:8px;text-decoration:none;color:var(--text2);transition:all .2s}
+.topbar a:hover{color:var(--text);background:rgba(59,130,246,.08)}
+.topbar a.active{color:var(--blue);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="brand">
-    <div class="brand-logo">✉</div>
-    <span class="brand-name">Velorah</span>
+  <div style="display:flex;align-items:center;gap:0">
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <span class="brand-name">Velorah</span>
+    </div>
+    <nav style="display:flex;gap:2px;margin-left:10px">
+      <a href="/dashboard.html" class="active">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html">Argus Watch</a>
+      <a href="/history.html">History</a>
+    </nav>
   </div>
   <div class="topbar-right">
     <div class="user-badge">
@@ -221,7 +237,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
       <div class="fc-action" style="color:var(--green)">View Analytics <span>-></span></div>
     </a>
 
-    <a class="feature-card" href="/visitors.html" style="--card-glow:rgba(139,92,246,.08);--card-border:rgba(139,92,246,.4);--card-shadow:rgba(139,92,246,.3)">
+    <a class="feature-card" href="/visitors.html" style="--card-glow:rgba(239,68,68,.08);--card-border:rgba(239,68,68,.4);--card-shadow:rgba(239,68,68,.3)">
       <span class="fc-badge" style="background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3)">LIVE</span>
       <span class="fc-icon">🌐</span>
       <div class="fc-title">Argus Watch</div>
