@@ -3,75 +3,97 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah — Find Leads</title>
+<title>Velorah - LinkedIn Campaign Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#fff;--bg2:#f7f7f5;--bg3:#f0f0ec;--text:#1a1a1a;--text2:#6b6b6b;--border:#e0e0d8;--border2:#c8c8c0;--r:8px;--rl:12px;--blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;--green:#15803d;--green-bg:#f0fdf4}
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--text:#f5f5f0;--text2:#aeaeb2;--border:#3a3a3c;--border2:#48484a}}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 1.5rem;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
-.topbar nav{display:flex;align-items:center;gap:16px}
-.topbar nav a{font-size:13px;color:var(--text2);text-decoration:none;font-weight:500;padding:4px 8px;border-radius:6px}
-.topbar nav a:hover{background:var(--bg2);color:var(--text)}
-.topbar nav a.active{color:var(--blue);background:var(--blue-bg)}
-.page{display:grid;grid-template-columns:320px 1fr;gap:1rem;max-width:1200px;margin:0 auto;padding:1.5rem;align-items:start}
-@media(max-width:800px){.page{grid-template-columns:1fr}}
-.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem}
-.card+.card{margin-top:12px}
-label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:5px;margin-top:12px}
-label:first-child{margin-top:0}
-input,select,textarea{width:100%;font-size:13px;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit}
-input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1)}
-.btn{cursor:pointer;font-size:13px;font-weight:700;padding:9px 18px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);font-family:inherit;white-space:nowrap;transition:all .15s}
-.btn:hover{background:var(--bg2)}
-.btn:active{transform:scale(.98)}
-.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
-.btn-primary:hover{opacity:.9}
-.btn-success{background:var(--green-bg);border-color:#86efac;color:var(--green)}
-.btn-sm{padding:4px 10px;font-size:12px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+:root{--bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--red:#ef4444;--gold:#f59e0b;--li:#0077b5;--border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);--glass:rgba(255,255,255,.03);--r:10px;--rl:14px}
+body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 0%,rgba(59,130,246,.08),transparent 60%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(0,119,181,.06),transparent 60%);pointer-events:none}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px}
+.brand-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f0fe,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav{display:flex;gap:4px;margin-left:12px}
+.nav a{font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;text-decoration:none;color:var(--text2);transition:all .2s}
+.nav a:hover{color:var(--text);background:rgba(59,130,246,.08)}
+.nav a.active{color:var(--blue);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:1.5rem}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:12px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:3px;height:16px;background:linear-gradient(var(--blue),var(--cyan));border-radius:2px}
+.lbl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
+input,select,textarea{width:100%;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:rgba(13,21,38,.8);color:var(--text);font-family:'Outfit',sans-serif;transition:all .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+select option{background:var(--bg2)}
+textarea{resize:vertical;line-height:1.6;min-height:100px}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--border2);background:rgba(59,130,246,.08)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:var(--blue);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,.3)}
+.btn-primary:hover{box-shadow:0 4px 25px rgba(59,130,246,.5);transform:translateY(-1px)}
+.btn-li{background:linear-gradient(135deg,#0077b5,#005885);border-color:#0077b5;color:#fff;box-shadow:0 4px 15px rgba(0,119,181,.3)}
+.btn-li:hover{transform:translateY(-1px)}
+.btn-green{background:linear-gradient(135deg,var(--green),#059669);border-color:var(--green);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px}
 .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.badge{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:500;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
-.tag button{background:none;border:none;cursor:pointer;color:var(--blue);font-size:14px;line-height:1;padding:0}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg2)}
-.chip.active{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
-.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.contact-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;transition:border-color .15s}
-.contact-card:hover{border-color:var(--blue-border)}
-.contact-card.selected{border-color:var(--blue);background:var(--blue-bg)}
-.avatar{width:38px;height:38px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
-.source-badge{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:700}
-.src-apollo{background:#ff6b35;color:#fff}
-.src-hunter{background:#00bfff;color:#fff}
-.src-lusha{background:#7c3aed;color:#fff}
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.stat-box{background:var(--bg2);border-radius:var(--r);padding:10px;text-align:center;border:1px solid var(--border)}
-.stat-val{font-size:20px;font-weight:700}
-.stat-lbl{font-size:11px;color:var(--text2);margin-top:2px}
-.progress-bar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:6px}
-.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .3s}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700}
+.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:rgba(59,130,246,.06);border-radius:var(--r);border-left:3px solid rgba(59,130,246,.3);line-height:1.6}
+.warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);line-height:1.5}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
-.section-title{font-size:15px;font-weight:700;margin-bottom:12px}
-.divider{height:1px;background:var(--border);margin:14px 0}
-.info-box{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--blue);margin-top:8px;line-height:1.5}
-.empty-state{text-align:center;padding:3rem;color:var(--text2)}
-.empty-icon{font-size:36px;margin-bottom:12px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Outfit',sans-serif}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-btn:hover{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:rgba(13,21,38,.5);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(59,130,246,.04)}
+.stat{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:14px;text-align:center}
+.stat-val{font-size:26px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.dz{border:2px dashed var(--border);border-radius:var(--rl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass)}
+.dz:hover,.dz.over{border-color:var(--li);background:rgba(0,119,181,.05);box-shadow:inset 0 0 40px rgba(0,119,181,.05)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s;margin:3px}
+.chip.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);color:var(--blue)}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 0 10px rgba(59,130,246,.4);flex-shrink:0}
+.step-row{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.step-row:last-child{border-bottom:none}
+.msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.msg-grid{grid-template-columns:1fr}}
+.msg-box{background:rgba(13,21,38,.6);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.ch-card{flex:1;padding:14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s;min-width:160px}
+.ch-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.angle-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
+.angle-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.pbar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width .4s}
+.empty{text-align:center;padding:3rem;color:var(--text2)}
 </style>
 </head>
 <body>
-
 <div class="topbar">
-  <div style="display:flex;align-items:center;gap:16px">
-    <strong>✉️ Velorah</strong>
-    <nav>
-      <a href="/app.html">🚀 Campaigns</a>
-      <a href="/find-leads.html" class="active">🔍 Find Leads</a>
-      <a href="/history.html">📋 History</a>
+  <div class="flex" style="gap:0">
+    <div class="brand">
+      <div class="brand-logo">✉</div>
+      <span class="brand-name">Velorah</span>
+    </div>
+    <nav class="nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/find-leads.html">Find Leads</a>
+      <a href="/linkedin.html" class="active">LinkedIn</a>
+      <a href="/visitors.html">Visitors</a>
+      <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="flex">
@@ -81,404 +103,706 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 </div>
 
 <div class="page">
-
-  <!-- LEFT: Search Panel -->
-  <div>
-    <div class="card">
-      <p class="section-title">🔍 Find Decision Makers</p>
-
-      <!-- Source selector -->
-      <label>Data Source</label>
-      <div class="chip-group">
-        <span class="chip active" id="src-apollo" onclick="toggleSource('apollo')">🟠 Apollo.io</span>
-        <span class="chip" id="src-hunter" onclick="toggleSource('hunter')">🔵 Hunter.io</span>
-        <span class="chip" id="src-lusha" onclick="toggleSource('lusha')">🟣 Lusha</span>
+  <div class="card" style="background:linear-gradient(135deg,rgba(0,119,181,.08),rgba(59,130,246,.05));border-color:rgba(0,119,181,.25);margin-bottom:1.25rem">
+    <div class="fb">
+      <div>
+        <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">💼 LinkedIn Campaign Agent</h1>
+        <p style="font-size:13px;color:var(--text2)">Import connections &rarr; Filter by title/location &rarr; Generate personalized messages &rarr; Email or LinkedIn outreach</p>
       </div>
-
-      <div class="divider"></div>
-
-      <!-- Job Titles -->
-      <label>Job Titles</label>
-      <div class="tag-list" id="title-tags"></div>
-      <div class="flex" style="margin-top:8px">
-        <input type="text" id="title-input" placeholder="Add title + press Enter" style="flex:1"/>
-        <button class="btn btn-sm" onclick="addTitle()">Add</button>
-      </div>
-
-      <!-- Quick title presets -->
-      <div class="chip-group" style="margin-top:8px">
-        <span class="chip" onclick="addPreset('CISO')">CISO</span>
-        <span class="chip" onclick="addPreset('CTO')">CTO</span>
-        <span class="chip" onclick="addPreset('CEO')">CEO</span>
-        <span class="chip" onclick="addPreset('VP of Security')">VP Security</span>
-        <span class="chip" onclick="addPreset('Chief Cybersecurity Officer')">CCO</span>
-        <span class="chip" onclick="addPreset('Security Manager')">Security Mgr</span>
-        <span class="chip" onclick="addPreset('Head of Information Security')">Head InfoSec</span>
-        <span class="chip" onclick="addPreset('Security Lead')">Security Lead</span>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Industry -->
-      <label>Industry (optional)</label>
-      <input type="text" id="industry-input" placeholder="e.g. Healthcare, Finance, Technology"/>
-
-      <!-- Company Size -->
-      <label>Company Size</label>
-      <div class="chip-group">
-        <span class="chip" id="sz-1,10" onclick="toggleSize('1,10')">1-10</span>
-        <span class="chip" id="sz-11,50" onclick="toggleSize('11,50')">11-50</span>
-        <span class="chip" id="sz-51,200" onclick="toggleSize('51,200')">51-200</span>
-        <span class="chip" id="sz-201,1000" onclick="toggleSize('201,1000')">201-1K</span>
-        <span class="chip" id="sz-1001,5000" onclick="toggleSize('1001,5000')">1K-5K</span>
-        <span class="chip" id="sz-5001,10000" onclick="toggleSize('5001,10000')">5K-10K</span>
-        <span class="chip" id="sz-10001,+" onclick="toggleSize('10001,+')">10K+</span>
-      </div>
-
-      <!-- Location -->
-      <label>Location (optional)</label>
-      <input type="text" id="location-input" placeholder="e.g. United States, Canada, United Kingdom"/>
-
-      <!-- Keywords -->
-      <label>Keywords (optional)</label>
-      <input type="text" id="keywords-input" placeholder="e.g. cybersecurity, compliance, HIPAA"/>
-
-      <!-- Results per page -->
-      <label>Results per search</label>
-      <select id="perpage-select">
-        <option value="25">25 contacts</option>
-        <option value="50">50 contacts</option>
-        <option value="100">100 contacts</option>
-      </select>
-
-      <div class="info-box" style="margin-top:12px">
-        Apollo.io searches 275M+ verified B2B contacts. Hunter.io and Lusha enrich emails and social profiles for selected contacts.
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;font-size:14px" onclick="searchLeads()" id="search-btn">
-        🔍 Search Leads
-      </button>
+      <a href="https://www.linkedin.com/mynetwork/invite-connect/connections/" target="_blank" class="btn btn-li">💼 Open LinkedIn Connections</a>
     </div>
   </div>
 
-  <!-- RIGHT: Results Panel -->
-  <div>
-
-    <!-- Stats -->
-    <div class="stat-row" id="stats-row" style="display:none">
-      <div class="stat-box"><div class="stat-val" id="stat-found">0</div><div class="stat-lbl">Found</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:#15803d" id="stat-emails">0</div><div class="stat-lbl">With Email</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:var(--blue)" id="stat-selected">0</div><div class="stat-lbl">Selected</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:#7e22ce" id="stat-enriched">0</div><div class="stat-lbl">Enriched</div></div>
-    </div>
-
-    <!-- Action bar -->
-    <div class="card fb" id="action-bar" style="display:none;margin-bottom:12px">
-      <div class="flex">
-        <button class="btn btn-sm" onclick="selectAll()">☑ Select All</button>
-        <button class="btn btn-sm" onclick="selectNone()">☐ Deselect All</button>
-        <button class="btn btn-sm" onclick="enrichSelected()" id="enrich-btn">🔍 Enrich Emails</button>
-      </div>
-      <div class="flex">
-        <button class="btn btn-sm btn-success" onclick="sendToAgent()" id="send-agent-btn">✉️ Send to Campaign Agent →</button>
-        <button class="btn btn-sm" onclick="exportSelected()">↓ Export CSV</button>
-      </div>
-    </div>
-
-    <!-- Pagination -->
-    <div class="fb" id="pagination" style="display:none;margin-bottom:10px">
-      <span id="result-count" style="font-size:13px;color:var(--text2)"></span>
-      <div class="flex">
-        <button class="btn btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
-        <span id="page-info" style="font-size:13px;font-weight:700"></span>
-        <button class="btn btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
-      </div>
-    </div>
-
-    <!-- Results list -->
-    <div id="results-container">
-      <div class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <h3 style="margin-bottom:8px">Find Decision Makers</h3>
-        <p>Search for CISOs, CTOs, VPs of Security and other decision makers using Apollo.io, Hunter.io and Lusha.</p>
-      </div>
-    </div>
-
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('import',this)">Step 1: Import</button>
+    <button class="tab-btn" onclick="showTab('filter',this)">Step 2: Filter &amp; Enrich</button>
+    <button class="tab-btn" onclick="showTab('compose',this)">Step 3: Compose</button>
+    <button class="tab-btn" onclick="showTab('send',this)">Step 4: Send</button>
   </div>
+
+  <div id="tab-content"></div>
 </div>
 
 <script>
-const SUPABASE_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
-const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let _session=null;
+var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+var _session=null;
 
 // State
-let titles=['CISO','CTO','CEO','VP of Security','Chief Cybersecurity Officer','Security Manager'];
-let sizes=[];
-let contacts=[];
-let selectedIds=new Set();
-let sources=new Set(['apollo']);
-let currentPage=1;
-let totalPages=1;
-let totalResults=0;
+var S={
+  raw:[], filtered:[], selected:new Set(), messages:[],
+  filters:{titles:[], locations:[], companies:[], keywords:''},
+  channel:'both', angle:'connection',
+  sender:{name:'', email:'', company:'Velorah'},
+  generating:false, genProgress:0
+};
 
-// Init
+var PRESETS=['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT','Director of IT','VP of IT','Chief Information Officer','CISO','Chief Compliance Officer'];
+
 async function init(){
-  const{data:{session}}=await sbClient.auth.getSession();
-  if(!session){window.location.href='/login.html';return;}
-  _session=session;
-  document.getElementById('user-email').textContent=session.user.email;
-  renderTitleTags();
-}
-
-// Source toggle
-function toggleSource(src){
-  if(sources.has(src))sources.delete(src);else sources.add(src);
-  ['apollo','hunter','lusha'].forEach(s=>{
-    document.getElementById('src-'+s).className='chip'+(sources.has(s)?' active':'');
-  });
-}
-
-// Size toggle
-function toggleSize(sz){
-  if(sizes.includes(sz))sizes=sizes.filter(s=>s!==sz);
-  else sizes.push(sz);
-  ['1,10','11,50','51,200','201,1000','1001,5000','5001,10000','10001,+'].forEach(s=>{
-    const el=document.getElementById('sz-'+s);
-    if(el)el.className='chip'+(sizes.includes(s)?' active':'');
-  });
-}
-
-// Title tags
-function renderTitleTags(){
-  const container=document.getElementById('title-tags');
-  container.innerHTML=titles.map((t,i)=>`<span class="tag">${t}<button onclick="removeTitle(${i})">×</button></span>`).join('');
-}
-function addTitle(){
-  const inp=document.getElementById('title-input');
-  const val=inp.value.trim();
-  if(val&&!titles.includes(val)){titles.push(val);renderTitleTags();}
-  inp.value='';
-}
-function removeTitle(i){titles.splice(i,1);renderTitleTags();}
-function addPreset(t){if(!titles.includes(t)){titles.push(t);renderTitleTags();}}
-document.getElementById('title-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTitle();});
-
-// SEARCH
-async function searchLeads(page){
-  currentPage=page||1;
-  const btn=document.getElementById('search-btn');
-  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Searching...';
-  document.getElementById('results-container').innerHTML='<div class="empty-state"><span class="spin"></span><p style="margin-top:12px">Searching Apollo.io database...</p></div>';
-
-  const perPage=parseInt(document.getElementById('perpage-select').value);
-  const industry=document.getElementById('industry-input').value.trim();
-  const location=document.getElementById('location-input').value.trim();
-  const keywords=document.getElementById('keywords-input').value.trim();
-
   try{
-    const resp=await fetch('/.netlify/functions/find-leads',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
-      body:JSON.stringify({
-        action:'search',
-        searchParams:{
-          titles,
-          industries:industry?[industry]:[],
-          companySizes:sizes,
-          locations:location?[location]:[],
-          keywords,
-          page:currentPage,
-          perPage
-        }
-      })
+    var r=await sbClient.auth.getSession();
+    var session=r.data.session;
+    if(!session){window.location.href='/login.html';return;}
+    _session=session;
+    document.getElementById('user-email').textContent=session.user.email;
+    try{var kr=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'Velorah';}}catch(e){}
+  }catch(e){}
+  showTab('import', document.querySelector('.tab-btn'));
+}
+
+function showTab(tab, btn){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var content=document.getElementById('tab-content');
+  content.innerHTML='';
+  if(tab==='import') renderImport(content);
+  else if(tab==='filter') renderFilter(content);
+  else if(tab==='compose') renderCompose(content);
+  else if(tab==='send') renderSend(content);
+}
+
+// ========== STEP 1: IMPORT ==========
+function renderImport(wrap){
+  // Instructions card
+  var card=mk('div','card');
+  card.appendChild(mkTitle('How to Export Your LinkedIn Connections'));
+
+  var steps=[
+    {n:'1', t:'Open LinkedIn Data Export', d:'Click the button on this page to go directly to LinkedIn connection settings, then click "Get a copy of your data".', link:['Open LinkedIn Export Settings','https://www.linkedin.com/psettings/member-data'], link2:['View Connections','https://www.linkedin.com/mynetwork/invite-connect/connections/']},
+    {n:'2', t:'Request Your Connections File', d:'On the LinkedIn page: scroll down and select "Download larger data archive" (this includes Connections). Click Request archive and confirm with your password. LinkedIn emails you within 10-30 minutes.'},
+    {n:'3', t:'Download & Upload Here', d:'Open the LinkedIn email, download the ZIP file, extract it, then upload Connections.csv below. Velorah auto-cleans LinkedIn\'s format.'}
+  ];
+
+  steps.forEach(function(s){
+    var row=mk('div','step-row');
+    var num=mk('div','step-num');num.textContent=s.n;
+    var body=mk('div',null);body.style.flex='1';
+    var title=mk('p',null);title.style.fontWeight='700';title.style.marginBottom='4px';title.textContent=s.t;
+    var desc=mk('p',null);desc.style.cssText='font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px';desc.textContent=s.d;
+    body.appendChild(title);body.appendChild(desc);
+    if(s.link){
+      var btnRow=mk('div','flex');
+      var a1=mk('a','btn btn-li btn-sm');a1.href=s.link[1];a1.target='_blank';a1.textContent=s.link[0];
+      btnRow.appendChild(a1);
+      if(s.link2){var a2=mk('a','btn btn-sm');a2.href=s.link2[1];a2.target='_blank';a2.style.cssText='border-color:rgba(0,119,181,.3);color:#0077b5';a2.textContent=s.link2[0];btnRow.appendChild(a2);}
+      body.appendChild(btnRow);
+    }
+    row.appendChild(num);row.appendChild(body);
+    card.appendChild(row);
+  });
+
+  var warn=mk('div','warn');warn.style.marginTop='12px';
+  warn.textContent='Note: LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Hunter.io and Lusha.';
+  card.appendChild(warn);
+  wrap.appendChild(card);
+
+  // Drop zone card
+  var dzCard=mk('div','card');
+  var dz=mk('div','dz'+(S.raw.length?' over':''));
+  var dzIcon=mk('div',null);dzIcon.style.cssText='font-size:42px;margin-bottom:14px';dzIcon.textContent=S.raw.length?'✅':'💼';
+  var dzTitle=mk('p',null);dzTitle.style.cssText='font-weight:700;font-size:15px;margin-bottom:6px';
+  dzTitle.textContent=S.raw.length?(S.raw.length+' connections loaded - upload new file to replace'):'Drop your LinkedIn Connections.csv here';
+  var dzSub=mk('p',null);dzSub.style.cssText='font-size:13px;color:var(--text2)';
+  dzSub.textContent=S.raw.length?'Velorah auto-cleaned LinkedIn\'s format':'or click to browse - Velorah auto-cleans LinkedIn\'s format';
+  dz.appendChild(dzIcon);dz.appendChild(dzTitle);dz.appendChild(dzSub);
+
+  var fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
+  fi.addEventListener('change',function(e){if(e.target.files[0])readCSV(e.target.files[0]);});
+  dz.addEventListener('click',function(){fi.click();});
+  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
+  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])readCSV(e.dataTransfer.files[0]);});
+  dzCard.appendChild(dz);dzCard.appendChild(fi);
+
+  if(S.raw.length){
+    var withEmail=S.raw.filter(function(r){return r.email;}).length;
+    var companies=new Set(S.raw.map(function(r){return r.company;}).filter(Boolean)).size;
+
+    var statGrid=mk('div','g4');statGrid.style.margin='14px 0';
+    [{v:S.raw.length,l:'Total Connections',c:'var(--blue)'},{v:withEmail,l:'Have Email',c:'var(--green)'},{v:S.raw.length-withEmail,l:'Need Enrichment',c:'var(--gold)'},{v:companies,l:'Companies',c:'var(--cyan)'}].forEach(function(s){
+      var sc=mk('div','stat');
+      var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
+      var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
+      sc.appendChild(sv);sc.appendChild(sl);statGrid.appendChild(sc);
     });
-    const data=await resp.json();
-    if(data.error){throw new Error(data.error);}
+    dzCard.appendChild(statGrid);
 
-    contacts=data.contacts||[];
-    totalResults=data.total||contacts.length;
-    totalPages=data.totalPages||1;
-    renderResults();
-    updateStats();
-  }catch(e){
-    document.getElementById('results-container').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Search failed</h3><p style="color:red;margin-top:8px">${e.message}</p></div>`;
+    // Preview table
+    var tWrap=mk('div',null);tWrap.style.overflowX='auto';
+    var pTitle=mk('p',null);pTitle.style.cssText='font-size:12px;color:var(--text2);margin-bottom:8px';pTitle.textContent='Preview (first 5 of '+S.raw.length+'):';
+    var table=mk('table',null);
+    table.innerHTML='<thead><tr><th>Name</th><th>Job Title</th><th>Company</th><th>Email</th><th>Location</th><th>Connected</th></tr></thead>';
+    var tbody=mk('tbody',null);
+    S.raw.slice(0,5).forEach(function(r){
+      var tr=mk('tr',null);
+      tr.innerHTML='<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:var(--text2)">'+esc(r.connectedOn||'-')+'</td>';
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tWrap.appendChild(pTitle);tWrap.appendChild(table);
+    dzCard.appendChild(tWrap);
+
+    var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
+    var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Filter & Enrich Connections ->';
+    nextBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[1].click();});
+    nextRow.appendChild(nextBtn);dzCard.appendChild(nextRow);
   }
-  btn.disabled=false;btn.textContent='🔍 Search Leads';
+
+  wrap.appendChild(dzCard);
 }
 
-function changePage(dir){
-  currentPage=Math.max(1,Math.min(totalPages,currentPage+dir));
-  searchLeads(currentPage);
+function readCSV(file){
+  var rd=new FileReader();
+  rd.onload=function(e){
+    var text=e.target.result;
+    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+    var headerIdx=0;
+    for(var i=0;i<Math.min(10,lines.length);i++){
+      if(lines[i].indexOf('First Name')>=0||lines[i].indexOf('Email Address')>=0||lines[i].indexOf('Connected On')>=0){headerIdx=i;break;}
+    }
+    function pr(line){
+      var r=[],c='',q=false;
+      for(var i=0;i<line.length;i++){
+        var ch=line[i];
+        if(ch==='"'){q=!q;}
+        else if(ch===','&&!q){r.push(c.trim().replace(/^"|"$/g,''));c='';}
+        else c+=ch;
+      }
+      r.push(c.trim().replace(/^"|"$/g,''));
+      return r;
+    }
+    var headers=pr(lines[headerIdx]).map(function(h){return h.trim();});
+    function col(name){for(var i=0;i<headers.length;i++){if(headers[i].toLowerCase().indexOf(name.toLowerCase())>=0)return i;}return -1;}
+    var fi=col('first'),li=col('last'),ei=col('email'),ti=col('position'),ci=col('company'),loci=col('location'),doi=col('connected'),urli=col('url');
+    var rows=lines.slice(headerIdx+1);
+    S.raw=rows.filter(function(l){return l.trim();}).map(function(row){
+      var v=pr(row);
+      function g(i){return i>=0&&i<v.length?v[i]:'';}
+      return{firstName:g(fi),lastName:g(li),email:g(ei),title:g(ti),company:g(ci),location:g(loci>=0?loci:-1),connectedOn:g(doi),linkedinUrl:g(urli),source:'linkedin'};
+    }).filter(function(r){return r.firstName||r.lastName||r.email;});
+    S.filtered=S.raw.slice();
+    document.querySelector('.tab-btn').click();
+  };
+  rd.readAsText(file);
 }
 
-// RENDER RESULTS
-function renderResults(){
-  const container=document.getElementById('results-container');
-  document.getElementById('stats-row').style.display='grid';
-  document.getElementById('action-bar').style.display='flex';
-  document.getElementById('pagination').style.display=totalPages>1?'flex':'none';
-  document.getElementById('result-count').textContent=`Showing ${contacts.length} of ${totalResults.toLocaleString()} results`;
-  document.getElementById('page-info').textContent=`Page ${currentPage} of ${totalPages}`;
-  document.getElementById('prev-btn').disabled=currentPage<=1;
-  document.getElementById('next-btn').disabled=currentPage>=totalPages;
+// ========== STEP 2: FILTER & ENRICH ==========
+function renderFilter(wrap){
+  if(!S.raw.length){
+    var empty=mk('div','card');
+    empty.innerHTML='<div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3 style="margin-bottom:8px">No connections loaded</h3><p>Go to Step 1 and upload your LinkedIn Connections.csv first.</p></div>';
+    wrap.appendChild(empty);return;
+  }
 
-  if(!contacts.length){
-    container.innerHTML='<div class="empty-state"><div class="empty-icon">😕</div><h3>No contacts found</h3><p>Try different titles, industry or location filters.</p></div>';
+  // Filter card
+  var fc=mk('div','card');fc.appendChild(mkTitle('Filter Your Connections'));
+
+  // Title filter
+  var tf=mk('div',null);tf.style.marginBottom='16px';
+  var tl=mk('label','lbl');tl.textContent='Filter by Job Title';
+  tf.appendChild(tl);
+  var chips=mk('div',null);chips.style.marginBottom='8px';
+  PRESETS.forEach(function(t){
+    var chip=mk('span','chip'+(S.filters.titles.indexOf(t)>=0?' active':''));
+    chip.textContent=t;
+    chip.addEventListener('click',function(){
+      var idx=S.filters.titles.indexOf(t);
+      if(idx>=0)S.filters.titles.splice(idx,1);else S.filters.titles.push(t);
+      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+    });
+    chips.appendChild(chip);
+  });
+  tf.appendChild(chips);
+  var customRow=mk('div','flex');customRow.style.marginTop='6px';
+  var customInp=document.createElement('input');customInp.type='text';customInp.placeholder='Add custom title + press Enter';customInp.style.flex='1';
+  customInp.addEventListener('keydown',function(e){
+    if(e.key==='Enter'&&customInp.value.trim()){
+      S.filters.titles.push(customInp.value.trim());customInp.value='';
+      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+    }
+  });
+  customRow.appendChild(customInp);tf.appendChild(customRow);
+  fc.appendChild(tf);
+
+  // Location filter
+  var lf=mk('div',null);lf.style.marginBottom='12px';
+  lf.appendChild(mkLbl('Location (comma-separated, optional)'));
+  var li2=document.createElement('input');li2.type='text';li2.placeholder='e.g. United States, Canada';
+  li2.value=S.filters.locations.join(', ');
+  li2.addEventListener('input',function(e){
+    S.filters.locations=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    applyFilters();
+  });
+  lf.appendChild(li2);fc.appendChild(lf);
+
+  // Company filter
+  var cof=mk('div',null);cof.style.marginBottom='12px';
+  cof.appendChild(mkLbl('Company (optional)'));
+  var coi=document.createElement('input');coi.type='text';coi.placeholder='e.g. Microsoft, Google';
+  coi.value=S.filters.companies.join(', ');
+  coi.addEventListener('input',function(e){
+    S.filters.companies=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+    applyFilters();
+  });
+  cof.appendChild(coi);fc.appendChild(cof);
+
+  // Keywords
+  var kf=mk('div',null);
+  kf.appendChild(mkLbl('Keywords (optional)'));
+  var ki=document.createElement('input');ki.type='text';ki.placeholder='e.g. cybersecurity, compliance';
+  ki.value=S.filters.keywords;
+  ki.addEventListener('input',function(e){S.filters.keywords=e.target.value;applyFilters();});
+  kf.appendChild(ki);fc.appendChild(kf);
+  wrap.appendChild(fc);
+
+  applyFilters();
+
+  // Results
+  var rc=mk('div','card');
+  var withEmail=S.filtered.filter(function(r){return r.email;}).length;
+  var noEmail=S.filtered.length-withEmail;
+
+  var rh=mk('div','fb');rh.style.marginBottom='12px';
+  var rTitle=mk('p',null);rTitle.style.fontWeight='700';rTitle.textContent='Results: '+S.filtered.length+' connections';
+  var rBadges=mk('div','flex');
+  var b1=mk('span','badge');b1.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';b1.textContent=withEmail+' have email';
+  var b2=mk('span','badge');b2.style.cssText='background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)';b2.textContent=noEmail+' need enrichment';
+  rBadges.appendChild(b1);rBadges.appendChild(b2);
+  rh.appendChild(rTitle);rh.appendChild(rBadges);rc.appendChild(rh);
+
+  if(noEmail>0){
+    var eb=mk('button','btn btn-primary btn-sm');eb.style.marginBottom='12px';
+    eb.textContent='🔍 Find '+noEmail+' Missing Emails via Hunter.io + Lusha';
+    eb.addEventListener('click',function(){enrichEmails(eb);});
+    rc.appendChild(eb);
+  }
+
+  // Select all row
+  var selRow=mk('div','flex');selRow.style.marginBottom='8px';
+  var selCount=mk('span',null);selCount.style.cssText='font-size:12px;color:var(--text2)';selCount.id='sel-count';selCount.textContent=S.selected.size+' selected';
+  var saBtn=mk('button','btn btn-sm');saBtn.textContent='Select All';
+  var snBtn=mk('button','btn btn-sm');snBtn.textContent='Clear';
+  saBtn.addEventListener('click',function(){S.filtered.forEach(function(r){S.selected.add(r.email||r.firstName+r.lastName);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
+  snBtn.addEventListener('click',function(){S.selected.clear();buildTable(tBody,S.filtered);selCount.textContent='0 selected';});
+  selRow.appendChild(selCount);selRow.appendChild(saBtn);selRow.appendChild(snBtn);
+  rc.appendChild(selRow);
+
+  var tWrap=mk('div',null);tWrap.style.overflowX='auto';
+  var table=mk('table',null);
+  table.innerHTML='<thead><tr><th>Select</th><th>Name</th><th>Job Title</th><th>Company</th><th>Location</th><th>Email</th><th>LinkedIn</th></tr></thead>';
+  var tBody=mk('tbody',null);
+  buildTable(tBody,S.filtered);
+  table.appendChild(tBody);tWrap.appendChild(table);rc.appendChild(tWrap);
+
+  var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
+  var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Compose Messages ->';
+  nextBtn.addEventListener('click',function(){
+    var sel=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName);});
+    if(!sel.length){alert('Select at least one connection first.');return;}
+    S.filtered=sel;
+    document.querySelectorAll('.tab-btn')[2].click();
+  });
+  nextRow.appendChild(nextBtn);rc.appendChild(nextRow);
+  wrap.appendChild(rc);
+}
+
+function buildTable(tbody,rows){
+  tbody.innerHTML='';
+  rows.slice(0,150).forEach(function(r,i){
+    var key=r.email||r.firstName+r.lastName+i;
+    var isSel=S.selected.has(key);
+    var tr=mk('tr',null);
+    var td0=mk('td',null);
+    var cb=document.createElement('input');cb.type='checkbox';cb.checked=isSel;cb.style.cssText='width:14px;height:14px;accent-color:var(--blue);cursor:pointer';
+    cb.addEventListener('change',function(e){
+      var sc=document.getElementById('sel-count');
+      if(e.target.checked)S.selected.add(key);else S.selected.delete(key);
+      if(sc)sc.textContent=S.selected.size+' selected';
+    });
+    td0.appendChild(cb);tr.appendChild(td0);
+    tr.innerHTML+=('<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td>'+(r.linkedinUrl?('<a href="'+esc(r.linkedinUrl)+'" target="_blank" style="font-size:11px;color:#0077b5">View</a>'):'-')+'</td>');
+    tbody.insertBefore(tr,tbody.firstChild);tbody.insertBefore(tr,null);
+    tbody.appendChild(tr);
+  });
+}
+
+function applyFilters(){
+  S.filtered=S.raw.filter(function(r){
+    if(S.filters.titles.length){
+      var match=S.filters.titles.some(function(t){return r.title&&r.title.toLowerCase().indexOf(t.toLowerCase())>=0;});
+      if(!match)return false;
+    }
+    if(S.filters.locations.length){
+      var match2=S.filters.locations.some(function(l){return r.location&&r.location.toLowerCase().indexOf(l.toLowerCase())>=0;});
+      if(!match2)return false;
+    }
+    if(S.filters.companies.length){
+      var match3=S.filters.companies.some(function(c){return r.company&&r.company.toLowerCase().indexOf(c.toLowerCase())>=0;});
+      if(!match3)return false;
+    }
+    if(S.filters.keywords){
+      var kw=S.filters.keywords.toLowerCase();
+      if(!((r.title&&r.title.toLowerCase().indexOf(kw)>=0)||(r.company&&r.company.toLowerCase().indexOf(kw)>=0)))return false;
+    }
+    return true;
+  });
+}
+
+async function enrichEmails(btn){
+  var orig=btn.textContent;
+  var noEmail=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName;});
+  if(!noEmail.length){alert('All selected contacts already have email addresses.');return;}
+
+  // Check if contacts have company names
+  var noCompany=noEmail.filter(function(r){return !r.company;});
+  if(noCompany.length===noEmail.length){
+    alert('Email enrichment requires company names. Your LinkedIn export may not include company data. Try uploading a more complete CSV or use the Find Leads page to search by job title.');
     return;
   }
 
-  container.innerHTML='';
-  contacts.forEach(c=>{
-    const isSelected=selectedIds.has(c.id);
-    const card=document.createElement('div');
-    card.className='contact-card'+(isSelected?' selected':'');
-    card.onclick=()=>toggleSelect(c.id,card);
+  btn.disabled=true;
+  var found=0;var tried=0;var errors=[];
 
-    const initials=(c.firstName?c.firstName[0]:'')+(c.lastName?c.lastName[0]:'');
-    const emailBadge=c.email?`<span class="badge" style="background:#f0fdf4;color:#15803d">✉ ${c.email}</span>`:`<span class="badge" style="background:#f3f4f6;color:#6b7280">No email</span>`;
-    const linkedinBtn=c.linkedin?`<a href="${c.linkedin}" target="_blank" onclick="e=>e.stopPropagation()" style="font-size:11px;color:#1d4ed8">LinkedIn ↗</a>`:'';
-    const twitterBtn=c.twitter?`<a href="${c.twitter}" target="_blank" style="font-size:11px;color:#1d4ed8">Twitter ↗</a>`:'';
+  for(var i=0;i<noEmail.length;i++){
+    var r=noEmail[i];
+    if(!r.firstName||!r.lastName){continue;}
+    tried++;
+    btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
 
-    card.innerHTML=`
-      <div style="display:flex;align-items:flex-start;gap:10px">
-        <input type="checkbox" style="margin-top:3px;width:auto" ${isSelected?'checked':''} onclick="event.stopPropagation();toggleSelect('${c.id}',this.closest('.contact-card'))"/>
-        <div class="avatar">${initials||'?'}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-weight:700">${c.fullName||'Unknown'}</span>
-            <span class="source-badge src-${c.source}">${c.source}</span>
-            ${c.emailStatus==='verified'?'<span class="badge" style="background:#f0fdf4;color:#15803d;font-size:10px">✓ Verified</span>':''}
-          </div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${c.title||''}${c.company?' · <strong style="color:var(--text)">'+c.company+'</strong>':''}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">
-            ${emailBadge}
-            ${c.industry?`<span class="badge" style="background:var(--bg2);color:var(--text2)">${c.industry}</span>`:''}
-            ${c.companySize?`<span class="badge" style="background:var(--bg2);color:var(--text2)">👥 ${Number(c.companySize).toLocaleString()}</span>`:''}
-            ${c.location?`<span class="badge" style="background:var(--bg2);color:var(--text2)">📍 ${c.location}</span>`:''}
-          </div>
-          <div style="display:flex;gap:10px">${linkedinBtn}${twitterBtn}${c.phone?`<span style="font-size:11px;color:var(--text2)">📞 ${c.phone}</span>`:''}</div>
-        </div>
-        <div style="flex-shrink:0">
-          ${!c.email?`<button class="btn btn-sm" onclick="event.stopPropagation();enrichOne('${c.id}')" style="font-size:11px">Find Email</button>`:''}
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
+    // Try Apollo.io people match first (most accurate)
+    try{
+      var ra=await fetch('/.netlify/functions/find-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'match',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',linkedinUrl:r.linkedinUrl||''}})
+      });
+      if(ra.ok){var da=await ra.json();if(da.email){r.email=da.email;r._source='apollo';found++;continue;}}
+    }catch(e){}
+
+    // Try Hunter.io second
+    try{
+      var rh=await fetch('/.netlify/functions/find-leads',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',domain:''}})
+      });
+      if(rh.ok){var dh=await rh.json();if(dh.email){r.email=dh.email;r._source='hunter';found++;continue;}if(dh.error)errors.push('Hunter: '+dh.error);}
+    }catch(e){errors.push('Hunter: '+e.message);}
+
+    // Try Lusha last
+    if(!r.email&&r.company){
+      try{
+        var rl=await fetch('/.netlify/functions/find-leads',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'enrich',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})
+        });
+        if(rl.ok){var dl=await rl.json();if(dl.email){r.email=dl.email;r._source='lusha';found++;}}
+      }catch(e){}
+    }
+    await delay(400);
+  }
+
+  btn.disabled=false;btn.textContent=orig;
+  showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+
+  if(found>0){
+    alert('Email enrichment complete! Found '+found+' email addresses out of '+tried+' contacts searched.');
+  } else {
+    var msg='No emails found for '+tried+' contacts.\n\nCommon reasons:\n';
+    msg+='1. HUNTER_API_KEY or LUSHA_API_KEY not set in Netlify environment variables\n';
+    msg+='2. Hunter.io free plan limit reached (25/month)\n';
+    msg+='3. These contacts haven\'t shared their emails publicly\n\n';
+    msg+='Check Netlify -> Environment Variables for HUNTER_API_KEY and LUSHA_API_KEY.';
+    alert(msg);
+  }
+}
+
+// ========== STEP 3: COMPOSE ==========
+function renderCompose(wrap){
+  var contacts=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName)||S.selected.size===0;});
+  if(!contacts.length)contacts=S.filtered.slice(0,20);
+
+  if(!S.raw.length){
+    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3>Upload connections first</h3><p>Go to Step 1</p></div></div>';
+    return;
+  }
+
+  // Channel selector
+  var cc=mk('div','card');cc.appendChild(mkTitle('Choose Outreach Channel'));
+  var chRow=mk('div','flex');chRow.style.flexWrap='wrap';
+  var channels=[{v:'both',icon:'📧+💼',label:'Email + LinkedIn',desc:'Send both a cold email AND a LinkedIn message'},{v:'email',icon:'📧',label:'Email Only',desc:'Personalized cold emails via SendGrid'},{v:'linkedin',icon:'💼',label:'LinkedIn Only',desc:'Messages to paste on LinkedIn'}];
+  channels.forEach(function(ch){
+    var card=mk('div','ch-card'+(S.channel===ch.v?' active':''));
+    card.innerHTML='<div style="font-size:18px;margin-bottom:4px">'+ch.icon+'</div><div style="font-weight:700;font-size:13px;margin-bottom:3px;color:'+(S.channel===ch.v?'var(--blue)':'var(--text)')+'">'+ch.label+(S.channel===ch.v?' ✓':'')+'</div><div style="font-size:11px;color:var(--text2)">'+ch.desc+'</div>';
+    card.addEventListener('click',function(){S.channel=ch.v;renderCompose(wrap);});
+    chRow.appendChild(card);
+  });
+  cc.appendChild(chRow);
+
+  // Sender
+  cc.appendChild(mk('div',null)).style.height='14px';
+  var sg=mk('div','g3');sg.style.marginTop='0';
+  [{k:'name',l:'Your Name',p:'Alex Rivera'},{k:'email',l:'Sender Email',p:'alex@company.com'},{k:'company',l:'Company',p:'Velorah'}].forEach(function(f){
+    var d=mk('div',null);
+    d.appendChild(mkLbl(f.l));
+    var inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
+    inp.addEventListener('input',function(e){S.sender[f.k]=e.target.value;});
+    d.appendChild(inp);sg.appendChild(d);
+  });
+  cc.appendChild(sg);
+
+  // Angle selector
+  var ac=mk('div',null);ac.style.marginTop='14px';
+  ac.appendChild(mkLbl('Message Angle'));
+  var angleGrid=mk('div','g2');angleGrid.style.marginTop='6px';
+  var angles=[{v:'connection',e:'🤝',n:'Connection-Based',d:'Warm opener referencing LinkedIn connection'},{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific business risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with financial impact and savings'},{v:'question',e:'❓',n:'Question-Based',d:'Open with a sharp business question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Open with a surprising industry insight'}];
+  angles.forEach(function(a){
+    var card=mk('div','angle-card'+(S.angle===a.v?' active':''));
+    card.innerHTML='<span style="font-size:16px">'+a.e+'</span> <strong style="font-size:13px;color:'+(S.angle===a.v?'var(--blue)':'var(--text)')+'">'+a.n+(S.angle===a.v?' ✓':'')+'</strong><p style="font-size:11px;color:var(--text2);margin-top:3px">'+a.d+'</p>';
+    card.addEventListener('click',function(){S.angle=a.v;renderCompose(wrap);});
+    angleGrid.appendChild(card);
+  });
+  ac.appendChild(angleGrid);cc.appendChild(ac);
+  wrap.appendChild(cc);
+
+  // Generate
+  var gc=mk('div','card');
+  var gRow=mk('div','fb');
+  var gInfo=mk('div',null);
+  var gTitle=mk('p',null);gTitle.style.cssText='font-weight:700;margin-bottom:3px';gTitle.textContent='Generate Messages for '+contacts.length+' Connections';
+  var gSub=mk('p',null);gSub.style.cssText='font-size:12px;color:var(--text2)';gSub.textContent='AI creates personalized '+(S.channel==='linkedin'?'LinkedIn messages':S.channel==='email'?'emails':'emails + LinkedIn messages')+' for each connection';
+  gInfo.appendChild(gTitle);gInfo.appendChild(gSub);gRow.appendChild(gInfo);
+
+  if(!S.generating){
+    var genBtn=mk('button','btn btn-primary');genBtn.textContent='🤖 Generate All Messages';
+    genBtn.addEventListener('click',function(){generateAll(contacts,wrap);});
+    gRow.appendChild(genBtn);
+  }
+  gc.appendChild(gRow);
+
+  if(S.generating){
+    var pct=contacts.length?Math.round(S.genProgress/contacts.length*100):0;
+    var prog=mk('div',null);prog.style.marginTop='14px';
+    var pInfo=mk('div','fb');pInfo.style.marginBottom='6px';
+    var pL=mk('span',null);pL.style.cssText='font-size:12px;color:var(--text2)';pL.textContent=S.genProgress+' of '+contacts.length+' generated';
+    var pR=mk('span',null);pR.style.cssText='font-size:12px;font-weight:700;color:var(--cyan);font-family:\'IBM Plex Mono\',monospace';pR.textContent=pct+'%';
+    pInfo.appendChild(pL);pInfo.appendChild(pR);
+    var pbar=mk('div','pbar');var pfill=mk('div','pfill');pfill.style.width=pct+'%';pbar.appendChild(pfill);
+    prog.appendChild(pInfo);prog.appendChild(pbar);gc.appendChild(prog);
+  }
+  wrap.appendChild(gc);
+
+  // Preview messages
+  if(S.messages.length){
+    var pre=mk('div','card');pre.appendChild(mkTitle('Generated Messages ('+S.messages.length+')'));
+    S.messages.slice(0,3).forEach(function(m){
+      var mDiv=mk('div',null);mDiv.style.cssText='border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden';
+      var mHdr=mk('div',null);mHdr.style.cssText='padding:10px 14px;background:rgba(13,21,38,.5);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center';
+      var mName=mk('strong',null);mName.textContent=m.contact.firstName+' '+m.contact.lastName;
+      var mMeta=mk('span',null);mMeta.style.cssText='font-size:11px;color:var(--text2)';mMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
+      mHdr.appendChild(mName);mHdr.appendChild(mMeta);mDiv.appendChild(mHdr);
+      if(m.email&&S.channel!=='linkedin'){
+        var eBox=mk('div',null);eBox.style.cssText='padding:10px 14px;border-bottom:1px solid var(--border)';
+        eBox.innerHTML='<p style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Email</p><p style="font-weight:700;font-size:13px;margin-bottom:3px">'+esc(m.email.subject)+'</p><p style="font-size:12px;color:var(--text2)">'+esc(m.email.body.substring(0,100))+'...</p>';
+        mDiv.appendChild(eBox);
+      }
+      if(m.linkedin&&S.channel!=='email'){
+        var lBox=mk('div',null);lBox.style.cssText='padding:10px 14px';
+        lBox.innerHTML='<p style="font-size:11px;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">LinkedIn ('+m.linkedin.length+' chars)</p><p style="font-size:12px;color:var(--text2)">'+esc(m.linkedin.substring(0,120))+'...</p>';
+        mDiv.appendChild(lBox);
+      }
+      pre.appendChild(mDiv);
+    });
+    if(S.messages.length>3){var more=mk('p',null);more.style.cssText='font-size:12px;color:var(--text2);text-align:center;padding:8px';more.textContent='...and '+(S.messages.length-3)+' more in Step 4';pre.appendChild(more);}
+    var nRow=mk('div',null);nRow.style.cssText='text-align:right;margin-top:12px';
+    var nBtn=mk('button','btn btn-primary');nBtn.textContent='Review & Send ->';
+    nBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[3].click();});
+    nRow.appendChild(nBtn);pre.appendChild(nRow);
+    wrap.appendChild(pre);
+  }
+}
+
+async function generateAll(contacts,wrap){
+  S.generating=true;S.genProgress=0;S.messages=[];
+  renderCompose(wrap);
+  for(var i=0;i<contacts.length;i++){
+    var r=contacts[i];
+    var emailResult=null;
+    if(S.channel!=='linkedin'){
+      try{
+        var prompt=buildPrompt(r);
+        var resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:r.company||'',industry:''})});
+        var d=await resp.json();
+        var txt=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').replace(/BACKTICK_JSON|BACKTICK/g,'').trim();
+        var js=txt.indexOf('{');var je=txt.lastIndexOf('}');
+        if(js>=0&&je>js)emailResult=JSON.parse(txt.substring(js,je+1));
+      }catch(e){}
+    }
+    var liMsg=buildLinkedIn(r,emailResult);
+    S.messages.push({contact:r,email:emailResult,linkedin:liMsg});
+    S.genProgress=i+1;
+    renderCompose(wrap);
+    await delay(4000);
+  }
+  S.generating=false;
+  renderCompose(wrap);
+}
+
+function buildPrompt(r){
+  var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with their most pressing business risk.',roi:'Lead with financial impact and ROI.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising industry data point.'};
+  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, peer-to-peer, reference LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
+}
+
+function buildLinkedIn(r,email){
+  var name=r.firstName||'there';
+  if(email&&email.body){
+    var body=email.body||'';
+    var first=body.split('\n\n')[0]||body;
+    first=first.replace(/^(Hi|Dear|Hello)\s+\w+[,.]?\s*/i,'').trim();
+    var msg='Hi '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
+    return msg.substring(0,300);
+  }
+  return ('Hi '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
+}
+
+// ========== STEP 4: SEND ==========
+function renderSend(wrap){
+  if(!S.messages.length){
+    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">🤖</div><h3 style="margin-bottom:8px">No messages generated yet</h3><p>Go to Step 3 and generate your messages first.</p></div></div>';
+    return;
+  }
+
+  var withEmail=S.messages.filter(function(m){return m.email&&m.contact.email;}).length;
+  var withLi=S.messages.filter(function(m){return m.linkedin;}).length;
+
+  // Stats
+  var sg=mk('div','g4');sg.style.marginBottom='14px';
+  [{v:S.messages.length,l:'Total',c:'var(--blue)'},{v:withEmail,l:'With Email',c:'var(--green)'},{v:withLi,l:'LinkedIn Msgs',c:'#0077b5'},{v:S.messages.filter(function(m){return m.contact.email;}).length,l:'Have Email',c:'var(--cyan)'}].forEach(function(s){
+    var sc=mk('div','stat');
+    var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
+    var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
+    sc.appendChild(sv);sc.appendChild(sl);sg.appendChild(sc);
+  });
+  wrap.appendChild(sg);
+
+  // Action bar
+  var ac=mk('div','card');ac.style.marginBottom='12px';ac.appendChild(mkTitle('Launch Campaign'));
+  var aRow=mk('div','flex');
+
+  if(S.channel!=='linkedin'){
+    var emailBtn=mk('button','btn btn-primary');emailBtn.textContent='📧 Send Emails via Campaign Agent ->';
+    emailBtn.addEventListener('click',function(){
+      var withEm=S.messages.filter(function(m){return m.contact.email&&m.email;});
+      if(!withEm.length){alert('No contacts have email addresses. Enrich emails in Step 2 first.');return;}
+      var hdrs='First Name,Last Name,Email,Company,Job Title\n';
+      var rows=withEm.map(function(m){return '"'+m.contact.firstName+'","'+m.contact.lastName+'","'+m.contact.email+'","'+m.contact.company+'","'+m.contact.title+'"';}).join('\n');
+      sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+      sessionStorage.setItem('velorah_leads_count',withEm.length);
+      alert('Sending '+withEm.length+' contacts to Campaign Agent!');
+      window.location.href='/app.html?from=linkedin';
+    });
+    aRow.appendChild(emailBtn);
+  }
+
+  var expBtn=mk('button','btn');expBtn.textContent='Export CSV';
+  expBtn.addEventListener('click',function(){exportCSV();});
+  aRow.appendChild(expBtn);
+  ac.appendChild(aRow);
+  wrap.appendChild(ac);
+
+  // Individual message cards
+  S.messages.forEach(function(m,idx){
+    var card=mk('div','card');card.style.marginBottom='10px';
+
+    // Header
+    var hdr=mk('div','fb');hdr.style.marginBottom='14px';
+    var avi=mk('div',null);avi.style.cssText='width:38px;height:38px;border-radius:50%;background:rgba(0,119,181,.15);border:1px solid rgba(0,119,181,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0077b5;font-size:13px;flex-shrink:0';
+    avi.textContent=(m.contact.firstName[0]||'?')+(m.contact.lastName[0]||'?');
+    var info=mk('div',null);info.style.flex='1';
+    var iName=mk('p',null);iName.style.fontWeight='700';iName.textContent=m.contact.firstName+' '+m.contact.lastName;
+    var iMeta=mk('p',null);iMeta.style.cssText='font-size:12px;color:var(--text2)';iMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
+    info.appendChild(iName);info.appendChild(iMeta);
+
+    var btns=mk('div','flex');
+    if(m.contact.linkedinUrl){
+      var liBtn=mk('a','btn btn-li btn-sm');liBtn.href=m.contact.linkedinUrl;liBtn.target='_blank';liBtn.textContent='View LinkedIn';btns.appendChild(liBtn);
+    }
+    if(m.contact.email){
+      var emBtn=mk('a','btn btn-sm');emBtn.href='mailto:'+m.contact.email;emBtn.style.cssText='border-color:var(--green);color:var(--green)';emBtn.textContent='Email Directly';btns.appendChild(emBtn);
+    }
+    hdr.appendChild(avi);hdr.appendChild(info);hdr.appendChild(btns);card.appendChild(hdr);
+
+    // Message grid
+    var msgGrid=mk('div','msg-grid');
+
+    // Email box
+    if(m.email&&S.channel!=='linkedin'){
+      var eBox=mk('div','msg-box');
+      var eT=mk('p',null);eT.style.cssText='font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';eT.textContent='📧 Email Message';
+      var eSubj=mk('p',null);eSubj.style.cssText='font-weight:700;font-size:13px;margin-bottom:6px';eSubj.textContent=m.email.subject;
+      var eArea=document.createElement('textarea');eArea.value=m.email.body;eArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(16,185,129,.2);min-height:130px';
+      eArea.addEventListener('input',function(e){S.messages[idx].email.body=e.target.value;});
+      eBox.appendChild(eT);eBox.appendChild(eSubj);eBox.appendChild(eArea);
+      msgGrid.appendChild(eBox);
+    }
+
+    // LinkedIn box
+    if(m.linkedin&&S.channel!=='email'){
+      var lBox=mk('div','msg-box');
+      var lT=mk('p',null);lT.style.cssText='font-size:11px;font-weight:700;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';lT.textContent='💼 LinkedIn Message';
+      var lLen=mk('p',null);lLen.style.cssText='font-size:11px;color:var(--text2);margin-bottom:6px';lLen.textContent=m.linkedin.length+'/300 chars '+(m.linkedin.length>300?'OVER LIMIT!':'OK');
+      if(m.linkedin.length>300)lLen.style.color='var(--red)';
+      var lArea=document.createElement('textarea');lArea.value=m.linkedin;lArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(0,119,181,.2);min-height:100px';
+      lArea.addEventListener('input',function(e){
+        S.messages[idx].linkedin=e.target.value.substring(0,300);
+        lLen.textContent=e.target.value.length+'/300 chars';
+        if(e.target.value.length>300){lLen.style.color='var(--red)';lArea.value=e.target.value.substring(0,300);}else lLen.style.color='var(--text2)';
+      });
+      lBox.appendChild(lT);lBox.appendChild(lLen);lBox.appendChild(lArea);
+
+      // Copy + Open LinkedIn button
+      var copyBtn=mk('button','btn btn-li btn-sm');copyBtn.style.marginTop='8px';copyBtn.textContent='📋 Copy & Open LinkedIn Profile';
+      copyBtn.addEventListener('click',function(){
+        navigator.clipboard.writeText(m.linkedin).then(function(){
+          if(m.contact.linkedinUrl){
+            window.open(m.contact.linkedinUrl,'_blank');
+            setTimeout(function(){alert('Message copied to clipboard! Paste it in the LinkedIn message box on the profile page.');},400);
+          } else {
+            alert('Message copied! Now find their LinkedIn profile and paste the message.');
+          }
+        }).catch(function(){
+          var tmp=document.createElement('textarea');tmp.value=m.linkedin;document.body.appendChild(tmp);tmp.select();document.execCommand('copy');document.body.removeChild(tmp);
+          if(m.contact.linkedinUrl)window.open(m.contact.linkedinUrl,'_blank');
+          alert('Message copied! Paste it on their LinkedIn profile.');
+        });
+      });
+      lBox.appendChild(copyBtn);
+      msgGrid.appendChild(lBox);
+    }
+
+    card.appendChild(msgGrid);
+    wrap.appendChild(card);
   });
 }
 
-function toggleSelect(id,card){
-  if(selectedIds.has(id)){selectedIds.delete(id);card.classList.remove('selected');card.querySelector('input[type=checkbox]').checked=false;}
-  else{selectedIds.add(id);card.classList.add('selected');card.querySelector('input[type=checkbox]').checked=true;}
-  updateStats();
-}
-function selectAll(){contacts.forEach(c=>selectedIds.add(c.id));renderResults();updateStats();}
-function selectNone(){selectedIds.clear();renderResults();updateStats();}
-
-function updateStats(){
-  const withEmail=contacts.filter(c=>c.email).length;
-  const enriched=contacts.filter(c=>c._enriched).length;
-  document.getElementById('stat-found').textContent=totalResults.toLocaleString();
-  document.getElementById('stat-emails').textContent=withEmail;
-  document.getElementById('stat-selected').textContent=selectedIds.size;
-  document.getElementById('stat-enriched').textContent=enriched;
+function exportCSV(){
+  var hdrs=['First Name','Last Name','Email','Company','Title','LinkedIn URL','Email Subject','Email Body','LinkedIn Message'];
+  var rows=S.messages.map(function(m){return[m.contact.firstName,m.contact.lastName,m.contact.email||'',m.contact.company||'',m.contact.title||'',m.contact.linkedinUrl||'',m.email?m.email.subject:'',m.email?m.email.body:'',m.linkedin||''];});
+  var csv=[hdrs].concat(rows).map(function(r){return r.map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='linkedin_campaign_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
-// ENRICH EMAILS
-async function enrichSelected(){
-  const toEnrich=contacts.filter(c=>selectedIds.has(c.id)&&!c.email);
-  if(!toEnrich.length){alert('All selected contacts already have emails, or none selected without emails.');return;}
-
-  const btn=document.getElementById('enrich-btn');
-  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Enriching ('+toEnrich.length+')...';
-
-  let enriched=0;
-  for(const c of toEnrich){
-    // Try Hunter.io first
-    if(sources.has('hunter')){
-      try{
-        const resp=await fetch('/.netlify/functions/find-leads',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
-          body:JSON.stringify({action:'find-email',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company,domain:c.website?new URL(c.website).hostname:''}})
-        });
-        const data=await resp.json();
-        if(data.email){c.email=data.email;c.emailStatus='hunter';c._enriched=true;enriched++;}
-      }catch(e){}
-    }
-
-    // Try Lusha if no email found
-    if(!c.email&&sources.has('lusha')){
-      try{
-        const resp=await fetch('/.netlify/functions/find-leads',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},
-          body:JSON.stringify({action:'enrich',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})
-        });
-        const data=await resp.json();
-        if(data.email){c.email=data.email;c.twitter=c.twitter||data.twitter;c.linkedin=c.linkedin||data.linkedin;c._enriched=true;enriched++;}
-      }catch(e){}
-    }
-    await new Promise(r=>setTimeout(r,200));
-  }
-
-  renderResults();updateStats();
-  btn.disabled=false;btn.textContent='🔍 Enrich Emails';
-  alert(`Enrichment complete: ${enriched} email(s) found out of ${toEnrich.length} contacts.`);
-}
-
-async function enrichOne(id){
-  const c=contacts.find(x=>x.id===id);
-  if(!c)return;
-  if(sources.has('hunter')){
-    try{
-      const resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},body:JSON.stringify({action:'find-email',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})});
-      const data=await resp.json();
-      if(data.email){c.email=data.email;c._enriched=true;renderResults();updateStats();return;}
-    }catch(e){}
-  }
-  if(sources.has('lusha')){
-    try{
-      const resp=await fetch('/.netlify/functions/find-leads',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?.access_token||'')},body:JSON.stringify({action:'enrich',contact:{firstName:c.firstName,lastName:c.lastName,company:c.company}})});
-      const data=await resp.json();
-      if(data.email){c.email=data.email;c._enriched=true;renderResults();updateStats();return;}
-    }catch(e){}
-  }
-  alert('Email not found for this contact.');
-}
-
-// SEND TO CAMPAIGN AGENT
-function sendToAgent(){
-  const selected=contacts.filter(c=>selectedIds.has(c.id)&&c.email);
-  if(!selected.length){alert('Please select contacts with email addresses first. Use "Enrich Emails" to find missing emails.');return;}
-
-  // Build CSV and store in sessionStorage for app.html to pick up
-  const headers=['First Name','Last Name','Email','Company','Job Title','Industry','Company Size','LinkedIn','Twitter'];
-  const rows=selected.map(c=>[c.firstName,c.lastName,c.email,c.company,c.title,c.industry,c.companySize||'',c.linkedin||'',c.twitter||'']);
-  const csv=[headers,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  sessionStorage.setItem('velorah_leads_csv',csv);
-  sessionStorage.setItem('velorah_leads_count',selected.length);
-  alert(selected.length+' contacts ready! Redirecting to Campaign Agent...');
-  window.location.href='/app.html?from=find-leads';
-}
-
-// EXPORT CSV
-function exportSelected(){
-  const selected=contacts.filter(c=>selectedIds.has(c.id));
-  if(!selected.length){alert('Select contacts to export.');return;}
-  const hdrs=['First Name','Last Name','Email','Company','Job Title','Industry','Company Size','Location','LinkedIn','Twitter','Phone','Source'];
-  const rows=selected.map(c=>[c.firstName,c.lastName,c.email||'',c.company,c.title,c.industry,c.companySize||'',c.location||'',c.linkedin||'',c.twitter||'',c.phone||'',c.source]);
-  const csv=[hdrs,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='velorah_leads_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-}
+// ========== HELPERS ==========
+function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
+function mkTitle(t){var el=mk('div','card-title');el.textContent=t;return el;}
+function mkLbl(t){var el=mk('label','lbl');el.textContent=t;return el;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
-
 init();
 </script>
 </body>
