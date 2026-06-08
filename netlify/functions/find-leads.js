@@ -47,12 +47,18 @@ exports.handler = async function(event) {
     const basePayload = {
       page:     searchParams.page    || 1,
       per_page: Math.min(searchParams.perPage || 25, 100),
-      person_titles: titles
+      person_titles: (titles && titles.length > 0) ? titles : undefined
     };
 
-    if (searchParams.locations    && searchParams.locations.length > 0)    basePayload.person_locations = searchParams.locations;
-    if (searchParams.keywords)                                               basePayload.q_keywords = searchParams.keywords;
-    if (searchParams.companySizes && searchParams.companySizes.length > 0)  basePayload.organization_num_employees_ranges = searchParams.companySizes;
+    // Accept location (string) or locations (array)
+    const locs = searchParams.locations || (searchParams.location ? [searchParams.location] : []);
+    if (locs.length > 0) basePayload.person_locations = locs;
+    // Combine keywords and industry into search query
+    const kwParts = [searchParams.keywords, searchParams.industry].filter(Boolean);
+    if (kwParts.length > 0) basePayload.q_keywords = kwParts.join(' ');
+    // Accept employeeRanges or companySizes
+    const sizes = searchParams.companySizes || searchParams.employeeRanges || [];
+    if (sizes.length > 0) basePayload.organization_num_employees_ranges = sizes;
 
     // All Koios endpoints to try in order
     const endpoints = [
@@ -211,4 +217,5 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ email, title: person.title||null, source: 'koios-intel' }) };
     } catch(e) { return { statusCode: 200, headers, body: JSON.stringify({ email: null, error: e.message }) }; }
   }
+
 
