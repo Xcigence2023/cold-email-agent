@@ -94,6 +94,44 @@ exports.handler = async function(event) {
       }
     }
 
+    // Inject sender preferences into the prompt
+    if (senderPrefs && Object.keys(senderPrefs).length > 0) {
+      const p = senderPrefs;
+      const prefLines = [
+        p.name         ? 'Sender name: ' + p.name                                : null,
+        p.role         ? 'Sender role/title: ' + p.role                          : null,
+        p.company      ? 'Sender company: ' + p.company                          : null,
+        p.valueProposition ? 'Your value proposition (state this clearly): ' + p.valueProposition : null,
+        p.tone         ? 'TONE -- strictly follow: ' + p.tone                    : null,
+        p.emailLength  ? 'Email length target: ' + p.emailLength                 : null,
+        p.ctaStyle     ? 'Call-to-action style: ' + p.ctaStyle                   : null,
+        p.avoidPhrases ? 'BANNED phrases -- never use: ' + p.avoidPhrases        : null,
+        p.socialProof  ? 'Include this social proof naturally: ' + p.socialProof : null,
+        p.hook         ? 'Opening hook/angle to use: ' + p.hook                  : null,
+      ].filter(Boolean);
+      if (prefLines.length > 0) {
+        enrichedPrompt += '
+
+SENDER PROFILE -- FOLLOW EXACTLY:
+' + prefLines.map(function(l) { return '- ' + l; }).join('
+');
+      }
+    }
+
+    // Add human touch instructions
+    enrichedPrompt += `
+
+HUMAN TOUCH REQUIREMENTS — MANDATORY:
+- Open with something SPECIFIC and unexpected about their company or role (not generic)
+- Use natural contractions (you're, we've, don't, I'd)
+- Write 1 imperfect sentence — real humans don't write perfect copy
+- Add one brief personal observation: "I noticed...", "What stood out to me was...", "I've been following..."
+- Vary sentence length — short punchy sentences mixed with longer ones
+- NO corporate words: leverage, synergy, scalable, robust, holistic, streamline, game-changer
+- End like a human: casual, warm, no pressure. E.g. "Would it make sense to grab 15 minutes?" or "Happy to show you what we've built — no deck, just a quick demo."
+- Sign off with just first name. No "Best regards", no title in body
+- Under 165 words total`;
+
     const result = await callClaude([{ role: 'user', content: enrichedPrompt }], 1000);
     return { statusCode: 200, headers, body: JSON.stringify(result) };
   } catch(e) {
