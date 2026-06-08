@@ -300,12 +300,22 @@ async function doSearch(){
     var resp=await fetch('/.netlify/functions/find-leads',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'search',searchParams:{titles:titlesArr,keywords:kw,industry:ind,location:loc,employeeRanges:size?[size]:[],perPage:limit}})
+      body:JSON.stringify({action:'search',searchParams:{
+        titles: titlesArr.length ? titlesArr : [],
+        keywords: kw,
+        industry: ind,
+        location: loc,
+        locations: loc ? [loc] : [],
+        companySizes: size ? [size] : [],
+        employeeRanges: size ? [size] : [],
+        perPage: limit
+      }})
     });
     var data=await resp.json();
     allContacts=data.contacts||[];
     statFound+=allContacts.length;
     document.getElementById('stat-found').textContent=statFound;
+    if(data.error){document.getElementById('results-wrap').innerHTML='<div style="padding:2rem;text-align:center;color:var(--red)">Error: '+data.error+'</div>';}
     document.getElementById('results-title').textContent='Intelligence Results: '+allContacts.length+' contacts found';
     renderResults();
     document.getElementById('results-section').style.display='block';
