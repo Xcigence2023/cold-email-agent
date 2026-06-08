@@ -631,6 +631,25 @@ Respond ONLY in JSON: {"steps":["step 1","step 2"],"message":"outreach message",
   }
 }
 
+
+function exportCSV(){
+  var toExp = selected.size > 0
+    ? allResults.filter(function(r){return selected.has(r.id);})
+    : allResults;
+  if(!toExp.length){alert('No results to export.');return;}
+  var hdrs = ['Platform','Type','Title','Snippet','Author','URL','Community','Intent','Score','Comments','Date'];
+  var rows = toExp.map(function(r){
+    return [r.platform,r.type,r.title,r.snippet,r.author,r.url,r.community,r.intent,r.score,r.comments,r.date||''].map(function(v){
+      return '"'+String(v||'').replace(/"/g,'""').replace(/\n/g,' ')+'"';
+    }).join(',');
+  });
+  var csv = hdrs.join(',')+'\n'+rows.join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'athena_one_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
 </script>
