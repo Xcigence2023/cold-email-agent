@@ -650,6 +650,16 @@ function exportCSV(){
   a.click();
 }
 
+
+function selectAll(){
+  allResults.forEach(function(r){ selected.add(r.id); });
+  renderResults();
+}
+function clearAll(){
+  selected.clear();
+  renderResults();
+}
+
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
 </script>
