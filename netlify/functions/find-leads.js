@@ -45,9 +45,11 @@ exports.handler = async function(event) {
     ];
 
     const basePayload = {
+      api_key:  APOLLO_KEY,
       page:     searchParams.page    || 1,
       per_page: Math.min(searchParams.perPage || 25, 100),
-      person_titles: (titles && titles.length > 0) ? titles : undefined
+      person_titles: (titles && titles.length > 0) ? titles : undefined,
+      person_seniorities: (titles && titles.length === 0) ? ['senior','vp','director','c_suite','founder','manager'] : undefined
     };
 
     // Accept location (string) or locations (array)
@@ -143,8 +145,13 @@ exports.handler = async function(event) {
     }
 
     // All endpoints failed
-    return { statusCode: 403, headers, body: JSON.stringify({
-      error: 'Could not access Koios API. Errors: ' + errors.slice(0,3).join(' | ') + '. Please check: 1) APOLLO_API_KEY is correct in Netlify env vars 2) Your API key has search permissions at developer.koios-intel/keys'
+    // If no key configured at all
+    if (!APOLLO_KEY) {
+      return { statusCode: 200, headers, body: JSON.stringify({ contacts: [], total: 0, error: 'APOLLO_API_KEY not configured in Netlify environment variables. Go to Netlify Site Settings > Environment Variables to add it.' }) };
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({
+      contacts: [], total: 0,
+      error: 'Apollo API returned no results. Errors: ' + errors.slice(0,3).join(' | ') + '. Check: 1) APOLLO_API_KEY is valid 2) API key has people/search permissions at developer.apollo.io 3) Try broader search (no title filter)'
     })};
   }
 
