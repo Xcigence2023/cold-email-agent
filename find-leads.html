@@ -315,9 +315,13 @@ async function doSearch(){
     allContacts=data.contacts||[];
     statFound+=allContacts.length;
     document.getElementById('stat-found').textContent=statFound;
-    if(data.error){document.getElementById('results-wrap').innerHTML='<div style="padding:2rem;text-align:center;color:var(--red)">Error: '+data.error+'</div>';}
     document.getElementById('results-title').textContent='Intelligence Results: '+allContacts.length+' contacts found';
-    renderResults();
+    document.getElementById('results-section').style.display='block';
+    if(data.error&&!allContacts.length){
+      document.getElementById('results-wrap').innerHTML='<div style="padding:2rem;text-align:center"><p style="color:var(--red);font-weight:700;margin-bottom:12px">'+data.error+'</p><div style="font-size:12px;color:var(--text2);line-height:1.8"><p><strong>Steps to fix:</strong></p><p>1. Go to Netlify Site Settings > Environment Variables</p><p>2. Confirm <strong>APOLLO_API_KEY</strong> exists and is correct</p><p>3. Go to <a href=\'https://developer.apollo.io/keys\' target=\'_blank\' style=\'color:var(--blue)\'>developer.apollo.io/keys</a></p><p>4. Check all permissions: people/search, contacts/search, mixed_people/search</p></div></div>';
+    }else{
+      renderResults();
+    }
     document.getElementById('results-section').style.display='block';
   }catch(e){alert('Query failed: '+e.message);}
   btn.disabled=false;btn.textContent='Run Intelligence Query';
