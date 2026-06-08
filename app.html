@@ -199,7 +199,7 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
       <a href="/history.html">History</a>
     </nav>
   </div>
-  <div class="topbar-right" id="topbar-right" style="display:none">
+  <div class="topbar-right" id="topbar-right">
     <div class="usage-wrap">
       <span id="usage-text" style="font-family:'IBM Plex Mono',monospace">0/50</span>
       <div class="usage-bar"><div class="usage-fill" id="usage-fill" style="width:0%"></div></div>
@@ -791,8 +791,7 @@ async function initAuth(){
     const{data:{session}}=await sbClient.auth.getSession();
     if(!session){window.location.href='/login.html';return;}
     _session=session;
-    document.getElementById('topbar-nav').style.display='flex';
-    document.getElementById('topbar-right').style.display='flex';
+    // nav always visible
     document.getElementById('user-email').textContent=session.user.email;
     try{const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});const plan=await resp.json();document.getElementById('plan-chip').textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);document.getElementById('usage-text').textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);document.getElementById('usage-fill').style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';}catch(e){}
     try{const resp=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
