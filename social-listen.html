@@ -544,19 +544,7 @@ async function aiDiscover(r){
   panel.appendChild(stepsDiv);
 
   try{
-    var prompt='You are a B2B lead generation expert. Someone posted this on '+r.platform+':
-
-Author username: '+r.author+'
-Post: '+r.title+'
-Content: '+(r.snippet||'').substring(0,300)+'
-Profile URL: '+(r.authorUrl||'none')+'
-
-Provide:
-1. Up to 5 specific steps to find this person email and contact info
-2. A personalized outreach message under 150 words referencing their post
-3. Google search queries to find their email
-
-Respond ONLY in JSON: {"steps":["step 1","step 2"],"message":"outreach message","subject":"subject line","searchQueries":["query 1","query 2"]}';
+    var prompt='You are a B2B lead generation expert. Someone posted this on '+r.platform+' platform:\n\nAuthor: '+r.author+'\nPost: '+r.title+'\nContent: '+(r.snippet||'').substring(0,300)+'\nProfile: '+(r.authorUrl||'none')+'\n\nProvide: 1) Steps to find their email/contact 2) Personalized outreach under 150 words 3) Google search queries.\nJSON only: {"steps":["step"],"message":"msg","subject":"subj","searchQueries":["q"]}';
 
     var resp=await fetch('/.netlify/functions/generate',{
       method:'POST',
@@ -613,7 +601,7 @@ Respond ONLY in JSON: {"steps":["step 1","step 2"],"message":"outreach message",
           stepsDiv.appendChild(subjLine);
         }
         var ta=document.createElement('textarea');ta.id='ai-draft-msg';ta.value=parsed.message;
-        ta.style.cssText='min-height:130px;font-size:12px;background:rgba(13,21,38,.8);border-color:rgba(59,130,246,.2);margin-bottom:8px;width:100%;padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,.2);color:var(--text);font-family:'Outfit',sans-serif;resize:vertical';
+        ta.style.cssText='min-height:130px;font-size:12px;background:rgba(13,21,38,.8);border-color:rgba(59,130,246,.2);margin-bottom:8px;width:100%;padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,.2);color:var(--text);font-family:Outfit,sans-serif;resize:vertical';
         stepsDiv.appendChild(ta);
         var copyBtn=document.createElement('button');copyBtn.className='btn btn-primary';copyBtn.style.cssText='width:100%;margin-bottom:6px;font-size:13px';copyBtn.textContent='Copy Message';
         copyBtn.addEventListener('click',function(){
