@@ -178,6 +178,30 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .page>*{animation:fadeUp .35s ease both}
 .card{animation:fadeUp .35s ease both}
+
+/* AGENT CARDS */
+.agent-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;transition:all .25s;position:relative;overflow:hidden}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.ac-icon{font-size:26px;margin-bottom:8px}
+.ac-badge{position:absolute;top:10px;right:10px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.03em}
+.ac-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.ac-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.ac-action{font-size:12px;font-weight:700;transition:letter-spacing .2s}
+.agent-card:hover .ac-action{letter-spacing:.03em}
+/* STAT CARDS */
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.stat-val{font-size:24px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:3px}
+.stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+/* QUICK ACTIONS */
+.qa-row{display:block;padding:8px 12px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(13,21,38,.4);color:var(--text);text-decoration:none;transition:all .15s;margin-bottom:4px}
+.qa-row:hover{border-color:var(--border2);background:var(--glass2,rgba(59,130,246,.06));transform:translateX(3px)}
+/* PLAN PILL & USAGE */
+.plan-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-dim,#1e3a6e);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.usage-wrap{display:flex;align-items:center;gap:6px}
+.usage-bar{width:60px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.usage-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .4s}
+@media(max-width:700px){#agent-cards{grid-template-columns:1fr 1fr!important}#stats-row{grid-template-columns:repeat(3,1fr)!important}}
+@media(max-width:450px){#agent-cards{grid-template-columns:1fr!important}#stats-row{grid-template-columns:1fr 1fr!important}}
 </style>
 </head>
 <body>
@@ -211,10 +235,108 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 </div>
 
 <div class="page">
-  <div class="hero">
-    <h1>✉️ Velorah — AI Cold Email Agent</h1>
-    <p>Upload leads → AI researches & personalizes → Review → Send at scale</p>
+
+  <!-- DASHBOARD HEADER -->
+  <div class="hero" id="dashboard-section">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem">
+      <div>
+        <div id="dash-greeting" style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;letter-spacing:.05em">WELCOME BACK</div>
+        <h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Velorah Command Centre</h1>
+        <p style="font-size:13px;color:var(--text2)">All your outreach tools in one place</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span id="plan-chip" class="plan-pill">Free</span>
+        <div class="usage-wrap">
+          <span id="usage-text" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text2)">0/50</span>
+          <div class="usage-bar"><div class="usage-fill" id="usage-fill" style="width:0%"></div></div>
+          <span style="font-size:10px;color:var(--text3)">leads</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE STATS ROW -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem" id="stats-row">
+      <div class="stat-card"><div class="stat-val" style="color:var(--blue)" id="d-sent">-</div><div class="stat-lbl">Emails Sent</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="d-opened">-</div><div class="stat-lbl">Opened</div><div style="font-size:10px;color:var(--text2);margin-top:2px" id="d-openrate"></div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--cyan)" id="d-clicked">-</div><div class="stat-lbl">Clicked</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--purple)" id="d-campaigns">-</div><div class="stat-lbl">Campaigns</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--gold)" id="d-leads">0</div><div class="stat-lbl">Leads Found</div></div>
+    </div>
+
+    <!-- AGENT CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem" id="agent-cards">
+      <div class="agent-card" onclick="startNewCampaign()" style="cursor:pointer">
+        <div class="ac-icon">🚀</div>
+        <div class="ac-title">Email Campaign</div>
+        <div class="ac-desc">Upload leads, AI writes personalized emails, bulk send</div>
+        <div class="ac-action" style="color:var(--blue)">New Campaign →</div>
+      </div>
+      <a href="/campaign-video.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">🛡</div>
+        <div class="ac-badge" style="background:rgba(239,68,68,.15);color:#ef4444">ARES</div>
+        <div class="ac-title">Video Campaign</div>
+        <div class="ac-desc">AI talking-head videos for each lead, distributed via email + YouTube</div>
+        <div class="ac-action" style="color:#ef4444">Launch Ares →</div>
+      </a>
+      <a href="/linkedin.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">💼</div>
+        <div class="ac-title">LinkedIn Agent</div>
+        <div class="ac-desc">Import connections, filter by title, generate personalised outreach</div>
+        <div class="ac-action" style="color:#0077b5">Import Connections →</div>
+      </a>
+      <a href="/find-leads.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">🧠</div>
+        <div class="ac-badge" style="background:rgba(139,92,246,.15);color:var(--purple)">KOIOS</div>
+        <div class="ac-title">Koios Intel</div>
+        <div class="ac-desc">Search 275M+ verified B2B contacts by title, industry, company size</div>
+        <div class="ac-action" style="color:var(--purple)">Find Contacts →</div>
+      </a>
+      <a href="/social-listen.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">📡</div>
+        <div class="ac-badge" style="background:rgba(6,182,212,.15);color:var(--cyan)">ATHENA</div>
+        <div class="ac-title">Athena One</div>
+        <div class="ac-desc">Find people on Reddit, HN, forums actively looking for your product</div>
+        <div class="ac-action" style="color:var(--cyan)">Monitor Discussions →</div>
+      </a>
+      <a href="/visitors.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">👁</div>
+        <div class="ac-badge" style="background:rgba(16,185,129,.15);color:var(--green)">ARGUS</div>
+        <div class="ac-title">Argus Watch</div>
+        <div class="ac-desc">See which companies visit your website and auto-launch outreach</div>
+        <div class="ac-action" style="color:var(--green)">View Visitors →</div>
+      </a>
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="padding:1rem">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:6px">📋 Recent Activity</div>
+        <div id="activity-feed">
+          <div style="text-align:center;padding:1.5rem;color:var(--text3);font-size:12px">No recent activity. Launch your first campaign.</div>
+        </div>
+        <a href="/history.html" style="display:block;text-align:center;font-size:12px;color:var(--blue);margin-top:10px;text-decoration:none">View full analytics →</a>
+      </div>
+      <div class="card" style="padding:1rem">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px">⚡ Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="qa-row" onclick="startNewCampaign()">🚀 New Email Campaign</div>
+          <a href="/campaign-video.html" class="qa-row">🛡 Launch Ares Video Campaign</a>
+          <a href="/find-leads.html" class="qa-row">🧠 Search Leads (Koios Intel)</a>
+          <a href="/social-listen.html" class="qa-row">📡 Monitor Discussions (Athena One)</a>
+          <a href="/linkedin.html" class="qa-row">💼 LinkedIn Outreach</a>
+          <a href="/history.html" class="qa-row">📊 Email Analytics</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIVIDER before campaign agent -->
+    <div style="display:flex;align-items:center;gap:12px;margin:1.5rem 0 0.5rem" id="campaign-divider" style="display:none">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Email Campaign Agent</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
   </div>
+
   <div id="root"></div>
 </div>
 
@@ -785,6 +907,58 @@ function doExport(){
 }
 
 // AUTH
+
+function startNewCampaign(){
+  document.getElementById('campaign-divider').style.display='flex';
+  document.getElementById('root').scrollIntoView({behavior:'smooth',block:'start'});
+  S.step=0;S.leads=[];S.emails=[];S.genProgress=0;S._duplicates={};
+  draw();
+}
+
+async function loadDashboardStats(){
+  if(!_session)return;
+  try{
+    var h=new Date().getHours();
+    var greet=h<12?'GOOD MORNING,':h<17?'GOOD AFTERNOON,':'GOOD EVENING,';
+    var gel=document.getElementById('dash-greeting');
+    if(gel)gel.textContent=greet;
+  }catch(e){}
+  try{
+    var resp=await fetch('/.netlify/functions/email_history?limit=1000',{headers:{'Authorization':'Bearer '+_session.access_token}});
+    var data=await resp.json();
+    var records=data.records||[];
+    var total=records.length;
+    var opened=records.filter(function(r){return r.tracking_status==='opened';}).length;
+    var clicked=records.filter(function(r){return r.tracking_status==='clicked';}).length;
+    var campaigns=new Set(records.map(function(r){return r.campaign_name;}).filter(Boolean)).size;
+    var openPct=total>0?Math.round(opened/total*100):0;
+    var el;
+    el=document.getElementById('d-sent');if(el)el.textContent=total;
+    el=document.getElementById('d-opened');if(el)el.textContent=opened;
+    el=document.getElementById('d-clicked');if(el)el.textContent=clicked;
+    el=document.getElementById('d-campaigns');if(el)el.textContent=campaigns;
+    el=document.getElementById('d-openrate');if(el)el.textContent=openPct+'% rate';
+    // Recent activity
+    if(records.length){
+      var feed=document.getElementById('activity-feed');
+      if(feed){
+        var recent=records.slice(0,5);
+        var html='';
+        recent.forEach(function(r){
+          var color=r.tracking_status==='opened'?'var(--green)':r.tracking_status==='clicked'?'var(--blue)':'var(--text3)';
+          var action=r.tracking_status==='opened'?'opened email':r.tracking_status==='clicked'?'clicked link':'email sent';
+          var date=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+          html+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'
+            +'<div style="width:6px;height:6px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'
+            +'<span style="flex:1"><strong>'+(r.recipient_name||r.recipient_email||'Unknown')+'</strong> '+action+'</span>'
+            +'<span style="color:var(--text3);font-size:10px">'+date+'</span></div>';
+        });
+        feed.innerHTML=html;
+      }
+    }
+  }catch(e){console.warn('Dashboard stats:',e.message);}
+}
+
 async function initAuth(){
   draw();
   try{
@@ -793,6 +967,7 @@ async function initAuth(){
     _session=session;
     // nav always visible
     document.getElementById('user-email').textContent=session.user.email;
+    loadDashboardStats();
     try{const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});const plan=await resp.json();document.getElementById('plan-chip').textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);document.getElementById('usage-text').textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);document.getElementById('usage-fill').style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';}catch(e){}
     try{const resp=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
     draw();
