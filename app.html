@@ -351,8 +351,11 @@ const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''},
   sender:{name:'',email:'',title:'',company:'Velorah'},
+  senderPrefs:{tone:'professional',emailLength:'short (under 100 words)',ctaStyle:'book a 15-min call',valueProposition:'',avoidPhrases:'',socialProof:'',hook:'industry insight'},
   emails:[],genProgress:0,activeIdx:0,
-  sendStatus:{},trackingStatus:{},messageIds:{},
+  sendStatus:{},
+  validationResults:{summary:null,results:[]},
+  validationDone:false,trackingStatus:{},messageIds:{},
   dragOver:false,emailAngle:'pain',researchMode:false,
   attachments:[],scheduleAt:null,campaignName:'',
   bulkSending:false,bulkProgress:{total:0,sent:0,failed:0}
@@ -417,7 +420,7 @@ async function callAI(lead){
   const sz=lead[S.colMap.companySize]||'';
   const rev=lead[S.colMap.revenue]||'';
   const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nJSON only: {"subject":"...","body":"..."}';
-  const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company,industry,companySize:sz,revenue:rev,researchMode:S.researchMode})});
+  const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company,industry,companySize:sz,revenue:rev,researchMode:S.researchMode,senderPrefs:S.senderPrefs})});
   const txt=await resp.text();
   if(!resp.ok){let e='HTTP '+resp.status;try{const d=JSON.parse(txt);e=d.error||e;}catch(ex){}throw new Error(e);}
   const data=JSON.parse(txt);
@@ -635,6 +638,64 @@ function p1(){
       saveUserKeys();draw();runGenerate();
     }},'Generate '+S.leads.length+' Emails ->')
   ));
+  
+  // -- SENDER PREFERENCES CARD (new) --
+  const spCard=h('div',{cls:'card',style:{marginTop:'14px'}},
+    h('div',{cls:'card-title'},'Sender Preferences'),
+    h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},'AI uses these to match your voice, tone and goals when writing every email'),
+    h('div',{cls:'g2',style:{marginBottom:'12px'}},
+      h('div',null,
+        h('label',{cls:'lbl'},'Your Name'),
+        h('input',{type:'text',value:S.sender.name||'',placeholder:'Alex Rivera',oninput:e=>{S.sender.name=e.target.value;}})
+      ),
+      h('div',null,
+        h('label',{cls:'lbl'},'Your Role / Title'),
+        h('input',{type:'text',value:S.sender.title||'',placeholder:'Head of Sales',oninput:e=>{S.sender.title=e.target.value;}})
+      )
+    ),
+    h('div',{cls:'g2',style:{marginBottom:'12px'}},
+      h('div',null,
+        h('label',{cls:'lbl'},'Value Proposition'),
+        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'We reduce security incidents by 60% in 90 days',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;}})
+      ),
+      h('div',null,
+        h('label',{cls:'lbl'},'Social Proof (1 line)'),
+        h('input',{type:'text',value:S.senderPrefs.socialProof||'',placeholder:'Trusted by 200+ B2B companies including Acme Corp',oninput:e=>{S.senderPrefs.socialProof=e.target.value;}})
+      )
+    ),
+    h('div',{cls:'g3',style:{marginBottom:'12px'}},
+      h('div',null,
+        h('label',{cls:'lbl'},'Tone'),
+        h('select',{value:S.senderPrefs.tone||'professional',onchange:e=>{S.senderPrefs.tone=e.target.value;}},
+          ...[['professional','Professional'],['friendly','Warm & Friendly'],['direct','Direct & Bold'],['casual','Casual Peer'],['formal','Formal & Executive']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.tone===o[0])op.selected=true;return op;})
+        )
+      ),
+      h('div',null,
+        h('label',{cls:'lbl'},'Email Length'),
+        h('select',{value:S.senderPrefs.emailLength,onchange:e=>{S.senderPrefs.emailLength=e.target.value;}},
+          ...[['very short (under 60 words)','Very Short (< 60 words)'],['short (under 100 words)','Short (< 100 words)'],['medium (100-150 words)','Medium (100-150)'],['long (150-200 words)','Long (150-200)']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.emailLength===o[0])op.selected=true;return op;})
+        )
+      ),
+      h('div',null,
+        h('label',{cls:'lbl'},'CTA Style'),
+        h('select',{value:S.senderPrefs.ctaStyle,onchange:e=>{S.senderPrefs.ctaStyle=e.target.value;}},
+          ...[['book a 15-min call','Book a 15-min call'],['reply to this email','Reply to this email'],['visit our website','Visit our website'],['watch a demo video','Watch a demo video'],['would this be relevant?','Soft relevance question']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.ctaStyle===o[0])op.selected=true;return op;})
+        )
+      )
+    ),
+    h('div',{cls:'g2'},
+      h('div',null,
+        h('label',{cls:'lbl'},'Opening Hook Angle'),
+        h('input',{type:'text',value:S.senderPrefs.hook||'',placeholder:'Industry insight / mutual connection / recent company news',oninput:e=>{S.senderPrefs.hook=e.target.value;}})
+      ),
+      h('div',null,
+        h('label',{cls:'lbl'},'Phrases to NEVER Use'),
+        h('input',{type:'text',value:S.senderPrefs.avoidPhrases||'',placeholder:'leverage, synergy, game-changer, reach out',oninput:e=>{S.senderPrefs.avoidPhrases=e.target.value;}})
+      )
+    )
+  );
+  wrap.appendChild(spCard);
+
   return wrap;
 }
 
@@ -776,6 +837,89 @@ function p3(){
 }
 
 // STEP 4: SEND
+// -- PRE-SEND EMAIL VALIDATION ---------------------------------
+async function validateEmails(){
+  const approved=S.emails.filter(e=>e.approved&&!e.error);
+  // -- VALIDATION RESULTS PANEL --------------------------------
+  if(S.validationDone&&S.validationResults&&S.validationResults.summary){
+    const vs=S.validationResults.summary;
+    const ca=S.validationResults.contentAnalysis;
+    const scoreColor=vs.avgDelivScore>=80?'var(--green)':vs.avgDelivScore>=50?'var(--gold)':'var(--red)';
+    const contentColor=ca&&ca.rating==='excellent'?'var(--green)':ca&&ca.rating==='good'?'var(--green)':ca&&ca.rating==='fair'?'var(--gold)':'var(--red)';
+    const vPanel=h('div',{cls:'card',style:{borderColor:vs.highRisk>0?'rgba(245,158,11,.4)':'rgba(16,185,129,.3)',background:vs.highRisk>0?'rgba(245,158,11,.05)':'rgba(16,185,129,.04)',marginBottom:'14px'}});
+    vPanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">'+
+      '<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+(vs.highRisk>0?'':'')+'</span> Pre-send Deliverability Report</div>'+
+      '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+';font-family:'IBM Plex Mono',monospace">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
+        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+';font-family:'IBM Plex Mono',monospace">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT SCORE</div></div>':'')+''+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green);font-family:'IBM Plex Mono',monospace">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
+        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold);font-family:'IBM Plex Mono',monospace">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
+        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red);font-family:'IBM Plex Mono',monospace">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
+      '</div>'+
+    '</div>';
+    if(ca&&ca.issues&&ca.issues.length>0){
+      vPanel.innerHTML+='<div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.08);border-radius:8px;border-left:3px solid var(--gold)">'+
+        '<p style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--gold)">Content Issues</p>'+
+        ca.issues.slice(0,4).map(function(i){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px">'+i+'</p>';}).join('')+
+        (ca.suggestions&&ca.suggestions.length?'<p style="font-size:12px;font-weight:700;margin:8px 0 4px;color:var(--blue)">Suggestions</p>'+ca.suggestions.slice(0,3).map(function(s){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px">'+s+'</p>';}).join(''):'')+
+        '</div>';
+    }
+    if(vs.highRisk>0){
+      const risky=S.validationResults.results.filter(function(r){return r.risk==='high'||r.risk==='critical'||r.status==='invalid';});
+      vPanel.innerHTML+='<div style="margin-top:10px;padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;border-left:3px solid var(--red)">'+
+        '<p style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--red)">'+risky.length+' High-Risk Recipients</p>'+
+        risky.slice(0,5).map(function(r){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px"><strong>'+r.email+'</strong> ('+r.risk+'): '+r.warnings[0]+'</p>';}).join('')+
+        '</div>';
+    }
+    wrap.appendChild(vPanel);
+  } else if(!S.validationDone){
+    const vPrompt=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.3)',background:'rgba(59,130,246,.05)',marginBottom:'14px',cursor:'pointer'},onClick:validateEmails});
+    vPrompt.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:20px"></span><div><p style="font-weight:700;font-size:13px;margin-bottom:3px">Run Deliverability Check</p><p style="font-size:12px;color:var(--text2)">Validates DNS records, detects firewalls, scores spam risk, and flags invalid emails before sending. Click to run.</p></div><span style="font-size:20px;color:var(--blue);margin-left:auto"> Run Now</span></div>';
+    wrap.appendChild(vPrompt);
+  }
+
+  if(!approved.length
+  if(!approved.length) return;
+
+  S.validationDone=false;
+  S.validationResults={summary:null,results:[]};
+  draw();
+
+  try{
+    const emails=approved.map(e=>e.lead[S.colMap.email]).filter(Boolean);
+    const firstEmail=approved[0];
+    const subject=firstEmail?firstEmail.subject:'';
+    const body=firstEmail?firstEmail.body:'';
+
+    const resp=await fetch('/.netlify/functions/email-validate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({emails,subject,body,action:'full'})
+    });
+
+    if(!resp.ok) throw new Error('Validation service error: '+resp.status);
+    const data=await resp.json();
+    S.validationResults=data;
+    S.validationDone=true;
+    draw();
+  }catch(e){
+    console.warn('Email validation error:',e.message);
+    S.validationDone=true;
+    S.validationResults={summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0},results:[],error:e.message};
+    draw();
+  }
+}
+
+function getValidationBadge(email){
+  if(!S.validationDone||!S.validationResults.results) return '';
+  const r=S.validationResults.results.find(function(x){return x.email.toLowerCase()===email.toLowerCase();});
+  if(!r) return '';
+  if(r.status==='invalid') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,.2);color:var(--red);font-weight:700">INVALID</span>';
+  if(r.risk==='high'||r.risk==='critical') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:var(--gold);font-weight:700">HIGH RISK</span>';
+  if(r.status==='warning') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.1);color:var(--gold)">WARN</span>';
+  return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,.1);color:var(--green)">OK</span>';
+}
+
 function p4(){
   const wrap=h('div',null);
   const approved=S.emails.filter(e=>e.approved&&!e.error);
@@ -828,6 +972,11 @@ function p4(){
 h('button',{cls:'btn btn-launch',onClick:async()=>{
       if(!approved.length){alert('No approved emails to send.');return;}
       const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails now?';
+      // Pre-flight validation before send
+      if(!S.validationDone){
+        const runVal=confirm('Run deliverability check before sending? (Recommended - checks DNS, spam score, firewall risk)');
+        if(runVal){await validateEmails();return;}
+      }
       if(!confirm(label))return;
       await launchCampaign(approved);
     }},S.scheduleAt?'Scheduled Schedule Campaign ('+approved.length+')':'🚀 Launch Campaign ('+approved.length+')'),
