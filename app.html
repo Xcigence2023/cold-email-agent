@@ -1169,7 +1169,7 @@ async function initAuth(){
     loadDashboardStats();
     checkSessionStorage();
     try{const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});const plan=await resp.json();document.getElementById('plan-chip').textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);document.getElementById('usage-text').textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);document.getElementById('usage-fill').style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';}catch(e){}
-    try{const resp=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
+    try{const resp=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
     draw();
     try{const csv=sessionStorage.getItem('velorah_leads_csv');const count=sessionStorage.getItem('velorah_leads_count');if(csv&&count){sessionStorage.removeItem('velorah_leads_csv');sessionStorage.removeItem('velorah_leads_count');const{headers,rows}=parseCSV(csv);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);S.step=1;draw();scheduleDraftSave();const b=document.createElement('div');b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';b.textContent='Done '+count+' leads imported!';document.body.appendChild(b);setTimeout(()=>b.remove(),4000);}}catch(e){}
   }catch(e){console.warn('Auth:',e.message);}
@@ -1177,7 +1177,7 @@ async function initAuth(){
 
 async function saveUserKeys(){
   if(!_session||!_session.access_token)return;
-  try{await fetch('/.netlify/functions/user-keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
+  try{await fetch('/.netlify/functions/user_keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
 }
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
