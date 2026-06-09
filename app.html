@@ -220,7 +220,8 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
       <a href="/find-leads.html">Koios Intel</a>
       <a href="/social-listen.html">Athena One</a>
       <a href="/visitors.html">Argus Watch</a>
-      <a href="/history.html">History</a>
+      <a href="/crm-settings.html">CRM</a>
+    <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="topbar-right" id="topbar-right">
@@ -358,7 +359,8 @@ const S={
   validationDone:false,trackingStatus:{},messageIds:{},
   dragOver:false,emailAngle:'pain',researchMode:false,
   attachments:[],scheduleAt:null,campaignName:'',
-  bulkSending:false,bulkProgress:{total:0,sent:0,failed:0}
+  bulkSending:false,bulkProgress:{total:0,sent:0,failed:0},
+  draftId:null,crmSource:null
 };
 
 function parseCSV(text){
@@ -455,6 +457,16 @@ function stepBar(){
 // STEP 0: UPLOAD
 function p0(){
   const wrap=h('div',null);
+  // Draft saved indicator
+  const draftInd=h('div',{style:{display:'none',alignItems:'center',gap:6,fontSize:12,color:'var(--green)',padding:'6px 12px',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.2)',borderRadius:8,marginBottom:12}});
+  draftInd.id='draft-saved-indicator';
+  draftInd.textContent='Draft saved';
+  if(S.draftId) draftInd.style.display='flex';
+  wrap.appendChild(draftInd);
+  // CRM import button
+  const crmImportBtn=h('a',{href:'/crm-settings.html',style:{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',borderRadius:8,border:'1px solid var(--border2)',background:'rgba(59,130,246,.06)',color:'var(--blue)',fontSize:13,fontWeight:700,textDecoration:'none',marginBottom:12,cursor:'pointer'}});
+  crmImportBtn.innerHTML='<span style="font-size:16px">&#x1F517;</span> Import from CRM &nbsp;<span style="font-size:11px;color:var(--text3);font-weight:400">(HubSpot, Salesforce, Pipedrive, Zoho, GHL and more)</span>';
+  wrap.appendChild(crmImportBtn);
   let fi;
   const dz=h('div',{cls:'drop-zone'+(S.dragOver?' over':''),
     onClick:()=>fi.click(),
@@ -522,7 +534,7 @@ function p0(){
   return wrap;
 }
 
-function readFile(f){const rd=new FileReader();rd.onload=e=>{const{headers,rows}=parseCSV(e.target.result);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);draw();};rd.readAsText(f);}
+function readFile(f){const rd=new FileReader();rd.onload=e=>{const{headers,rows}=parseCSV(e.target.result);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);draw();scheduleDraftSave();};rd.readAsText(f);}
 function dlSample(){const csv='First Name,Last Name,Email,Company,Job Title,Industry,Company Size\nJohn,Smith,john@acme.com,Acme Financial,CISO,Financial Services,2500\nSarah,Chen,sarah@health.io,HealthTech Inc,Chief Compliance Officer,Healthcare,800\nMike,Johnson,mike@retail.com,RetailCo,VP of IT,Retail,150';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='sample_leads.csv';a.click();}
 
 // STEP 1: CONFIGURE
@@ -1087,6 +1099,65 @@ async function loadDashboardStats(){
   }catch(e){console.warn('Dashboard stats:',e.message);}
 }
 
+
+// -- DRAFT PERSISTENCE -----------------------------------------
+var _saveDraftTimer = null;
+
+function scheduleDraftSave() {
+  if (_saveDraftTimer) clearTimeout(_saveDraftTimer);
+  _saveDraftTimer = setTimeout(saveDraft, 3000);
+}
+
+async function saveDraft() {
+  if (!_session || !S.leads || S.leads.length === 0) return;
+  try {
+    var resp = await fetch('/.netlify/functions/crm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _session.access_token },
+      body: JSON.stringify({
+        action:      'save_draft',
+        name:        S.campaignName || ('Campaign ' + new Date().toLocaleDateString()),
+        leads:       S.leads,
+        headers:     S.headers,
+        colMap:      S.colMap,
+        senderPrefs: S.senderPrefs,
+        source:      S.crmSource ? 'crm' : 'csv',
+        crmSource:   S.crmSource || null,
+        draft_id:    S.draftId,
+      })
+    });
+    var data = await resp.json();
+    if (data.draft_id) {
+      S.draftId = data.draft_id;
+      var indicator = document.getElementById('draft-saved-indicator');
+      if (indicator) { indicator.textContent = 'Draft saved (' + S.leads.length + ' contacts)'; indicator.style.display = 'flex'; }
+    }
+  } catch(e) {}
+}
+
+async function checkSessionStorage() {
+  // Resume from CRM import or draft
+  var csv = sessionStorage.getItem('velorah_leads_csv');
+  var source = sessionStorage.getItem('velorah_source');
+  var crmSrc = sessionStorage.getItem('velorah_crm_source');
+  var draftId = sessionStorage.getItem('velorah_draft_id');
+  if (csv) {
+    sessionStorage.removeItem('velorah_leads_csv');
+    sessionStorage.removeItem('velorah_leads_count');
+    sessionStorage.removeItem('velorah_source');
+    sessionStorage.removeItem('velorah_crm_source');
+    sessionStorage.removeItem('velorah_draft_id');
+    var parsed = parseCSV(csv);
+    S.headers = parsed.headers;
+    S.leads   = parsed.rows;
+    S.colMap  = autoMap(parsed.headers);
+    if (crmSrc)  S.crmSource = crmSrc;
+    if (draftId) S.draftId   = draftId;
+    S.step = 1;
+    draw();
+  }
+}
+
 async function initAuth(){
   draw();
   try{
@@ -1096,10 +1167,11 @@ async function initAuth(){
     // nav always visible
     document.getElementById('user-email').textContent=session.user.email;
     loadDashboardStats();
+    checkSessionStorage();
     try{const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});const plan=await resp.json();document.getElementById('plan-chip').textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);document.getElementById('usage-text').textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);document.getElementById('usage-fill').style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';}catch(e){}
     try{const resp=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
     draw();
-    try{const csv=sessionStorage.getItem('velorah_leads_csv');const count=sessionStorage.getItem('velorah_leads_count');if(csv&&count){sessionStorage.removeItem('velorah_leads_csv');sessionStorage.removeItem('velorah_leads_count');const{headers,rows}=parseCSV(csv);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);S.step=1;draw();const b=document.createElement('div');b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';b.textContent='Done '+count+' leads imported!';document.body.appendChild(b);setTimeout(()=>b.remove(),4000);}}catch(e){}
+    try{const csv=sessionStorage.getItem('velorah_leads_csv');const count=sessionStorage.getItem('velorah_leads_count');if(csv&&count){sessionStorage.removeItem('velorah_leads_csv');sessionStorage.removeItem('velorah_leads_count');const{headers,rows}=parseCSV(csv);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);S.step=1;draw();scheduleDraftSave();const b=document.createElement('div');b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';b.textContent='Done '+count+' leads imported!';document.body.appendChild(b);setTimeout(()=>b.remove(),4000);}}catch(e){}
   }catch(e){console.warn('Auth:',e.message);}
 }
 
