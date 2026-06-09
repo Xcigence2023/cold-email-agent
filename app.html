@@ -389,27 +389,7 @@ function getSystem(angle,sz,rev){
     insight:'EMAIL ANGLE: INSIGHT-LED. Open with a surprising, specific industry data point.'
   };
   const sizeCtx=sz?'\n\nCOMPANY SIZE: '+sz+' employees'+(rev?' | Revenue: '+rev:'')+'.\nAdjust all stats, stakes, and language to match this exact scale. Do not apply SMB language to enterprises.':'';
-  return'You are an elite B2B sales copywriter. Every email you write lands in the inbox and gets read.
-
-${angles[angle]||angles.pain}
-
-PRODUCT: Velorah - AI-Powered Cold Email & Cybersecurity Risk Assessment Platform
-FEATURES: Automated risk scores, 12+ compliance frameworks (SOC 2, HIPAA, GDPR, PCI DSS, ISO 27001, NIST, CCPA, FedRAMP, DORA, PIPEDA), AI remediation roadmaps, 60-70% cost reduction vs manual audits.
-
-FRAMEWORK SELECTION (never default to SOC 2 unless explicitly tech/SaaS):
-Healthcare: HIPAA, HITECH | Finance: PCI DSS, SOX, DORA | Gov: FedRAMP, FISMA | Retail: PCI DSS, CCPA | Manufacturing: NIST CSF, IEC 62443 | Legal: ISO 27001, GDPR | SaaS: SOC 2, ISO 27001${sizeCtx}
-
-STRICT RULES:
-- Subject: under 50 chars, no spam triggers, outcome or question format
-- Body: exactly 3 short paragraphs - hook, value, CTA
-- Conversational peer-to-peer tone, NOT corporate
-- ONE specific stat or number
-- Soft CTA: offer 15-min call or quick question
-- Last line: "If this isn't relevant, just reply and I'll remove you."
-- Under 170 words total
-- NEVER start with "I hope", "My name is", or any preamble
-
-Respond ONLY with valid JSON, no markdown: {"subject":"...","body":"..."}';
+  return 'You are an elite B2B sales copywriter. Every email you write lands in the inbox and gets read.\n\n'+(angles[angle]||angles.pain)+'\n\nPRODUCT: Velorah - AI-Powered Cold Email & Cybersecurity Risk Assessment Platform\nFEATURES: Automated risk scores, 12+ compliance frameworks (SOC 2, HIPAA, GDPR, PCI DSS, ISO 27001, NIST, CCPA, FedRAMP, DORA, PIPEDA), AI remediation roadmaps, 60-70% cost reduction vs manual audits.\n\nFRAMEWORK SELECTION (never default to SOC 2 unless explicitly tech/SaaS):\nHealthcare: HIPAA, HITECH | Finance: PCI DSS, SOX, DORA | Gov: FedRAMP, FISMA | Retail: PCI DSS, CCPA | Tech/SaaS: SOC 2, ISO 27001\n\nSTRICT RULES:\n- Subject: under 50 chars, no spam triggers, outcome or question format\n- Body: exactly 3 short paragraphs - hook, value, CTA\n- Conversational peer-to-peer tone, NOT corporate\n- ONE specific stat or number\n- Soft CTA: offer 15-min call or quick question\n- Last line: If this is not relevant, just reply and I will remove you.\n- Under 170 words total\n- NEVER start with I hope, My name is, or any preamble\n\nRespond ONLY with valid JSON, no markdown: {"subject":"...","body":"..."}'+(sizeCtx||'');
 }
 
 async function callAI(lead){
@@ -704,18 +684,18 @@ function p2(){
   const pct=S.leads.length>0?Math.round(S.genProgress/S.leads.length*100):0;
   const latest=S.emails.length>0?S.emails[S.emails.length-1]:null;
   const card=h('div',{cls:'card',style:{textAlign:'center',padding:'3.5rem 2rem'}});
-  card.innerHTML='
-    <div style="font-size:48px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(59,130,246,.5))">🤖</div>
-    <h2 style="font-size:18px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Generating personalized emails</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:20px">AI is researching companies and crafting targeted outreach...</p>
-    <div style="max-width:440px;margin:0 auto">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-        <span style="color:var(--text2)">${S.genProgress} of ${S.leads.length} generated</span>
-        <span style="font-family:'IBM Plex Mono',monospace;color:var(--cyan);font-weight:700">${pct}%</span>
-      </div>
-      <div class="pbar" style="height:6px"><div class="pfill" style="width:${pct}%"></div></div>
-    </div>
-  ';
+  const pct2=Math.round(S.genProgress/(S.leads.length||1)*100);
+  card.innerHTML=
+    '<div style="font-size:48px;margin-bottom:16px">&#x1F916;</div>'+
+    '<h2 style="font-size:18px;font-weight:800;margin-bottom:6px">Generating Personalised Emails</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:20px">AI is researching companies and crafting emails...</p>'+
+    '<div style="max-width:440px;margin:0 auto">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">'+
+        '<span style="color:var(--text2)">'+S.genProgress+' of '+S.leads.length+' generated</span>'+
+        '<span style="font-family:IBM Plex Mono,monospace;color:var(--cyan);font-weight:700">'+pct2+'%</span>'+
+      '</div>'+
+      '<div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct2+'%"></div></div>'+
+    '</div>';
   if(latest&&!latest.error){
     const prev=h('div',{style:{textAlign:'left',maxWidth:'440px',margin:'16px auto 0',background:'rgba(59,130,246,.06)',borderRadius:'var(--r)',padding:'12px',fontSize:'12px',border:'1px solid var(--border)'}});
     prev.innerHTML='<p style="font-weight:700;margin-bottom:4px;color:var(--cyan)">Latest generated:</p><p style="color:var(--text);font-weight:600;margin-bottom:3px">'+latest.subject+'</p><p style="color:var(--text2)">'+latest.body.substring(0,100)+'...</p>';
@@ -850,11 +830,11 @@ async function validateEmails(){
     vPanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">'+
       '<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+(vs.highRisk>0?'':'')+'</span> Pre-send Deliverability Report</div>'+
       '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
-        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+';font-family:'IBM Plex Mono',monospace">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
-        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+';font-family:'IBM Plex Mono',monospace">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT SCORE</div></div>':'')+''+
-        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green);font-family:'IBM Plex Mono',monospace">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
-        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold);font-family:'IBM Plex Mono',monospace">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
-        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red);font-family:'IBM Plex Mono',monospace">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+';font-family:IBM Plex Mono,monospace">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
+        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+';font-family:IBM Plex Mono,monospace">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT SCORE</div></div>':'')+''+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green);font-family:IBM Plex Mono,monospace">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
+        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold);font-family:IBM Plex Mono,monospace">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
+        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red);font-family:IBM Plex Mono,monospace">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
       '</div>'+
     '</div>';
     if(ca&&ca.issues&&ca.issues.length>0){
@@ -878,7 +858,6 @@ async function validateEmails(){
     wrap.appendChild(vPrompt);
   }
 
-  if(!approved.length
   if(!approved.length) return;
 
   S.validationDone=false;
