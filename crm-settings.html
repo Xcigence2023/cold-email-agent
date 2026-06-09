@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Velorah -- CRM Integrations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--bg4:#162040;
+  --text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;
+  --blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--red:#ef4444;
+  --gold:#f59e0b;--purple:#8b5cf6;--orange:#f97316;
+  --border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);
+  --glass:rgba(255,255,255,.03);--rl:12px;
+}
+body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 0%,rgba(59,130,246,.1),transparent 55%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(139,92,246,.08),transparent 55%);pointer-events:none;z-index:0;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:0 20px;height:56px;background:rgba(7,12,24,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.topbar-brand{font-size:18px;font-weight:900;color:var(--cyan);letter-spacing:-.01em;text-decoration:none;}
+.topbar-nav{display:flex;gap:2px;flex:1;overflow-x:auto;}
+.topbar-nav a{padding:6px 12px;border-radius:8px;text-decoration:none;color:var(--text2);font-size:12px;font-weight:600;white-space:nowrap;transition:all .2s;}
+.topbar-nav a:hover,.topbar-nav a.active{color:var(--cyan);background:rgba(6,182,212,.1);}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+#user-email{font-size:11px;color:var(--text3);}
+.sign-out{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;}
+
+/* MAIN */
+.main{max-width:1000px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:1;}
+.page-header{margin-bottom:2rem;}
+.page-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);font-size:10px;font-weight:800;color:var(--blue);letter-spacing:.08em;margin-bottom:12px;}
+.page-title{font-size:2rem;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#e8f0fe,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.page-sub{font-size:14px;color:var(--text2);max-width:600px;line-height:1.7;}
+
+/* DRAFT BANNER */
+.draft-banner{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:14px 18px;margin-bottom:1.5rem;display:none;}
+.draft-banner.show{display:block;}
+.draft-banner h3{font-size:14px;font-weight:800;color:var(--green);margin-bottom:8px;}
+.drafts-list{display:flex;flex-direction:column;gap:8px;}
+.draft-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(16,185,129,.15);border-radius:8px;cursor:pointer;transition:all .2s;}
+.draft-item:hover{border-color:var(--green);background:rgba(16,185,129,.05);}
+.draft-meta{flex:1;}
+.draft-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.draft-info{font-size:11px;color:var(--text2);}
+.draft-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.btn-resume{padding:6px 14px;border-radius:6px;background:var(--green);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;}
+.btn-del{padding:5px 10px;border-radius:6px;background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--red);font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;}
+
+/* CRM GRID */
+.crm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:1.5rem;}
+.crm-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.5rem;transition:all .25s;position:relative;}
+.crm-card.connected{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.03);}
+.crm-card:hover{border-color:var(--border2);}
+.crm-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.crm-logo{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0;}
+.crm-name{font-size:16px;font-weight:800;}
+.crm-tagline{font-size:11px;color:var(--text3);}
+.crm-badge{position:absolute;top:14px;right:14px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;}
+.badge-connected{background:rgba(16,185,129,.15);color:var(--green);}
+.badge-disconnected{background:var(--bg3);color:var(--text3);}
+.crm-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px;}
+
+/* FORM FIELDS */
+.field-group{margin-bottom:10px;}
+.field-lbl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+input[type=text],input[type=password],input[type=url],select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;}
+input:focus,select:focus{border-color:var(--blue);}
+input::placeholder{color:var(--text3);}
+.field-reveal{position:relative;}
+.field-reveal input{padding-right:36px;}
+.reveal-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;}
+
+/* BUTTONS */
+.btn-connect{width:100%;padding:10px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:4px;}
+.btn-connect:hover{opacity:.9;transform:translateY(-1px);}
+.btn-connect:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-test{padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:rgba(59,130,246,.08);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;}
+.btn-disconnect{padding:7px 14px;border-radius:6px;border:1px solid rgba(239,68,68,.3);background:transparent;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;}
+.btn-import{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(16,185,129,.3);background:rgba(16,185,129,.08);color:var(--green);font-size:13px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;margin-top:4px;}
+.btn-row{display:flex;gap:8px;margin-top:10px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:700;transform:translateY(80px);opacity:0;transition:all .3s;max-width:340px;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--green);}
+.toast.error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.toast.info{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blue);}
+
+/* STATUS */
+.status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:6px;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-err{background:var(--red);}
+.dot-idle{background:var(--text3);}
+
+.section-title{font-size:14px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:2rem 0 1rem;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.import-count{text-align:center;padding:16px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;margin-top:10px;display:none;}
+.ic-val{font-size:28px;font-weight:900;font-family:'IBM Plex Mono',monospace;color:var(--green);}
+.ic-lbl{font-size:11px;color:var(--text2);}
+.ic-action{display:flex;gap:8px;margin-top:10px;justify-content:center;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-brand" href="/app.html">Velorah</a>
+  <div class="topbar-nav">
+    <a href="/app.html">Campaigns</a>
+    <a href="/campaign-video.html">Ares</a>
+    <a href="/linkedin.html">LinkedIn</a>
+    <a href="/find-leads.html">Koios Intel</a>
+    <a href="/social-listen.html">Athena One</a>
+    <a href="/visitors.html">Argus Watch</a>
+    <a href="/crm-settings.html" class="active">CRM</a>
+    <a href="/history.html">History</a>
+  </div>
+  <div class="topbar-right">
+    <span id="user-email"></span>
+    <button class="sign-out" onclick="signOut()">Sign Out</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-header">
+    <div class="page-badge">&#x1F517; CRM INTEGRATIONS</div>
+    <div class="page-title">Connect Your CRM</div>
+    <p class="page-sub">Import contacts directly from your CRM into any Velorah campaign -- and push email activity back after sending. Your API keys are stored securely and never shared.</p>
+  </div>
+
+  <!-- DRAFT BANNER -->
+  <div class="draft-banner" id="draft-banner">
+    <h3>&#x1F4BE; Saved Lead Drafts</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">These uploads were saved automatically when you left the Campaign Agent. Resume where you left off.</p>
+    <div class="drafts-list" id="drafts-list"></div>
+  </div>
+
+  <!-- CRM GRID -->
+  <div class="section-title">CRM Integrations</div>
+
+  <div class="crm-grid" id="crm-grid">
+    <!-- Cards rendered by JS -->
+  </div>
+
+  <div class="section-title">Import Activity</div>
+  <div id="import-log" style="font-size:12px;color:var(--text2);font-family:'IBM Plex Mono',monospace;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;min-height:60px;line-height:1.7;">
+    Connect a CRM above to import contacts into Velorah campaigns...
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+var _session=null;
+var _savedKeys={};
+
+var CRMS=[
+  {id:'hubspot',  name:'HubSpot',        logo:'🟠', color:'#f97316', bg:'rgba(249,115,22,.12)',
+   tagline:'CRM, Marketing & Sales Hub',
+   desc:'Import contacts, companies and deals. Push email activity as engagement notes.',
+   fields:[{key:'hubspot_key',label:'Private App Access Token',type:'password',placeholder:'pat-na1-xxxxxxxx...'}]},
+  {id:'salesforce',name:'Salesforce',    logo:'??', color:'#06b6d4', bg:'rgba(6,182,212,.12)',
+   tagline:'World\'s #1 CRM Platform',
+   desc:'Import contacts from Salesforce using OAuth access token and your instance URL.',
+   fields:[{key:'salesforce_key',label:'Access Token',type:'password',placeholder:'00D...'},{key:'salesforce_instance',label:'Instance URL',type:'url',placeholder:'https://mycompany.salesforce.com'}]},
+  {id:'pipedrive',name:'Pipedrive',      logo:'🔵', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
+   tagline:'Sales Pipeline CRM',
+   desc:'Import persons and their linked organisations directly from your Pipedrive pipeline.',
+   fields:[{key:'pipedrive_key',label:'API Token',type:'password',placeholder:'From Settings > Personal Preferences > API'}]},
+  {id:'zoho',    name:'Zoho CRM',        logo:'🔴', color:'#ef4444', bg:'rgba(239,68,68,.12)',
+   tagline:'All-in-One CRM Suite',
+   desc:'Import contacts from Zoho CRM using an OAuth access token.',
+   fields:[{key:'zoho_key',label:'Access Token',type:'password',placeholder:'1000.xxxxx...'},{key:'zoho_dc',label:'Data Centre',type:'select',options:[['com','Global (.com)'],['eu','Europe (.eu)'],['in','India (.in)'],['com.au','Australia (.com.au)'],['jp','Japan (.jp)']]}]},
+  {id:'ghl',     name:'GoHighLevel',     logo:'🟡', color:'#f59e0b', bg:'rgba(245,158,11,.12)',
+   tagline:'All-In-One Sales & Marketing',
+   desc:'Import contacts from your GoHighLevel sub-account using your API key.',
+   fields:[{key:'ghl_key',label:'API Key',type:'password',placeholder:'From Settings > Integrations > API Key'}]},
+  {id:'activecampaign',name:'ActiveCampaign',logo:'💙', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
+   tagline:'Email & Marketing Automation',
+   desc:'Import contacts from ActiveCampaign. Find your API key under Settings > Developer.',
+   fields:[{key:'activecampaign_key',label:'API Key',type:'password',placeholder:'From Settings > Developer'},{key:'activecampaign_account',label:'Account Name',type:'text',placeholder:'mycompany (from mycompany.activehosted.com)'}]},
+  {id:'notion',  name:'Notion',          logo:'?', color:'#8b5cf6', bg:'rgba(139,92,246,.12)',
+   tagline:'Connected Database Workspace',
+   desc:'Import contacts from a Notion database. Your database must have Name, Email, and Company fields.',
+   fields:[{key:'notion_key',label:'Integration Secret',type:'password',placeholder:'secret_...'},{key:'notion_db_id',label:'Database ID',type:'text',placeholder:'From your database URL: notion.so/.../{DATABASE_ID}'}]},
+];
+
+function toast(msg, type) {
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'info');
+  setTimeout(function(){t.className='toast';},3500);
+}
+
+function log(msg) {
+  var el=document.getElementById('import-log');
+  el.innerHTML+=(el.innerHTML==='Connect a CRM above to import contacts into Velorah campaigns...'?'':'\n')+'['+new Date().toLocaleTimeString()+'] '+msg;
+}
+
+function revealToggle(inputId){
+  var inp=document.getElementById(inputId);
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+function getVal(key){
+  var el=document.getElementById('crm-field-'+key);
+  return el?el.value.trim():'';
+}
+
+function buildCard(crm){
+  var connected=_savedKeys['crm_active']===crm.id;
+  var card=document.createElement('div');
+  card.className='crm-card'+(connected?' connected':'');
+  card.id='card-'+crm.id;
+
+  var fieldsHtml='';
+  crm.fields.forEach(function(f){
+    var savedVal=_savedKeys[f.key]||'';
+    if(f.type==='select'){
+      var opts=(f.options||[]).map(function(o){
+        var sel=_savedKeys[f.key]===o[0]?' selected':'';
+        return '<option value="'+o[0]+'"'+sel+'>'+o[1]+'</option>';
+      }).join('');
+      fieldsHtml+='<div class="field-group"><div class="field-lbl">'+f.label+'</div><select id="crm-field-'+f.key+'">'+opts+'</select></div>';
+    } else {
+      fieldsHtml+='<div class="field-group"><div class="field-lbl">'+f.label+'</div>'+
+        '<div class="field-reveal"><input type="'+(f.type==='password'&&savedVal?'password':f.type)+'" id="crm-field-'+f.key+'" placeholder="'+f.placeholder+'" value="'+(savedVal?'&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;':'')+'" data-real="'+savedVal+'"/>'+
+        (f.type==='password'?'<button class="reveal-btn" onclick="revealToggle(\'crm-field-'+f.key+'\')">👁</button>':'')+
+        '</div></div>';
+    }
+  });
+
+  card.innerHTML=
+    '<span class="crm-badge '+(connected?'badge-connected':'badge-disconnected')+'">'+(connected?'Connected':'Not connected')+'</span>'+
+    '<div class="crm-top">'+
+      '<div class="crm-logo" style="background:'+crm.bg+';color:'+crm.color+'">'+crm.logo+'</div>'+
+      '<div><div class="crm-name" style="color:'+crm.color+'">'+crm.name+'</div><div class="crm-tagline">'+crm.tagline+'</div></div>'+
+    '</div>'+
+    '<div class="crm-desc">'+crm.desc+'</div>'+
+    fieldsHtml+
+    '<div class="btn-row">'+
+      '<button class="btn-connect" onclick="saveCRM(\''+crm.id+'\')">Save & Connect '+crm.name+'</button>'+
+    '</div>'+
+    '<div class="btn-row">'+
+      '<button class="btn-test" onclick="testCRM(\''+crm.id+'\')">Test Connection</button>'+
+      (connected?'<button class="btn-import" onclick="importFromCRM(\''+crm.id+'\')">Import Contacts</button>':'')+
+      (connected?'<button class="btn-disconnect" onclick="disconnectCRM(\''+crm.id+'\')">Disconnect</button>':'')+
+    '</div>'+
+    '<div class="import-count" id="import-count-'+crm.id+'">'+
+      '<div class="ic-val" id="ic-val-'+crm.id+'">0</div>'+
+      '<div class="ic-lbl">contacts imported</div>'+
+      '<div class="ic-action">'+
+        '<button class="btn-resume" onclick="sendToCampaign(\''+crm.id+'\')">Send to Campaign</button>'+
+        '<button class="btn-test" onclick="sendToAres(\''+crm.id+'\')">Launch with Ares</button>'+
+      '</div>'+
+    '</div>';
+
+  return card;
+}
+
+function renderCards(){
+  var grid=document.getElementById('crm-grid');
+  grid.innerHTML='';
+  CRMS.forEach(function(crm){
+    grid.appendChild(buildCard(crm));
+  });
+}
+
+async function saveCRM(crmId){
+  var crm=CRMS.find(function(c){return c.id===crmId;});
+  if(!crm) return;
+  var payload={crm_active:crmId};
+  crm.fields.forEach(function(f){
+    var el=document.getElementById('crm-field-'+f.key);
+    if(!el) return;
+    var val=el.value.trim();
+    if(val&&val!=='&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;'){
+      payload[f.key]=val;
+    } else if(el.dataset&&el.dataset.real&&el.dataset.real!==val){
+      payload[f.key]=el.dataset.real;
+    }
+  });
+
+  try{
+    var resp=await fetch('/.netlify/functions/user-keys',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify(payload)
+    });
+    if(!resp.ok) throw new Error('Save failed: '+resp.status);
+    Object.assign(_savedKeys, payload);
+    renderCards();
+    toast(crm.name+' connected successfully!','success');
+    log(crm.name+' API key saved.');
+  }catch(e){
+    toast('Save failed: '+e.message,'error');
+  }
+}
+
+async function testCRM(crmId){
+  var crm=CRMS.find(function(c){return c.id===crmId;});
+  if(!crm) return;
+  var apiKey=_savedKeys[crm.fields[0].key]||'';
+  if(!apiKey){toast('Enter and save an API key first','error');return;}
+  toast('Testing '+crm.name+' connection...','info');
+  log('Testing '+crm.name+'...');
+  try{
+    var body={action:'test',crm:crmId,api_key:apiKey};
+    if(crmId==='salesforce') body.instance_url=_savedKeys.salesforce_instance||'';
+    if(crmId==='zoho') body.data_centre=_savedKeys.zoho_dc||'com';
+    if(crmId==='activecampaign') body.account_name=_savedKeys.activecampaign_account||'';
+    if(crmId==='notion') body.database_id=_savedKeys.notion_db_id||'';
+
+    var resp=await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify(body)
+    });
+    var data=await resp.json();
+    if(data.success){
+      toast(crm.name+' connected! Sample contacts found.','success');
+      log(crm.name+' test passed. Ready to import.');
+    } else {
+      toast('Connection failed: '+(data.error||'Unknown error'),'error');
+      log(crm.name+' test failed: '+(data.error||''));
+    }
+  }catch(e){
+    toast('Test error: '+e.message,'error');
+  }
+}
+
+var _importedContacts={};
+
+async function importFromCRM(crmId){
+  var crm=CRMS.find(function(c){return c.id===crmId;});
+  if(!crm) return;
+  var apiKey=_savedKeys[crm.fields[0].key]||'';
+  if(!apiKey){toast('API key not saved. Connect the CRM first.','error');return;}
+  toast('Importing from '+crm.name+'...','info');
+  log('Importing contacts from '+crm.name+'...');
+
+  try{
+    var body={action:'import',crm:crmId,api_key:apiKey,limit:50,campaign_name:crm.name+' Import '+new Date().toLocaleDateString()};
+    if(crmId==='salesforce') body.instance_url=_savedKeys.salesforce_instance||'';
+    if(crmId==='zoho') body.data_centre=_savedKeys.zoho_dc||'com';
+    if(crmId==='activecampaign') body.account_name=_savedKeys.activecampaign_account||'';
+    if(crmId==='notion') body.database_id=_savedKeys.notion_db_id||'';
+
+    var resp=await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify(body)
+    });
+    if(!resp.ok) throw new Error('Import error: '+resp.status);
+    var data=await resp.json();
+    _importedContacts[crmId]=data.contacts||[];
+    var cnt=data.count||0;
+
+    var countEl=document.getElementById('import-count-'+crmId);
+    var valEl=document.getElementById('ic-val-'+crmId);
+    if(countEl&&valEl){countEl.style.display='block';valEl.textContent=cnt;}
+
+    toast('Imported '+cnt+' contacts from '+crm.name+(data.draft_id?' (saved as draft)':''),'success');
+    log('Imported '+cnt+' contacts from '+crm.name+'. Draft saved: '+(data.draft_id||'none'));
+    if(data.draft_id) loadDrafts();
+  }catch(e){
+    toast('Import failed: '+e.message,'error');
+    log('Import error: '+e.message);
+  }
+}
+
+function sendToCampaign(crmId){
+  var contacts=_importedContacts[crmId]||[];
+  if(!contacts.length){toast('No contacts imported yet','error');return;}
+  var headers=['firstName','lastName','email','company','title','industry','companySize'];
+  var rows=contacts.map(function(c){return headers.map(function(k){return c[k]||'';});});
+  var csv=headers.join(',')+'\n'+rows.map(function(r){return r.map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  sessionStorage.setItem('velorah_leads_csv',csv);
+  sessionStorage.setItem('velorah_leads_count',contacts.length);
+  sessionStorage.setItem('velorah_source','crm');
+  sessionStorage.setItem('velorah_crm_source',crmId);
+  toast('Sending '+contacts.length+' contacts to Campaign Agent...','success');
+  setTimeout(function(){window.location.href='/app.html';},800);
+}
+
+function sendToAres(crmId){
+  var contacts=_importedContacts[crmId]||[];
+  if(!contacts.length){toast('No contacts imported yet','error');return;}
+  var headers=['firstName','lastName','email','company','title','industry'];
+  var rows=contacts.slice(0,20).map(function(c){return headers.map(function(k){return c[k]||'';});});
+  var csv=headers.join(',')+'\n'+rows.map(function(r){return r.map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  sessionStorage.setItem('velorah_leads_csv',csv);
+  sessionStorage.setItem('velorah_leads_count',Math.min(contacts.length,20));
+  sessionStorage.setItem('velorah_source','crm');
+  window.location.href='/campaign-video.html';
+}
+
+async function disconnectCRM(crmId){
+  if(!confirm('Disconnect '+crmId+'? The API key will be removed.')) return;
+  try{
+    await fetch('/.netlify/functions/user-keys',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({crm_active:'',[(crmId+'_key')]:'',crm_id_to_clear:crmId})
+    });
+    delete _savedKeys[crmId+'_key'];
+    _savedKeys.crm_active='';
+    renderCards();
+    toast('CRM disconnected','info');
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function loadDrafts(){
+  try{
+    var resp=await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'list_drafts'})
+    });
+    var data=await resp.json();
+    var drafts=data.drafts||[];
+    if(!drafts.length) return;
+
+    var banner=document.getElementById('draft-banner');
+    var list=document.getElementById('drafts-list');
+    banner.className='draft-banner show';
+    list.innerHTML=drafts.map(function(d){
+      var ago=timeSince(d.updated_at);
+      var srcBadge=d.crm_source?('<span class="draft-badge" style="background:rgba(59,130,246,.15);color:var(--blue)">'+d.crm_source.toUpperCase()+'</span>'):'<span class="draft-badge" style="background:var(--bg3);color:var(--text3)">CSV</span>';
+      return '<div class="draft-item" onclick="resumeDraft(\''+d.id+'\')">'+
+        srcBadge+
+        '<div class="draft-meta"><div class="draft-name">'+d.name+'</div><div class="draft-info">'+d.lead_count+' contacts &middot; Saved '+ago+'</div></div>'+
+        '<button class="btn-resume">Resume</button>'+
+        '<button class="btn-del" onclick="event.stopPropagation();deleteDraft(\''+d.id+'\')">Delete</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){}
+}
+
+function timeSince(ts){
+  var diff=(Date.now()-new Date(ts).getTime())/1000;
+  if(diff<60) return 'just now';
+  if(diff<3600) return Math.round(diff/60)+' min ago';
+  if(diff<86400) return Math.round(diff/3600)+'h ago';
+  return Math.round(diff/86400)+'d ago';
+}
+
+async function resumeDraft(draftId){
+  try{
+    var resp=await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'load_draft',draft_id:draftId})
+    });
+    var data=await resp.json();
+    var leads=data.leads||[];
+    if(!leads.length){toast('Draft is empty','error');return;}
+    // Convert to CSV and pass to campaign agent
+    var keys=Object.keys(leads[0]||{}).filter(function(k){return !k.startsWith('crm_');});
+    var csv=keys.join(',')+'\n'+leads.map(function(l){return keys.map(function(k){return '"'+String(l[k]||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+    sessionStorage.setItem('velorah_leads_csv',csv);
+    sessionStorage.setItem('velorah_leads_count',leads.length);
+    sessionStorage.setItem('velorah_source','draft');
+    sessionStorage.setItem('velorah_draft_id',draftId);
+    toast('Resuming '+leads.length+' contacts...','success');
+    setTimeout(function(){window.location.href='/app.html';},600);
+  }catch(e){ toast('Could not load draft: '+e.message,'error'); }
+}
+
+async function deleteDraft(draftId){
+  if(!confirm('Delete this draft?')) return;
+  try{
+    await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'delete_draft',draft_id:draftId})
+    });
+    toast('Draft deleted','info');
+    loadDrafts();
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function initAuth(){
+  try{
+    var r=await sbClient.auth.getSession();
+    if(!r.data.session){window.location.href='/login.html';return;}
+    _session=r.data.session;
+    document.getElementById('user-email').textContent=_session.user.email;
+
+    // Load saved CRM keys
+    try{
+      var kr=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+_session.access_token}});
+      var kd=await kr.json();
+      if(kd.keys) _savedKeys=Object.assign({},kd.keys);
+    }catch(e){}
+
+    renderCards();
+    loadDrafts();
+  }catch(e){ window.location.href='/login.html'; }
+}
+
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+
+initAuth();
+</script>
+</body>
+</html>
