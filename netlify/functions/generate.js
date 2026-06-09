@@ -110,27 +110,12 @@ exports.handler = async function(event) {
         p.hook         ? 'Opening hook/angle to use: ' + p.hook                  : null,
       ].filter(Boolean);
       if (prefLines.length > 0) {
-        enrichedPrompt += '
-
-SENDER PROFILE -- FOLLOW EXACTLY:
-' + prefLines.map(function(l) { return '- ' + l; }).join('
-');
+        enrichedPrompt += '\nSENDER PROFILE -- FOLLOW EXACTLY:\n' + prefLines.map(function(l) { return '- ' + l; }).join('\n');
       }
     }
 
     // Add human touch instructions
-    enrichedPrompt += `
-
-HUMAN TOUCH REQUIREMENTS — MANDATORY:
-- Open with something SPECIFIC and unexpected about their company or role (not generic)
-- Use natural contractions (you're, we've, don't, I'd)
-- Write 1 imperfect sentence — real humans don't write perfect copy
-- Add one brief personal observation: "I noticed...", "What stood out to me was...", "I've been following..."
-- Vary sentence length — short punchy sentences mixed with longer ones
-- NO corporate words: leverage, synergy, scalable, robust, holistic, streamline, game-changer
-- End like a human: casual, warm, no pressure. E.g. "Would it make sense to grab 15 minutes?" or "Happy to show you what we've built — no deck, just a quick demo."
-- Sign off with just first name. No "Best regards", no title in body
-- Under 165 words total`;
+    enrichedPrompt += '\nHUMAN TOUCH REQUIREMENTS -- MANDATORY:\n- Open with something SPECIFIC and unexpected about their company or role (not generic)\n- Use natural contractions, vary sentence length\n- NO corporate buzzwords: leverage, synergy, scalable, robust\n- End casually: Would it make sense to grab 15 minutes?\n- Sign off with just first name, under 165 words';
 
     const result = await callClaude([{ role: 'user', content: enrichedPrompt }], 1000);
     return { statusCode: 200, headers, body: JSON.stringify(result) };
