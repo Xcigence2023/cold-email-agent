@@ -290,7 +290,7 @@ async function saveCRM(crmId){
   });
 
   try{
-    var resp=await fetch('/.netlify/functions/user-keys',{
+    var resp=await fetch('/.netlify/functions/user_keys',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
       body:JSON.stringify(payload)
@@ -406,7 +406,7 @@ function sendToAres(crmId){
 async function disconnectCRM(crmId){
   if(!confirm('Disconnect '+crmId+'? The API key will be removed.')) return;
   try{
-    await fetch('/.netlify/functions/user-keys',{
+    await fetch('/.netlify/functions/user_keys',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
       body:JSON.stringify({crm_active:'',[(crmId+'_key')]:'',crm_id_to_clear:crmId})
@@ -497,7 +497,7 @@ async function initAuth(){
 
     // Load saved CRM keys
     try{
-      var kr=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+_session.access_token}});
+      var kr=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+_session.access_token}});
       var kd=await kr.json();
       if(kd.keys) _savedKeys=Object.assign({},kd.keys);
     }catch(e){}
