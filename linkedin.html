@@ -1,855 +1,467 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<meta charset="UTF-8"/>
-<meta name="theme-color" content="#070c18"/>
-<meta name="robots" content="noindex,nofollow"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah - LinkedIn Campaign Agent</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--red:#ef4444;--gold:#f59e0b;--li:#0077b5;--border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);--glass:rgba(255,255,255,.03);--r:10px;--rl:14px}
-body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 0%,rgba(59,130,246,.08),transparent 60%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(0,119,181,.06),transparent 60%);pointer-events:none}
-body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
-.topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
-.brand{display:flex;align-items:center;gap:10px}
-.brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px}
-.brand-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f0fe,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav{display:flex;gap:4px;margin-left:12px}
-.nav a{font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;text-decoration:none;color:var(--text2);transition:all .2s}
-.nav a:hover{color:var(--text);background:rgba(59,130,246,.08)}
-.nav a.active{color:var(--blue);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
-.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:1.5rem}
-.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:12px}
-.card-title{font-size:15px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
-.card-title::before{content:'';width:3px;height:16px;background:linear-gradient(var(--blue),var(--cyan));border-radius:2px}
-.lbl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
-input,select,textarea{width:100%;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:rgba(13,21,38,.8);color:var(--text);font-family:'Outfit',sans-serif;transition:all .2s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-input::placeholder,textarea::placeholder{color:var(--text3)}
-select option{background:var(--bg2)}
-textarea{resize:vertical;line-height:1.6;min-height:100px}
-.btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;text-decoration:none;display:inline-block}
-.btn:hover{border-color:var(--border2);background:rgba(59,130,246,.08)}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:var(--blue);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,.3)}
-.btn-primary:hover{box-shadow:0 4px 25px rgba(59,130,246,.5);transform:translateY(-1px)}
-.btn-li{background:linear-gradient(135deg,#0077b5,#005885);border-color:#0077b5;color:#fff;box-shadow:0 4px 15px rgba(0,119,181,.3)}
-.btn-li:hover{transform:translateY(-1px)}
-.btn-green{background:linear-gradient(135deg,var(--green),#059669);border-color:var(--green);color:#fff}
-.btn-sm{padding:5px 12px;font-size:12px}
-.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-@media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700}
-.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:rgba(59,130,246,.06);border-radius:var(--r);border-left:3px solid rgba(59,130,246,.3);line-height:1.6}
-.warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);line-height:1.5}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
-@keyframes sp{to{transform:rotate(360deg)}}
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
-.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Outfit',sans-serif}
-.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab-btn:hover{color:var(--text)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:rgba(13,21,38,.5);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
-tr:hover td{background:rgba(59,130,246,.04)}
-.stat{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:14px;text-align:center}
-.stat-val{font-size:26px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:4px}
-.stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
-.dz{border:2px dashed var(--border);border-radius:var(--rl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass)}
-.dz:hover,.dz.over{border-color:var(--li);background:rgba(0,119,181,.05);box-shadow:inset 0 0 40px rgba(0,119,181,.05)}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s;margin:3px}
-.chip.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);color:var(--blue)}
-.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 0 10px rgba(59,130,246,.4);flex-shrink:0}
-.step-row{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
-.step-row:last-child{border-bottom:none}
-.msg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:700px){.msg-grid{grid-template-columns:1fr}}
-.msg-box{background:rgba(13,21,38,.6);border:1px solid var(--border);border-radius:var(--r);padding:14px}
-.ch-card{flex:1;padding:14px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s;min-width:160px}
-.ch-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
-.angle-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
-.angle-card.active{border-color:var(--blue);background:rgba(59,130,246,.1)}
-.pbar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden}
-.pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width .4s}
-.empty{text-align:center;padding:3rem;color:var(--text2)}
-</style>
-</head>
-<body>
-<div class="topbar">
-  <div class="flex" style="gap:0">
-    <div class="brand">
-      <div class="brand-logo">✉</div>
-      <span class="brand-name">Velorah</span>
-    </div>
-    <nav class="nav">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/app.html">Campaigns</a>
-      <a href="/campaign-video.html">Ares</a>
-      <a href="/linkedin.html" class="active">LinkedIn</a>
-      <a href="/find-leads.html">Koios Intel</a>
-      <a href="/social-listen.html">Athena One</a>
-      <a href="/visitors.html">Argus Watch</a>
-      <a href="/history.html">History</a>
-    </nav>
-  </div>
-  <div class="flex">
-    <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
-    <button class="btn btn-sm" onclick="signOut()">Sign out</button>
-  </div>
-</div>
+/**
+ * crm.js -- Netlify Function: CRM Integration Hub
+ * Place in: netlify/functions/crm.js
+ *
+ * Actions:
+ *   import   -- fetch contacts from a connected CRM (HubSpot | Salesforce | Pipedrive | Zoho | GHL | ActiveCampaign)
+ *   push     -- write email activity/note back to the CRM after a campaign send
+ *   test     -- verify a stored API key connects successfully
+ *   save_draft -- persist uploaded CSV leads to Supabase so they survive navigation
+ *   load_draft -- retrieve saved draft leads for resume
+ *   list_drafts -- list all draft campaigns for the user
+ *   delete_draft -- remove a draft
+ *
+ * ENV VARS (all optional -- only needed per CRM):
+ *   SUPABASE_URL, SUPABASE_SERVICE_KEY  (for draft persistence)
+ */
 
-<div class="page">
-  <div class="card" style="background:linear-gradient(135deg,rgba(0,119,181,.08),rgba(59,130,246,.05));border-color:rgba(0,119,181,.25);margin-bottom:1.25rem">
-    <div class="fb">
-      <div>
-        <h1 style="font-size:20px;font-weight:800;margin-bottom:4px">💼 LinkedIn Campaign Agent</h1>
-        <p style="font-size:13px;color:var(--text2)">Import connections &rarr; Filter by title/location &rarr; Generate personalized messages &rarr; Email or LinkedIn outreach</p>
-      </div>
-      <a href="https://www.linkedin.com/mynetwork/invite-connect/connections/" target="_blank" class="btn btn-li">💼 Open LinkedIn Connections</a>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('import',this)">Step 1: Import</button>
-    <button class="tab-btn" onclick="showTab('filter',this)">Step 2: Filter &amp; Enrich</button>
-    <button class="tab-btn" onclick="showTab('compose',this)">Step 3: Compose</button>
-    <button class="tab-btn" onclick="showTab('send',this)">Step 4: Send</button>
-  </div>
-
-  <div id="tab-content"></div>
-</div>
-
-<script>
-var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
-var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
-var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
-var _session=null;
-
-// State
-var S={
-  raw:[], filtered:[], selected:new Set(), messages:[],
-  filters:{titles:[], locations:[], companies:[], keywords:''},
-  channel:'both', angle:'connection',
-  sender:{name:'', email:'', company:'Velorah'},
-  generating:false, genProgress:0
+const HDR = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type':                 'application/json',
 };
 
-var PRESETS=['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT','Director of IT','VP of IT','Chief Information Officer','CISO','Chief Compliance Officer'];
-
-async function init(){
-  try{
-    var r=await sbClient.auth.getSession();
-    var session=r.data.session;
-    if(!session){window.location.href='/login.html';return;}
-    _session=session;
-    document.getElementById('user-email').textContent=session.user.email;
-    try{var kr=await fetch('/.netlify/functions/user-keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'Velorah';}}catch(e){}
-  }catch(e){}
-  showTab('import', document.querySelector('.tab-btn'));
+const _rl = new Map();
+function _rate(id, max, win) {
+  const n = Date.now(), r = _rl.get(id) || { c: 0, t: n + (win || 60000) };
+  if (n > r.t) { r.c = 0; r.t = n + (win || 60000); }
+  r.c++; _rl.set(id, r);
+  return r.c <= (max || 30);
 }
 
-function showTab(tab, btn){
-  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  var content=document.getElementById('tab-content');
-  content.innerHTML='';
-  if(tab==='import') renderImport(content);
-  else if(tab==='filter') renderFilter(content);
-  else if(tab==='compose') renderCompose(content);
-  else if(tab==='send') renderSend(content);
-}
+function ok(data)  { return { statusCode: 200, headers: HDR, body: JSON.stringify(data) }; }
+function err(msg, code) { return { statusCode: code || 400, headers: HDR, body: JSON.stringify({ error: msg }) }; }
 
-// ========== STEP 1: IMPORT ==========
-function renderImport(wrap){
-  // Instructions card
-  var card=mk('div','card');
-  card.appendChild(mkTitle('How to Export Your LinkedIn Connections'));
-
-  var steps=[
-    {n:'1', t:'Open LinkedIn Data Export', d:'Click the button on this page to go directly to LinkedIn connection settings, then click "Get a copy of your data".', link:['Open LinkedIn Export Settings','https://www.linkedin.com/psettings/member-data'], link2:['View Connections','https://www.linkedin.com/mynetwork/invite-connect/connections/']},
-    {n:'2', t:'Request Your Connections File', d:'On the LinkedIn page: scroll down and select "Download larger data archive" (this includes Connections). Click Request archive and confirm with your password. LinkedIn emails you within 10-30 minutes.'},
-    {n:'3', t:'Download & Upload Here', d:'Open the LinkedIn email, download the ZIP file, extract it, then upload Connections.csv below. Velorah auto-cleans LinkedIn\'s format.'}
-  ];
-
-  steps.forEach(function(s){
-    var row=mk('div','step-row');
-    var num=mk('div','step-num');num.textContent=s.n;
-    var body=mk('div',null);body.style.flex='1';
-    var title=mk('p',null);title.style.fontWeight='700';title.style.marginBottom='4px';title.textContent=s.t;
-    var desc=mk('p',null);desc.style.cssText='font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px';desc.textContent=s.d;
-    body.appendChild(title);body.appendChild(desc);
-    if(s.link){
-      var btnRow=mk('div','flex');
-      var a1=mk('a','btn btn-li btn-sm');a1.href=s.link[1];a1.target='_blank';a1.textContent=s.link[0];
-      btnRow.appendChild(a1);
-      if(s.link2){var a2=mk('a','btn btn-sm');a2.href=s.link2[1];a2.target='_blank';a2.style.cssText='border-color:rgba(0,119,181,.3);color:#0077b5';a2.textContent=s.link2[0];btnRow.appendChild(a2);}
-      body.appendChild(btnRow);
-    }
-    row.appendChild(num);row.appendChild(body);
-    card.appendChild(row);
+// -- SUPABASE AUTH ---------------------------------------------
+async function getUser(token) {
+  const SB_URL = process.env.SUPABASE_URL;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  if (!SB_URL || !SB_KEY) return null;
+  const r = await fetch(SB_URL + '/auth/v1/user', {
+    headers: { 'Authorization': 'Bearer ' + token, 'apikey': SB_KEY }
   });
-
-  var warn=mk('div','warn');warn.style.marginTop='12px';
-  warn.textContent='Note: LinkedIn only includes email addresses for connections who have allowed it. Velorah will automatically find missing emails via Koios Intel and Koios Intel.';
-  card.appendChild(warn);
-  wrap.appendChild(card);
-
-  // Drop zone card
-  var dzCard=mk('div','card');
-  var dz=mk('div','dz'+(S.raw.length?' over':''));
-  var dzIcon=mk('div',null);dzIcon.style.cssText='font-size:42px;margin-bottom:14px';dzIcon.textContent=S.raw.length?'Done':'💼';
-  var dzTitle=mk('p',null);dzTitle.style.cssText='font-weight:700;font-size:15px;margin-bottom:6px';
-  dzTitle.textContent=S.raw.length?(S.raw.length+' connections loaded - upload new file to replace'):'Drop your LinkedIn Connections.csv here';
-  var dzSub=mk('p',null);dzSub.style.cssText='font-size:13px;color:var(--text2)';
-  dzSub.textContent=S.raw.length?'Velorah auto-cleaned LinkedIn\'s format':'or click to browse - Velorah auto-cleans LinkedIn\'s format';
-  dz.appendChild(dzIcon);dz.appendChild(dzTitle);dz.appendChild(dzSub);
-
-  var fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
-  fi.addEventListener('change',function(e){if(e.target.files[0])readCSV(e.target.files[0]);});
-  dz.addEventListener('click',function(){fi.click();});
-  dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
-  dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
-  dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])readCSV(e.dataTransfer.files[0]);});
-  dzCard.appendChild(dz);dzCard.appendChild(fi);
-
-  if(S.raw.length){
-    var withEmail=S.raw.filter(function(r){return r.email;}).length;
-    var companies=new Set(S.raw.map(function(r){return r.company;}).filter(Boolean)).size;
-
-    var statGrid=mk('div','g4');statGrid.style.margin='14px 0';
-    [{v:S.raw.length,l:'Total Connections',c:'var(--blue)'},{v:withEmail,l:'Have Email',c:'var(--green)'},{v:S.raw.length-withEmail,l:'Need Enrichment',c:'var(--gold)'},{v:companies,l:'Companies',c:'var(--cyan)'}].forEach(function(s){
-      var sc=mk('div','stat');
-      var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
-      var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
-      sc.appendChild(sv);sc.appendChild(sl);statGrid.appendChild(sc);
-    });
-    dzCard.appendChild(statGrid);
-
-    // Preview table
-    var tWrap=mk('div',null);tWrap.style.overflowX='auto';
-    var pTitle=mk('p',null);pTitle.style.cssText='font-size:12px;color:var(--text2);margin-bottom:8px';pTitle.textContent='Preview (first 5 of '+S.raw.length+'):';
-    var table=mk('table',null);
-    table.innerHTML='<thead><tr><th>Name</th><th>Job Title</th><th>Company</th><th>Email</th><th>Location</th><th>Connected</th></tr></thead>';
-    var tbody=mk('tbody',null);
-    S.raw.slice(0,5).forEach(function(r){
-      var tr=mk('tr',null);
-      tr.innerHTML='<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:var(--text2)">'+esc(r.connectedOn||'-')+'</td>';
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    tWrap.appendChild(pTitle);tWrap.appendChild(table);
-    dzCard.appendChild(tWrap);
-
-    var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
-    var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Filter & Enrich Connections ->';
-    nextBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[1].click();});
-    nextRow.appendChild(nextBtn);dzCard.appendChild(nextRow);
-  }
-
-  wrap.appendChild(dzCard);
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
 }
 
-function readCSV(file){
-  var rd=new FileReader();
-  rd.onload=function(e){
-    var text=e.target.result;
-    var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
-    var headerIdx=0;
-    for(var i=0;i<Math.min(10,lines.length);i++){
-      if(lines[i].indexOf('First Name')>=0||lines[i].indexOf('Email Address')>=0||lines[i].indexOf('Connected On')>=0){headerIdx=i;break;}
+async function sbFetch(path, opts) {
+  const SB_URL = process.env.SUPABASE_URL;
+  const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+  return fetch(SB_URL + path, Object.assign({}, opts, {
+    headers: Object.assign({ 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, opts.headers || {})
+  }));
+}
+
+// -- CRM IMPORTERS ---------------------------------------------
+
+// HubSpot: contacts -> Velorah lead format
+async function importHubSpot(apiKey, limit) {
+  const url = 'https://api.hubapi.com/crm/v3/objects/contacts?limit=' + (limit || 50) +
+    '&properties=firstname,lastname,email,company,jobtitle,industry,numberofemployees,annualrevenue,hs_lead_status';
+  const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + apiKey } });
+  if (!r.ok) {
+    const e = await r.text();
+    throw new Error('HubSpot ' + r.status + ': ' + e.substring(0, 120));
+  }
+  const d = await r.json();
+  return (d.results || []).map(function(c) {
+    const p = c.properties || {};
+    return {
+      crm_id:        c.id,
+      crm_source:    'hubspot',
+      firstName:     p.firstname || '',
+      lastName:      p.lastname  || '',
+      fullName:      ((p.firstname || '') + ' ' + (p.lastname || '')).trim(),
+      email:         p.email || '',
+      company:       p.company || '',
+      title:         p.jobtitle || '',
+      industry:      p.industry || '',
+      companySize:   p.numberofemployees || '',
+      revenue:       p.annualrevenue || '',
+      status:        p.hs_lead_status || '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// Salesforce: query contacts via REST API
+async function importSalesforce(accessToken, instanceUrl, limit) {
+  const soql = encodeURIComponent(
+    'SELECT Id,FirstName,LastName,Email,Account.Name,Title,Department,Account.Industry,Account.NumberOfEmployees,Account.AnnualRevenue ' +
+    'FROM Contact WHERE Email != null LIMIT ' + (limit || 50)
+  );
+  const r = await fetch(instanceUrl + '/services/data/v59.0/query/?q=' + soql, {
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' }
+  });
+  if (!r.ok) throw new Error('Salesforce ' + r.status);
+  const d = await r.json();
+  return (d.records || []).map(function(c) {
+    return {
+      crm_id:      c.Id,
+      crm_source:  'salesforce',
+      firstName:   c.FirstName || '',
+      lastName:    c.LastName  || '',
+      fullName:    ((c.FirstName || '') + ' ' + (c.LastName || '')).trim(),
+      email:       c.Email,
+      company:     (c.Account && c.Account.Name) || '',
+      title:       c.Title || '',
+      industry:    (c.Account && c.Account.Industry) || '',
+      companySize: (c.Account && c.Account.NumberOfEmployees) || '',
+      revenue:     (c.Account && c.Account.AnnualRevenue) || '',
+    };
+  });
+}
+
+// Pipedrive: persons endpoint
+async function importPipedrive(apiKey, limit) {
+  const r = await fetch('https://api.pipedrive.com/v1/persons?api_token=' + apiKey + '&limit=' + (limit || 50) + '&status=open&sort=update_time DESC');
+  if (!r.ok) throw new Error('Pipedrive ' + r.status);
+  const d = await r.json();
+  return ((d.data) || []).map(function(p) {
+    const email = (p.email && p.email[0] && p.email[0].value) || '';
+    const org = p.org_id && p.org_id.name ? p.org_id.name : '';
+    return {
+      crm_id:     String(p.id),
+      crm_source: 'pipedrive',
+      firstName:  p.first_name || '',
+      lastName:   p.last_name  || '',
+      fullName:   p.name || '',
+      email:      email,
+      company:    org,
+      title:      p.job_title || '',
+      industry:   '',
+      companySize:'',
+      revenue:    '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// Zoho CRM: contacts module
+async function importZoho(accessToken, dataCentre, limit) {
+  const base = dataCentre && dataCentre !== 'com' ? 'https://www.zohoapis.' + dataCentre : 'https://www.zohoapis.com';
+  const r = await fetch(base + '/crm/v3/Contacts?per_page=' + (limit || 50) + '&fields=First_Name,Last_Name,Email,Account_Name,Title,Industry,No_of_Employees', {
+    headers: { 'Authorization': 'Zoho-oauthtoken ' + accessToken }
+  });
+  if (!r.ok) throw new Error('Zoho ' + r.status);
+  const d = await r.json();
+  return ((d.data) || []).map(function(c) {
+    return {
+      crm_id:     c.id,
+      crm_source: 'zoho',
+      firstName:  c.First_Name || '',
+      lastName:   c.Last_Name  || '',
+      fullName:   ((c.First_Name || '') + ' ' + (c.Last_Name || '')).trim(),
+      email:      c.Email || '',
+      company:    c.Account_Name || '',
+      title:      c.Title || '',
+      industry:   c.Industry || '',
+      companySize:c.No_of_Employees || '',
+      revenue:    '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// GoHighLevel (GHL)
+async function importGHL(apiKey, limit) {
+  const r = await fetch('https://rest.gohighlevel.com/v1/contacts/?limit=' + (limit || 50), {
+    headers: { 'Authorization': 'Bearer ' + apiKey }
+  });
+  if (!r.ok) throw new Error('GoHighLevel ' + r.status);
+  const d = await r.json();
+  return ((d.contacts) || []).map(function(c) {
+    return {
+      crm_id:     c.id,
+      crm_source: 'ghl',
+      firstName:  c.firstName || '',
+      lastName:   c.lastName  || '',
+      fullName:   ((c.firstName || '') + ' ' + (c.lastName || '')).trim(),
+      email:      (c.email) || '',
+      company:    c.companyName || '',
+      title:      c.title || '',
+      industry:   '',
+      companySize:'',
+      revenue:    '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// ActiveCampaign
+async function importActiveCampaign(apiKey, accountName, limit) {
+  const base = 'https://' + accountName + '.api-us1.com/api/3';
+  const r = await fetch(base + '/contacts?limit=' + (limit || 50), {
+    headers: { 'Api-Token': apiKey }
+  });
+  if (!r.ok) throw new Error('ActiveCampaign ' + r.status);
+  const d = await r.json();
+  return ((d.contacts) || []).map(function(c) {
+    return {
+      crm_id:     c.id,
+      crm_source: 'activecampaign',
+      firstName:  c.firstName || '',
+      lastName:   c.lastName  || '',
+      fullName:   ((c.firstName || '') + ' ' + (c.lastName || '')).trim(),
+      email:      c.email || '',
+      company:    c.orgname || '',
+      title:      c.jobtitle || '',
+      industry:   '',
+      companySize:'',
+      revenue:    '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// Notion (database with contact records)
+async function importNotion(apiKey, databaseId, limit) {
+  const r = await fetch('https://api.notion.com/v1/databases/' + databaseId + '/query', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + apiKey, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page_size: limit || 50 })
+  });
+  if (!r.ok) throw new Error('Notion ' + r.status);
+  const d = await r.json();
+  return ((d.results) || []).map(function(page) {
+    const p = page.properties || {};
+    function getProp(name, type) {
+      const prop = p[name];
+      if (!prop) return '';
+      if (type === 'email') return prop.email || '';
+      if (type === 'rich_text') return (prop.rich_text && prop.rich_text[0] && prop.rich_text[0].plain_text) || '';
+      if (type === 'title') return (prop.title && prop.title[0] && prop.title[0].plain_text) || '';
+      if (type === 'select') return (prop.select && prop.select.name) || '';
+      return '';
     }
-    function pr(line){
-      var r=[],c='',q=false;
-      for(var i=0;i<line.length;i++){
-        var ch=line[i];
-        if(ch==='"'){q=!q;}
-        else if(ch===','&&!q){r.push(c.trim().replace(/^"|"$/g,''));c='';}
-        else c+=ch;
-      }
-      r.push(c.trim().replace(/^"|"$/g,''));
-      return r;
-    }
-    var headers=pr(lines[headerIdx]).map(function(h){return h.trim();});
-    function col(name){for(var i=0;i<headers.length;i++){if(headers[i].toLowerCase().indexOf(name.toLowerCase())>=0)return i;}return -1;}
-    var fi=col('first'),li=col('last'),ei=col('email'),ti=col('position'),ci=col('company'),loci=col('location'),doi=col('connected'),urli=col('url');
-    var rows=lines.slice(headerIdx+1);
-    S.raw=rows.filter(function(l){return l.trim();}).map(function(row){
-      var v=pr(row);
-      function g(i){return i>=0&&i<v.length?v[i]:'';}
-      return{firstName:g(fi),lastName:g(li),email:g(ei),title:g(ti),company:g(ci),location:g(loci>=0?loci:-1),connectedOn:g(doi),linkedinUrl:g(urli),source:'linkedin'};
-    }).filter(function(r){return r.firstName||r.lastName||r.email;});
-    S.filtered=S.raw.slice();
-    document.querySelector('.tab-btn').click();
+    return {
+      crm_id:     page.id,
+      crm_source: 'notion',
+      fullName:   getProp('Name', 'title') || getProp('Full Name', 'title'),
+      email:      getProp('Email', 'email'),
+      company:    getProp('Company', 'rich_text') || getProp('Organization', 'rich_text'),
+      title:      getProp('Title', 'rich_text') || getProp('Job Title', 'rich_text'),
+      industry:   getProp('Industry', 'select') || getProp('Industry', 'rich_text'),
+      companySize:'',
+      revenue:    '',
+    };
+  }).filter(function(c) { return c.email; });
+}
+
+// -- CRM PUSH (write email activity back to CRM) ---------------
+
+async function pushHubSpot(apiKey, leads) {
+  const results = [];
+  for (var i = 0; i < leads.length; i++) {
+    const lead = leads[i];
+    if (!lead.crm_id || !lead.email) continue;
+    try {
+      // Create email engagement note on the contact
+      await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          properties: {
+            hs_note_body: 'Velorah Campaign: ' + (lead.subject || 'Email sent') + '\n\nSent: ' + new Date().toISOString() + '\nStatus: ' + (lead.sendStatus || 'sent'),
+            hs_timestamp: String(Date.now())
+          },
+          associations: [{ to: { id: lead.crm_id }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }] }]
+        })
+      });
+      results.push({ email: lead.email, status: 'pushed' });
+    } catch(e) { results.push({ email: lead.email, status: 'error', error: e.message }); }
+  }
+  return results;
+}
+
+// -- DRAFT PERSISTENCE -----------------------------------------
+
+async function saveDraft(userId, body) {
+  const payload = {
+    user_id:      userId,
+    name:         (body.name || 'Draft Campaign').substring(0, 100),
+    leads:        JSON.stringify(body.leads || []),
+    headers:      JSON.stringify(body.headers || []),
+    col_map:      JSON.stringify(body.colMap || {}),
+    sender_prefs: JSON.stringify(body.senderPrefs || {}),
+    lead_count:   (body.leads || []).length,
+    status:       'draft',
+    source:       body.source || 'csv',
+    crm_source:   body.crmSource || null,
+    updated_at:   new Date().toISOString(),
   };
-  rd.readAsText(file);
-}
 
-// ========== STEP 2: FILTER & ENRICH ==========
-function renderFilter(wrap){
-  if(!S.raw.length){
-    var empty=mk('div','card');
-    empty.innerHTML='<div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3 style="margin-bottom:8px">No connections loaded</h3><p>Go to Step 1 and upload your LinkedIn Connections.csv first.</p></div>';
-    wrap.appendChild(empty);return;
-  }
+  const existing = await sbFetch(
+    '/rest/v1/campaigns?user_id=eq.' + userId + '&status=eq.draft&select=id&limit=1',
+    { method: 'GET' }
+  );
+  const rows = await existing.json();
 
-  // Filter card
-  var fc=mk('div','card');fc.appendChild(mkTitle('Filter Your Connections'));
-
-  // Title filter
-  var tf=mk('div',null);tf.style.marginBottom='16px';
-  var tl=mk('label','lbl');tl.textContent='Filter by Job Title';
-  tf.appendChild(tl);
-  var chips=mk('div',null);chips.style.marginBottom='8px';
-  PRESETS.forEach(function(t){
-    var chip=mk('span','chip'+(S.filters.titles.indexOf(t)>=0?' active':''));
-    chip.textContent=t;
-    chip.addEventListener('click',function(){
-      var idx=S.filters.titles.indexOf(t);
-      if(idx>=0)S.filters.titles.splice(idx,1);else S.filters.titles.push(t);
-      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+  if (rows && rows.length > 0 && body.draft_id) {
+    // Update existing draft
+    const r = await sbFetch('/rest/v1/campaigns?id=eq.' + body.draft_id + '&user_id=eq.' + userId, {
+      method: 'PATCH', body: JSON.stringify(payload)
     });
-    chips.appendChild(chip);
-  });
-  tf.appendChild(chips);
-  var customRow=mk('div','flex');customRow.style.marginTop='6px';
-  var customInp=document.createElement('input');customInp.type='text';customInp.placeholder='Add custom title + press Enter';customInp.style.flex='1';
-  customInp.addEventListener('keydown',function(e){
-    if(e.key==='Enter'&&customInp.value.trim()){
-      S.filters.titles.push(customInp.value.trim());customInp.value='';
-      applyFilters();showTab('filter',document.querySelectorAll('.tab-btn')[1]);
-    }
-  });
-  customRow.appendChild(customInp);tf.appendChild(customRow);
-  fc.appendChild(tf);
-
-  // Location filter
-  var lf=mk('div',null);lf.style.marginBottom='12px';
-  lf.appendChild(mkLbl('Location (comma-separated, optional)'));
-  var li2=document.createElement('input');li2.type='text';li2.placeholder='e.g. United States, Canada';
-  li2.value=S.filters.locations.join(', ');
-  li2.addEventListener('input',function(e){
-    S.filters.locations=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
-    applyFilters();
-  });
-  lf.appendChild(li2);fc.appendChild(lf);
-
-  // Company filter
-  var cof=mk('div',null);cof.style.marginBottom='12px';
-  cof.appendChild(mkLbl('Company (optional)'));
-  var coi=document.createElement('input');coi.type='text';coi.placeholder='e.g. Microsoft, Google';
-  coi.value=S.filters.companies.join(', ');
-  coi.addEventListener('input',function(e){
-    S.filters.companies=e.target.value.split(',').map(function(x){return x.trim();}).filter(Boolean);
-    applyFilters();
-  });
-  cof.appendChild(coi);fc.appendChild(cof);
-
-  // Keywords
-  var kf=mk('div',null);
-  kf.appendChild(mkLbl('Keywords (optional)'));
-  var ki=document.createElement('input');ki.type='text';ki.placeholder='e.g. cybersecurity, compliance';
-  ki.value=S.filters.keywords;
-  ki.addEventListener('input',function(e){S.filters.keywords=e.target.value;applyFilters();});
-  kf.appendChild(ki);fc.appendChild(kf);
-  wrap.appendChild(fc);
-
-  applyFilters();
-
-  // Results
-  var rc=mk('div','card');
-  var withEmail=S.filtered.filter(function(r){return r.email;}).length;
-  var noEmail=S.filtered.length-withEmail;
-
-  var rh=mk('div','fb');rh.style.marginBottom='12px';
-  var rTitle=mk('p',null);rTitle.style.fontWeight='700';rTitle.textContent='Results: '+S.filtered.length+' connections';
-  var rBadges=mk('div','flex');
-  var b1=mk('span','badge');b1.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';b1.textContent=withEmail+' have email';
-  var b2=mk('span','badge');b2.style.cssText='background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)';b2.textContent=noEmail+' need enrichment';
-  rBadges.appendChild(b1);rBadges.appendChild(b2);
-  rh.appendChild(rTitle);rh.appendChild(rBadges);rc.appendChild(rh);
-
-  if(noEmail>0){
-    var eb=mk('button','btn btn-primary btn-sm');eb.style.marginBottom='12px';
-    eb.textContent='🔍 Find '+noEmail+' Missing Emails via Koios Intel';
-    eb.addEventListener('click',function(){enrichEmails(eb);});
-    rc.appendChild(eb);
-  }
-
-  // Select all row
-  var selRow=mk('div','flex');selRow.style.marginBottom='8px';
-  var selCount=mk('span',null);selCount.style.cssText='font-size:12px;color:var(--text2)';selCount.id='sel-count';selCount.textContent=S.selected.size+' selected';
-  var saBtn=mk('button','btn btn-sm');saBtn.textContent='Select All';
-  var snBtn=mk('button','btn btn-sm');snBtn.textContent='Clear';
-  saBtn.addEventListener('click',function(){S.filtered.forEach(function(r){S.selected.add(r.email||r.firstName+r.lastName);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
-  snBtn.addEventListener('click',function(){S.selected.clear();buildTable(tBody,S.filtered);selCount.textContent='0 selected';});
-  selRow.appendChild(selCount);selRow.appendChild(saBtn);selRow.appendChild(snBtn);
-  rc.appendChild(selRow);
-
-  var tWrap=mk('div',null);tWrap.style.overflowX='auto';
-  var table=mk('table',null);
-  table.innerHTML='<thead><tr><th>Select</th><th>Name</th><th>Job Title</th><th>Company</th><th>Location</th><th>Email</th><th>LinkedIn</th></tr></thead>';
-  var tBody=mk('tbody',null);
-  buildTable(tBody,S.filtered);
-  table.appendChild(tBody);tWrap.appendChild(table);rc.appendChild(tWrap);
-
-  var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
-  var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Compose Messages ->';
-  nextBtn.addEventListener('click',function(){
-    var sel=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName);});
-    if(!sel.length){alert('Select at least one connection first.');return;}
-    S.filtered=sel;
-    document.querySelectorAll('.tab-btn')[2].click();
-  });
-  nextRow.appendChild(nextBtn);rc.appendChild(nextRow);
-  wrap.appendChild(rc);
-}
-
-function buildTable(tbody,rows){
-  tbody.innerHTML='';
-  rows.slice(0,150).forEach(function(r,i){
-    var key=r.email||r.firstName+r.lastName+i;
-    var isSel=S.selected.has(key);
-    var tr=mk('tr',null);
-    var td0=mk('td',null);
-    var cb=document.createElement('input');cb.type='checkbox';cb.checked=isSel;cb.style.cssText='width:14px;height:14px;accent-color:var(--blue);cursor:pointer';
-    cb.addEventListener('change',function(e){
-      var sc=document.getElementById('sel-count');
-      if(e.target.checked)S.selected.add(key);else S.selected.delete(key);
-      if(sc)sc.textContent=S.selected.size+' selected';
-    });
-    td0.appendChild(cb);tr.appendChild(td0);
-    tr.innerHTML+=('<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td>'+(r.linkedinUrl?('<a href="'+esc(r.linkedinUrl)+'" target="_blank" style="font-size:11px;color:#0077b5">View</a>'):'-')+'</td>');
-    tbody.insertBefore(tr,tbody.firstChild);tbody.insertBefore(tr,null);
-    tbody.appendChild(tr);
-  });
-}
-
-function applyFilters(){
-  S.filtered=S.raw.filter(function(r){
-    if(S.filters.titles.length){
-      var match=S.filters.titles.some(function(t){return r.title&&r.title.toLowerCase().indexOf(t.toLowerCase())>=0;});
-      if(!match)return false;
-    }
-    if(S.filters.locations.length){
-      var match2=S.filters.locations.some(function(l){return r.location&&r.location.toLowerCase().indexOf(l.toLowerCase())>=0;});
-      if(!match2)return false;
-    }
-    if(S.filters.companies.length){
-      var match3=S.filters.companies.some(function(c){return r.company&&r.company.toLowerCase().indexOf(c.toLowerCase())>=0;});
-      if(!match3)return false;
-    }
-    if(S.filters.keywords){
-      var kw=S.filters.keywords.toLowerCase();
-      if(!((r.title&&r.title.toLowerCase().indexOf(kw)>=0)||(r.company&&r.company.toLowerCase().indexOf(kw)>=0)))return false;
-    }
-    return true;
-  });
-}
-
-async function enrichEmails(btn){
-  var orig=btn.textContent;
-  var noEmail=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName;});
-  if(!noEmail.length){alert('All selected contacts already have email addresses.');return;}
-
-  // Check if contacts have company names
-  var noCompany=noEmail.filter(function(r){return !r.company;});
-  if(noCompany.length===noEmail.length){
-    alert('Email enrichment requires company names. Your LinkedIn export may not include company data. Try uploading a more complete CSV or use the Find Leads page to search by job title.');
-    return;
-  }
-
-  btn.disabled=true;
-  var found=0;var tried=0;var errors=[];
-
-  for(var i=0;i<noEmail.length;i++){
-    var r=noEmail[i];
-    if(!r.firstName||!r.lastName){continue;}
-    tried++;
-    btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
-
-    // Try Koios Intel people match first (most accurate)
-    try{
-      var ra=await fetch('/.netlify/functions/find-leads',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'match',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',linkedinUrl:r.linkedinUrl||''}})
-      });
-      if(ra.ok){var da=await ra.json();if(da.email){r.email=da.email;r._source='apollo';found++;continue;}}
-    }catch(e){}
-
-    // Try Koios Intel second
-    try{
-      var rh=await fetch('/.netlify/functions/find-leads',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',domain:''}})
-      });
-      if(rh.ok){var dh=await rh.json();if(dh.email){r.email=dh.email;r._source='hunter';found++;continue;}if(dh.error)errors.push('Enrichment: '+dh.error);}
-    }catch(e){errors.push('Enrichment error');}
-
-    // Try Koios Intel last
-    if(!r.email&&r.company){
-      try{
-        var rl=await fetch('/.netlify/functions/find-leads',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'enrich',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})
-        });
-        if(rl.ok){var dl=await rl.json();if(dl.email){r.email=dl.email;r._source='lusha';found++;}}
-      }catch(e){}
-    }
-    await delay(400);
-  }
-
-  btn.disabled=false;btn.textContent=orig;
-  showTab('filter',document.querySelectorAll('.tab-btn')[1]);
-
-  if(found>0){
-    alert('Email enrichment complete! Found '+found+' email addresses out of '+tried+' contacts searched.');
+    const updated = await r.json();
+    return { draft_id: body.draft_id, lead_count: payload.lead_count };
   } else {
-    var msg='No emails found for '+tried+' contacts.\n\nCommon reasons:\n';
-    msg+='1. HUNTER_API_KEY or LUSHA_API_KEY not set in Netlify environment variables\n';
-    msg+='2. Koios Intel free plan limit reached (25/month)\n';
-    msg+='3. These contacts haven\'t shared their emails publicly\n\n';
-    msg+='Check Netlify -> Environment Variables for HUNTER_API_KEY and LUSHA_API_KEY.';
-    alert(msg);
-  }
-}
-
-// ========== STEP 3: COMPOSE ==========
-function renderCompose(wrap){
-  var contacts=S.filtered.filter(function(r){return S.selected.has(r.email||r.firstName+r.lastName)||S.selected.size===0;});
-  if(!contacts.length)contacts=S.filtered.slice(0,20);
-
-  if(!S.raw.length){
-    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">💼</div><h3>Upload connections first</h3><p>Go to Step 1</p></div></div>';
-    return;
-  }
-
-  // Channel selector
-  var cc=mk('div','card');cc.appendChild(mkTitle('Choose Outreach Channel'));
-  var chRow=mk('div','flex');chRow.style.flexWrap='wrap';
-  var channels=[{v:'both',icon:'📧+💼',label:'Email + LinkedIn',desc:'Send both a cold email AND a LinkedIn message'},{v:'email',icon:'📧',label:'Email Only',desc:'Personalized cold emails via SendGrid'},{v:'linkedin',icon:'💼',label:'LinkedIn Only',desc:'Messages to paste on LinkedIn'}];
-  channels.forEach(function(ch){
-    var card=mk('div','ch-card'+(S.channel===ch.v?' active':''));
-    card.innerHTML='<div style="font-size:18px;margin-bottom:4px">'+ch.icon+'</div><div style="font-weight:700;font-size:13px;margin-bottom:3px;color:'+(S.channel===ch.v?'var(--blue)':'var(--text)')+'">'+ch.label+(S.channel===ch.v?' OK':'')+'</div><div style="font-size:11px;color:var(--text2)">'+ch.desc+'</div>';
-    card.addEventListener('click',function(){S.channel=ch.v;renderCompose(wrap);});
-    chRow.appendChild(card);
-  });
-  cc.appendChild(chRow);
-
-  // Sender
-  cc.appendChild(mk('div',null)).style.height='14px';
-  var sg=mk('div','g3');sg.style.marginTop='0';
-  [{k:'name',l:'Your Name',p:'Alex Rivera'},{k:'email',l:'Sender Email',p:'alex@company.com'},{k:'company',l:'Company',p:'Velorah'}].forEach(function(f){
-    var d=mk('div',null);
-    d.appendChild(mkLbl(f.l));
-    var inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
-    inp.addEventListener('input',function(e){S.sender[f.k]=e.target.value;});
-    d.appendChild(inp);sg.appendChild(d);
-  });
-  cc.appendChild(sg);
-
-  // Angle selector
-  var ac=mk('div',null);ac.style.marginTop='14px';
-  ac.appendChild(mkLbl('Message Angle'));
-  var angleGrid=mk('div','g2');angleGrid.style.marginTop='6px';
-  var angles=[{v:'connection',e:'🤝',n:'Connection-Based',d:'Warm opener referencing LinkedIn connection'},{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific business risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with financial impact and savings'},{v:'question',e:'?',n:'Question-Based',d:'Open with a sharp business question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Open with a surprising industry insight'}];
-  angles.forEach(function(a){
-    var card=mk('div','angle-card'+(S.angle===a.v?' active':''));
-    card.innerHTML='<span style="font-size:16px">'+a.e+'</span> <strong style="font-size:13px;color:'+(S.angle===a.v?'var(--blue)':'var(--text)')+'">'+a.n+(S.angle===a.v?' OK':'')+'</strong><p style="font-size:11px;color:var(--text2);margin-top:3px">'+a.d+'</p>';
-    card.addEventListener('click',function(){S.angle=a.v;renderCompose(wrap);});
-    angleGrid.appendChild(card);
-  });
-  ac.appendChild(angleGrid);cc.appendChild(ac);
-  wrap.appendChild(cc);
-
-  // Generate
-  var gc=mk('div','card');
-  var gRow=mk('div','fb');
-  var gInfo=mk('div',null);
-  var gTitle=mk('p',null);gTitle.style.cssText='font-weight:700;margin-bottom:3px';gTitle.textContent='Generate Messages for '+contacts.length+' Connections';
-  var gSub=mk('p',null);gSub.style.cssText='font-size:12px;color:var(--text2)';gSub.textContent='AI creates personalized '+(S.channel==='linkedin'?'LinkedIn messages':S.channel==='email'?'emails':'emails + LinkedIn messages')+' for each connection';
-  gInfo.appendChild(gTitle);gInfo.appendChild(gSub);gRow.appendChild(gInfo);
-
-  if(!S.generating){
-    var genBtn=mk('button','btn btn-primary');genBtn.textContent='🤖 Generate All Messages';
-    genBtn.addEventListener('click',function(){generateAll(contacts,wrap);});
-    gRow.appendChild(genBtn);
-  }
-  gc.appendChild(gRow);
-
-  if(S.generating){
-    var pct=contacts.length?Math.round(S.genProgress/contacts.length*100):0;
-    var prog=mk('div',null);prog.style.marginTop='14px';
-    var pInfo=mk('div','fb');pInfo.style.marginBottom='6px';
-    var pL=mk('span',null);pL.style.cssText='font-size:12px;color:var(--text2)';pL.textContent=S.genProgress+' of '+contacts.length+' generated';
-    var pR=mk('span',null);pR.style.cssText='font-size:12px;font-weight:700;color:var(--cyan);font-family:\'IBM Plex Mono\',monospace';pR.textContent=pct+'%';
-    pInfo.appendChild(pL);pInfo.appendChild(pR);
-    var pbar=mk('div','pbar');var pfill=mk('div','pfill');pfill.style.width=pct+'%';pbar.appendChild(pfill);
-    prog.appendChild(pInfo);prog.appendChild(pbar);gc.appendChild(prog);
-  }
-  wrap.appendChild(gc);
-
-  // Preview messages
-  if(S.messages.length){
-    var pre=mk('div','card');pre.appendChild(mkTitle('Generated Messages ('+S.messages.length+')'));
-    S.messages.slice(0,3).forEach(function(m){
-      var mDiv=mk('div',null);mDiv.style.cssText='border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden';
-      var mHdr=mk('div',null);mHdr.style.cssText='padding:10px 14px;background:rgba(13,21,38,.5);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center';
-      var mName=mk('strong',null);mName.textContent=m.contact.firstName+' '+m.contact.lastName;
-      var mMeta=mk('span',null);mMeta.style.cssText='font-size:11px;color:var(--text2)';mMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
-      mHdr.appendChild(mName);mHdr.appendChild(mMeta);mDiv.appendChild(mHdr);
-      if(m.email&&S.channel!=='linkedin'){
-        var eBox=mk('div',null);eBox.style.cssText='padding:10px 14px;border-bottom:1px solid var(--border)';
-        eBox.innerHTML='<p style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Email</p><p style="font-weight:700;font-size:13px;margin-bottom:3px">'+esc(m.email.subject)+'</p><p style="font-size:12px;color:var(--text2)">'+esc(m.email.body.substring(0,100))+'...</p>';
-        mDiv.appendChild(eBox);
-      }
-      if(m.linkedin&&S.channel!=='email'){
-        var lBox=mk('div',null);lBox.style.cssText='padding:10px 14px';
-        lBox.innerHTML='<p style="font-size:11px;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">LinkedIn ('+m.linkedin.length+' chars)</p><p style="font-size:12px;color:var(--text2)">'+esc(m.linkedin.substring(0,120))+'...</p>';
-        mDiv.appendChild(lBox);
-      }
-      pre.appendChild(mDiv);
+    // Insert new draft
+    payload.created_at = new Date().toISOString();
+    const r = await sbFetch('/rest/v1/campaigns', {
+      method: 'POST', body: JSON.stringify(payload)
     });
-    if(S.messages.length>3){var more=mk('p',null);more.style.cssText='font-size:12px;color:var(--text2);text-align:center;padding:8px';more.textContent='...and '+(S.messages.length-3)+' more in Step 4';pre.appendChild(more);}
-    var nRow=mk('div',null);nRow.style.cssText='text-align:right;margin-top:12px';
-    var nBtn=mk('button','btn btn-primary');nBtn.textContent='Review & Send ->';
-    nBtn.addEventListener('click',function(){document.querySelectorAll('.tab-btn')[3].click();});
-    nRow.appendChild(nBtn);pre.appendChild(nRow);
-    wrap.appendChild(pre);
+    const inserted = await r.json();
+    const row = Array.isArray(inserted) ? inserted[0] : inserted;
+    return { draft_id: row && row.id, lead_count: payload.lead_count };
   }
 }
 
-async function generateAll(contacts,wrap){
-  S.generating=true;S.genProgress=0;S.messages=[];
-  renderCompose(wrap);
-  for(var i=0;i<contacts.length;i++){
-    var r=contacts[i];
-    var emailResult=null;
-    if(S.channel!=='linkedin'){
-      try{
-        var prompt=buildPrompt(r);
-        var resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:r.company||'',industry:''})});
-        var d=await resp.json();
-        var txt=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('').replace(/json/g,'').trim();
-        var js=txt.indexOf('{');var je=txt.lastIndexOf('}');
-        if(js>=0&&je>js)emailResult=JSON.parse(txt.substring(js,je+1));
-      }catch(e){}
-    }
-    var liMsg=buildLinkedIn(r,emailResult);
-    S.messages.push({contact:r,email:emailResult,linkedin:liMsg});
-    S.genProgress=i+1;
-    renderCompose(wrap);
-    await delay(4000);
-  }
-  S.generating=false;
-  renderCompose(wrap);
+async function loadDrafts(userId) {
+  const r = await sbFetch(
+    '/rest/v1/campaigns?user_id=eq.' + userId + '&status=eq.draft&order=updated_at.desc&select=id,name,lead_count,source,crm_source,updated_at,leads,headers,col_map,sender_prefs',
+    { method: 'GET' }
+  );
+  return await r.json();
 }
 
-function buildPrompt(r){
-  var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with their most pressing business risk.',roi:'Lead with financial impact and ROI.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising industry data point.'};
-  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, peer-to-peer, reference LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
-}
-
-function buildLinkedIn(r,email){
-  var name=r.firstName||'there';
-  if(email&&email.body){
-    var body=email.body||'';
-    var first=body.split('\n\n')[0]||body;
-    first=first.replace(/^(Hi|Dear|Hello)\s+\w+[,.]?\s*/i,'').trim();
-    var msg='Hi '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
-    return msg.substring(0,300);
-  }
-  return ('Hi '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
-}
-
-// ========== STEP 4: SEND ==========
-function renderSend(wrap){
-  if(!S.messages.length){
-    wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">🤖</div><h3 style="margin-bottom:8px">No messages generated yet</h3><p>Go to Step 3 and generate your messages first.</p></div></div>';
-    return;
-  }
-
-  var withEmail=S.messages.filter(function(m){return m.email&&m.contact.email;}).length;
-  var withLi=S.messages.filter(function(m){return m.linkedin;}).length;
-
-  // Stats
-  var sg=mk('div','g4');sg.style.marginBottom='14px';
-  [{v:S.messages.length,l:'Total',c:'var(--blue)'},{v:withEmail,l:'With Email',c:'var(--green)'},{v:withLi,l:'LinkedIn Msgs',c:'#0077b5'},{v:S.messages.filter(function(m){return m.contact.email;}).length,l:'Have Email',c:'var(--cyan)'}].forEach(function(s){
-    var sc=mk('div','stat');
-    var sv=mk('div',null);sv.style.cssText='font-size:24px;font-weight:800;font-family:\'IBM Plex Mono\',monospace;color:'+s.c+';margin-bottom:4px';sv.textContent=s.v;
-    var sl=mk('div',null);sl.style.cssText='font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em';sl.textContent=s.l;
-    sc.appendChild(sv);sc.appendChild(sl);sg.appendChild(sc);
+async function deleteDraft(userId, draftId) {
+  await sbFetch('/rest/v1/campaigns?id=eq.' + draftId + '&user_id=eq.' + userId + '&status=eq.draft', {
+    method: 'DELETE'
   });
-  wrap.appendChild(sg);
+  return { deleted: true };
+}
 
-  // Action bar
-  var ac=mk('div','card');ac.style.marginBottom='12px';ac.appendChild(mkTitle('Launch Campaign'));
-  var aRow=mk('div','flex');
+// -- MAIN HANDLER ----------------------------------------------
+exports.handler = async function(event) {
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: HDR, body: '' };
+  if (event.httpMethod !== 'POST') return err('Method not allowed', 405);
 
-  if(S.channel!=='linkedin'){
-    var emailBtn=mk('button','btn btn-primary');emailBtn.textContent='📧 Send Emails via Campaign Agent ->';
-    emailBtn.addEventListener('click',function(){
-      var withEm=S.messages.filter(function(m){return m.contact.email&&m.email;});
-      if(!withEm.length){alert('No contacts have email addresses. Enrich emails in Step 2 first.');return;}
-      var hdrs='First Name,Last Name,Email,Company,Job Title\n';
-      var rows=withEm.map(function(m){return '"'+m.contact.firstName+'","'+m.contact.lastName+'","'+m.contact.email+'","'+m.contact.company+'","'+m.contact.title+'"';}).join('\n');
-      sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
-      sessionStorage.setItem('velorah_leads_count',withEm.length);
-      alert('Sending '+withEm.length+' contacts to Campaign Agent!');
-      window.location.href='/app.html?from=linkedin';
-    });
-    aRow.appendChild(emailBtn);
-    var aresLiBtn=mk('button','btn btn-sm');
-    aresLiBtn.style.cssText='background:linear-gradient(135deg,#ef4444,#f59e0b);border:none;color:#fff;font-weight:700';
-    aresLiBtn.textContent='Launch with Ares';
-    aresLiBtn.addEventListener('click',function(){
-      var withEm2=S.messages.filter(function(m){return m.contact.email&&m.email;});
-      if(!withEm2.length){alert('No contacts with emails. Enrich in Step 2 first.');return;}
-      var rows2=withEm2.map(function(m){return[m.contact.firstName||'',m.contact.lastName||'',m.contact.email||'',m.contact.company||'',m.contact.title||'',''].map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-      sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows2);
-      sessionStorage.setItem('velorah_leads_count',withEm2.length);
-      sessionStorage.setItem('velorah_source','linkedin');
-      window.location.href='/campaign-video.html';
-    });
-    aRow.appendChild(aresLiBtn);
+  const ip = (event.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  if (!_rate(ip, 30, 60000)) return err('Too many requests', 429);
+
+  let body;
+  try { body = JSON.parse(event.body || '{}'); }
+  catch(e) { return err('Invalid JSON'); }
+
+  const action = body.action;
+  if (!action) return err('action required');
+
+  // Auth for all actions
+  const token = (event.headers['authorization'] || '').replace('Bearer ', '');
+  let user = null;
+  if (token) user = await getUser(token).catch(function() { return null; });
+
+  // Draft actions require auth
+  if (['save_draft','load_draft','list_drafts','delete_draft','push'].includes(action) && !user) {
+    return err('Unauthorized', 401);
   }
 
-  var expBtn=mk('button','btn');expBtn.textContent='Export CSV';
-  expBtn.addEventListener('click',function(){exportCSV();});
-  aRow.appendChild(expBtn);
-  ac.appendChild(aRow);
-  wrap.appendChild(ac);
+  // -- SAVE DRAFT -----------------------------------------------
+  if (action === 'save_draft') {
+    if (!body.leads || !body.leads.length) return err('leads required');
+    const result = await saveDraft(user.id, body);
+    return ok(result);
+  }
 
-  // Individual message cards
-  S.messages.forEach(function(m,idx){
-    var card=mk('div','card');card.style.marginBottom='10px';
-
-    // Header
-    var hdr=mk('div','fb');hdr.style.marginBottom='14px';
-    var avi=mk('div',null);avi.style.cssText='width:38px;height:38px;border-radius:50%;background:rgba(0,119,181,.15);border:1px solid rgba(0,119,181,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0077b5;font-size:13px;flex-shrink:0';
-    avi.textContent=(m.contact.firstName[0]||'?')+(m.contact.lastName[0]||'?');
-    var info=mk('div',null);info.style.flex='1';
-    var iName=mk('p',null);iName.style.fontWeight='700';iName.textContent=m.contact.firstName+' '+m.contact.lastName;
-    var iMeta=mk('p',null);iMeta.style.cssText='font-size:12px;color:var(--text2)';iMeta.textContent=(m.contact.title||'')+(m.contact.company?' @ '+m.contact.company:'');
-    info.appendChild(iName);info.appendChild(iMeta);
-
-    var btns=mk('div','flex');
-    if(m.contact.linkedinUrl){
-      var liBtn=mk('a','btn btn-li btn-sm');liBtn.href=m.contact.linkedinUrl;liBtn.target='_blank';liBtn.textContent='View LinkedIn';btns.appendChild(liBtn);
-    }
-    if(m.contact.email){
-      var emBtn=mk('a','btn btn-sm');emBtn.href='mailto:'+m.contact.email;emBtn.style.cssText='border-color:var(--green);color:var(--green)';emBtn.textContent='Email Directly';btns.appendChild(emBtn);
-    }
-    hdr.appendChild(avi);hdr.appendChild(info);hdr.appendChild(btns);card.appendChild(hdr);
-
-    // Message grid
-    var msgGrid=mk('div','msg-grid');
-
-    // Email box
-    if(m.email&&S.channel!=='linkedin'){
-      var eBox=mk('div','msg-box');
-      var eT=mk('p',null);eT.style.cssText='font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';eT.textContent='📧 Email Message';
-      var eSubj=mk('p',null);eSubj.style.cssText='font-weight:700;font-size:13px;margin-bottom:6px';eSubj.textContent=m.email.subject;
-      var eArea=document.createElement('textarea');eArea.value=m.email.body;eArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(16,185,129,.2);min-height:130px';
-      eArea.addEventListener('input',function(e){S.messages[idx].email.body=e.target.value;});
-      eBox.appendChild(eT);eBox.appendChild(eSubj);eBox.appendChild(eArea);
-      msgGrid.appendChild(eBox);
-    }
-
-    // LinkedIn box
-    if(m.linkedin&&S.channel!=='email'){
-      var lBox=mk('div','msg-box');
-      var lT=mk('p',null);lT.style.cssText='font-size:11px;font-weight:700;color:#0077b5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px';lT.textContent='💼 LinkedIn Message';
-      var lLen=mk('p',null);lLen.style.cssText='font-size:11px;color:var(--text2);margin-bottom:6px';lLen.textContent=m.linkedin.length+'/300 chars '+(m.linkedin.length>300?'OVER LIMIT!':'OK');
-      if(m.linkedin.length>300)lLen.style.color='var(--red)';
-      var lArea=document.createElement('textarea');lArea.value=m.linkedin;lArea.style.cssText='font-size:12px;background:rgba(7,12,24,.5);border-color:rgba(0,119,181,.2);min-height:100px';
-      lArea.addEventListener('input',function(e){
-        S.messages[idx].linkedin=e.target.value.substring(0,300);
-        lLen.textContent=e.target.value.length+'/300 chars';
-        if(e.target.value.length>300){lLen.style.color='var(--red)';lArea.value=e.target.value.substring(0,300);}else lLen.style.color='var(--text2)';
+  // -- LIST / LOAD DRAFTS ----------------------------------------
+  if (action === 'list_drafts' || action === 'load_draft') {
+    const drafts = await loadDrafts(user.id);
+    if (action === 'load_draft') {
+      const target = (drafts || []).find(function(d) { return d.id === body.draft_id; });
+      if (!target) return err('Draft not found', 404);
+      return ok({
+        draft:       target,
+        leads:       JSON.parse(target.leads || '[]'),
+        headers:     JSON.parse(target.headers || '[]'),
+        colMap:      JSON.parse(target.col_map || '{}'),
+        senderPrefs: JSON.parse(target.sender_prefs || '{}'),
       });
-      lBox.appendChild(lT);lBox.appendChild(lLen);lBox.appendChild(lArea);
+    }
+    return ok({ drafts: (drafts || []).map(function(d) {
+      return { id: d.id, name: d.name, lead_count: d.lead_count, source: d.source, crm_source: d.crm_source, updated_at: d.updated_at };
+    })});
+  }
 
-      // Copy + Open LinkedIn button
-      var copyBtn=mk('button','btn btn-li btn-sm');copyBtn.style.marginTop='8px';copyBtn.textContent='📋 Copy & Open LinkedIn Profile';
-      copyBtn.addEventListener('click',function(){
-        navigator.clipboard.writeText(m.linkedin).then(function(){
-          if(m.contact.linkedinUrl){
-            window.open(m.contact.linkedinUrl,'_blank');
-            setTimeout(function(){alert('Message copied to clipboard! Paste it in the LinkedIn message box on the profile page.');},400);
-          } else {
-            alert('Message copied! Now find their LinkedIn profile and paste the message.');
-          }
-        }).catch(function(){
-          var tmp=document.createElement('textarea');tmp.value=m.linkedin;document.body.appendChild(tmp);tmp.select();document.execCommand('copy');document.body.removeChild(tmp);
-          if(m.contact.linkedinUrl)window.open(m.contact.linkedinUrl,'_blank');
-          alert('Message copied! Paste it on their LinkedIn profile.');
+  // -- DELETE DRAFT ---------------------------------------------
+  if (action === 'delete_draft') {
+    if (!body.draft_id) return err('draft_id required');
+    return ok(await deleteDraft(user.id, body.draft_id));
+  }
+
+  // -- CRM IMPORT -----------------------------------------------
+  if (action === 'import') {
+    const crm    = String(body.crm || '').toLowerCase();
+    const apiKey = String(body.api_key || body.apiKey || '');
+    const limit  = Math.min(parseInt(body.limit || 50), 200);
+
+    if (!crm)    return err('crm required');
+    if (!apiKey) return err('api_key required');
+
+    let contacts = [];
+    try {
+      if (crm === 'hubspot')       contacts = await importHubSpot(apiKey, limit);
+      else if (crm === 'salesforce') contacts = await importSalesforce(apiKey, body.instance_url, limit);
+      else if (crm === 'pipedrive')  contacts = await importPipedrive(apiKey, limit);
+      else if (crm === 'zoho')       contacts = await importZoho(apiKey, body.data_centre || 'com', limit);
+      else if (crm === 'ghl')        contacts = await importGHL(apiKey, limit);
+      else if (crm === 'activecampaign') contacts = await importActiveCampaign(apiKey, body.account_name, limit);
+      else if (crm === 'notion')     contacts = await importNotion(apiKey, body.database_id, limit);
+      else return err('Unknown CRM: ' + crm);
+    } catch(e) {
+      return err('CRM import failed: ' + e.message, 502);
+    }
+
+    // Auto-save as draft if user is authenticated
+    let draft_id = null;
+    if (user && contacts.length > 0) {
+      try {
+        const saved = await saveDraft(user.id, {
+          name:      (body.campaign_name || (crm.charAt(0).toUpperCase() + crm.slice(1)) + ' Import'),
+          leads:     contacts,
+          source:    'crm',
+          crmSource: crm,
+          draft_id:  body.draft_id,
         });
-      });
-      lBox.appendChild(copyBtn);
-      msgGrid.appendChild(lBox);
+        draft_id = saved.draft_id;
+      } catch(e) {}
     }
 
-    card.appendChild(msgGrid);
-    wrap.appendChild(card);
-  });
-}
+    return ok({ contacts, count: contacts.length, crm, draft_id });
+  }
 
-function exportCSV(){
-  var hdrs=['First Name','Last Name','Email','Company','Title','LinkedIn URL','Email Subject','Email Body','LinkedIn Message'];
-  var rows=S.messages.map(function(m){return[m.contact.firstName,m.contact.lastName,m.contact.email||'',m.contact.company||'',m.contact.title||'',m.contact.linkedinUrl||'',m.email?m.email.subject:'',m.email?m.email.body:'',m.linkedin||''];});
-  var csv=[hdrs].concat(rows).map(function(r){return r.map(function(v){return'"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
-  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='linkedin_campaign_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
-}
+  // -- CRM TEST CONNECTION ---------------------------------------
+  if (action === 'test') {
+    const crm    = String(body.crm || '').toLowerCase();
+    const apiKey = String(body.api_key || body.apiKey || '');
+    if (!crm || !apiKey) return err('crm and api_key required');
+    try {
+      let contacts = [];
+      if (crm === 'hubspot')        contacts = await importHubSpot(apiKey, 1);
+      else if (crm === 'salesforce') contacts = await importSalesforce(apiKey, body.instance_url, 1);
+      else if (crm === 'pipedrive')  contacts = await importPipedrive(apiKey, 1);
+      else if (crm === 'zoho')       contacts = await importZoho(apiKey, body.data_centre || 'com', 1);
+      else if (crm === 'ghl')        contacts = await importGHL(apiKey, 1);
+      else if (crm === 'activecampaign') contacts = await importActiveCampaign(apiKey, body.account_name, 1);
+      else if (crm === 'notion')     contacts = await importNotion(apiKey, body.database_id, 1);
+      else return err('Unknown CRM: ' + crm);
+      return ok({ success: true, crm, sample_count: contacts.length });
+    } catch(e) {
+      return ok({ success: false, crm, error: e.message });
+    }
+  }
 
-// ========== HELPERS ==========
-function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
-function mkTitle(t){var el=mk('div','card-title');el.textContent=t;return el;}
-function mkLbl(t){var el=mk('label','lbl');el.textContent=t;return el;}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
+  // -- CRM PUSH -------------------------------------------------
+  if (action === 'push') {
+    const crm    = String(body.crm || '').toLowerCase();
+    const apiKey = String(body.api_key || body.apiKey || '');
+    const leads  = Array.isArray(body.leads) ? body.leads : [];
+    if (!crm || !apiKey) return err('crm and api_key required');
+    try {
+      let results = [];
+      if (crm === 'hubspot') results = await pushHubSpot(apiKey, leads);
+      else results = leads.map(function(l) { return { email: l.email, status: 'skipped', reason: 'push not yet supported for ' + crm }; });
+      return ok({ results, count: results.length });
+    } catch(e) {
+      return err('Push failed: ' + e.message, 502);
+    }
+  }
 
-async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
-init();
-</script>
-
-<script>
-// Performance: debounce helper
-function debounce(fn, ms) {
-  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
-}
-// Performance: lazy-load non-critical content
-if ('IntersectionObserver' in window) {
-  var lazyObs = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
-  });
-  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
-}
-// Performance: prevent duplicate fetch on rapid clicks
-window._fetchCache = window._fetchCache || {};
-window.cachedFetch = function(url, opts, ttlMs) {
-  var key = url + JSON.stringify(opts&&opts.body||'');
-  var cached = window._fetchCache[key];
-  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
-  return fetch(url, opts).then(function(r) {
-    return r.clone().json().then(function(data) {
-      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
-      return r;
-    }).catch(function(){ return r; });
-  });
+  return err('Unknown action: ' + action);
 };
-</script>
-</body>
-</html>
