@@ -37,7 +37,7 @@ exports.handler = async function(event) {
     return { statusCode: 429, headers, body: JSON.stringify({ error: 'Rate limit exceeded. Please wait before generating more emails.' }) };
   }
 
-  let prompt, company, industry, researchMode, companySize, revenue;
+  let prompt, company, industry, researchMode, companySize, revenue, senderPrefs;
   try {
     const body = JSON.parse(event.body || '{}');
     // Sanitize all inputs
@@ -47,6 +47,7 @@ exports.handler = async function(event) {
     researchMode = body.researchMode === true;
     companySize  = String(body.companySize || '').substring(0, 50).replace(/[^0-9,+\-\s]/g, '');
     revenue      = String(body.revenue || '').substring(0, 50).replace(/[<>]/g, '');
+    senderPrefs  = body.senderPrefs && typeof body.senderPrefs === 'object' ? body.senderPrefs : {};
     if (!prompt) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing prompt' }) };
   } catch(e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid request body' }) };
@@ -79,7 +80,7 @@ exports.handler = async function(event) {
   try {
     let enrichedPrompt = prompt;
 
-    // Research mode — parallel calls, graceful fallback
+    // Research mode -- parallel calls, graceful fallback
     if (researchMode && company) {
       const [companyRes, industryRes] = await Promise.allSettled([
         callClaude([{ role: 'user', content: 'In 60 words: what does "' + company + '" do in ' + industry + '? Any recent news?' }], 250),
