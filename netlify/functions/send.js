@@ -61,6 +61,12 @@ exports.handler = async function(event) {
     return { statusCode: 429, headers, body: JSON.stringify({ error: 'Too many emails sent. Please wait.' }) };
   }
 
+  // Compliance safety net: ensure an opt-out line exists (CAN-SPAM/GDPR)
+  const optOutPattern = /unsubscribe|opt.?out|remove (you|me)|take (you|me) off|reply stop|stop receiving|not relevant.{0,30}reply|reply.{0,30}remove/i;
+  if (!optOutPattern.test(body)) {
+    body = body + '\n\nIf this is not relevant, just reply and I will remove you from my list.';
+  }
+
   // Build HTML
   const htmlBody = body.split('\n\n')
     .map(p => '<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">' +
