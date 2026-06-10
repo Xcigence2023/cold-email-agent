@@ -151,10 +151,11 @@ function scoreContent(subject, body) {
       suggestions.push('Add recipient name and a specific observation about their company');
     }
 
-    // Unsubscribe
-    if (!/unsubscribe|opt.?out/i.test(body)) {
+    // Unsubscribe / opt-out -- recognise all compliant phrasings
+    var optOutPattern = /unsubscribe|opt.?out|remove (you|me)|take (you|me) off|reply stop|stop receiving|no longer (wish|want) to|not relevant.{0,30}reply|reply.{0,30}remove/i;
+    if (!optOutPattern.test(body)) {
       score += 5; issues.push('Missing unsubscribe option -- CAN-SPAM/GDPR compliance risk');
-      suggestions.push('Add a simple "Reply STOP to unsubscribe" line at the bottom');
+      suggestions.push('Add an opt-out line, e.g. "If this is not relevant, just reply and I will remove you"');
     }
 
     // HTML only (no plain text equivalent likely)
