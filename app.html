@@ -356,7 +356,7 @@ const S={
   emails:[],genProgress:0,activeIdx:0,
   sendStatus:{},
   validationResults:{summary:null,results:[]},
-  validationDone:false,trackingStatus:{},messageIds:{},
+  validationDone:false,validationRunning:false,trackingStatus:{},messageIds:{},
   dragOver:false,emailAngle:'pain',researchMode:false,
   attachments:[],scheduleAt:null,campaignName:'',
   bulkSending:false,bulkProgress:{total:0,sent:0,failed:0},
@@ -832,47 +832,10 @@ function p3(){
 // -- PRE-SEND EMAIL VALIDATION ---------------------------------
 async function validateEmails(){
   const approved=S.emails.filter(e=>e.approved&&!e.error);
-  // -- VALIDATION RESULTS PANEL --------------------------------
-  if(S.validationDone&&S.validationResults&&S.validationResults.summary){
-    const vs=S.validationResults.summary;
-    const ca=S.validationResults.contentAnalysis;
-    const scoreColor=vs.avgDelivScore>=80?'var(--green)':vs.avgDelivScore>=50?'var(--gold)':'var(--red)';
-    const contentColor=ca&&ca.rating==='excellent'?'var(--green)':ca&&ca.rating==='good'?'var(--green)':ca&&ca.rating==='fair'?'var(--gold)':'var(--red)';
-    const vPanel=h('div',{cls:'card',style:{borderColor:vs.highRisk>0?'rgba(245,158,11,.4)':'rgba(16,185,129,.3)',background:vs.highRisk>0?'rgba(245,158,11,.05)':'rgba(16,185,129,.04)',marginBottom:'14px'}});
-    vPanel.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">'+
-      '<div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+(vs.highRisk>0?'':'')+'</span> Pre-send Deliverability Report</div>'+
-      '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
-        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+';font-family:IBM Plex Mono,monospace">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
-        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+';font-family:IBM Plex Mono,monospace">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT SCORE</div></div>':'')+''+
-        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green);font-family:IBM Plex Mono,monospace">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
-        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold);font-family:IBM Plex Mono,monospace">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
-        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red);font-family:IBM Plex Mono,monospace">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
-      '</div>'+
-    '</div>';
-    if(ca&&ca.issues&&ca.issues.length>0){
-      vPanel.innerHTML+='<div style="margin-top:10px;padding:10px 12px;background:rgba(245,158,11,.08);border-radius:8px;border-left:3px solid var(--gold)">'+
-        '<p style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--gold)">Content Issues</p>'+
-        ca.issues.slice(0,4).map(function(i){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px">'+i+'</p>';}).join('')+
-        (ca.suggestions&&ca.suggestions.length?'<p style="font-size:12px;font-weight:700;margin:8px 0 4px;color:var(--blue)">Suggestions</p>'+ca.suggestions.slice(0,3).map(function(s){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px">'+s+'</p>';}).join(''):'')+
-        '</div>';
-    }
-    if(vs.highRisk>0){
-      const risky=S.validationResults.results.filter(function(r){return r.risk==='high'||r.risk==='critical'||r.status==='invalid';});
-      vPanel.innerHTML+='<div style="margin-top:10px;padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;border-left:3px solid var(--red)">'+
-        '<p style="font-size:12px;font-weight:700;margin-bottom:6px;color:var(--red)">'+risky.length+' High-Risk Recipients</p>'+
-        risky.slice(0,5).map(function(r){return '<p style="font-size:12px;color:var(--text2);margin-bottom:3px"><strong>'+r.email+'</strong> ('+r.risk+'): '+r.warnings[0]+'</p>';}).join('')+
-        '</div>';
-    }
-    wrap.appendChild(vPanel);
-  } else if(!S.validationDone){
-    const vPrompt=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.3)',background:'rgba(59,130,246,.05)',marginBottom:'14px',cursor:'pointer'},onClick:validateEmails});
-    vPrompt.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:20px"></span><div><p style="font-weight:700;font-size:13px;margin-bottom:3px">Run Deliverability Check</p><p style="font-size:12px;color:var(--text2)">Validates DNS records, detects firewalls, scores spam risk, and flags invalid emails before sending. Click to run.</p></div><span style="font-size:20px;color:var(--blue);margin-left:auto"> Run Now</span></div>';
-    wrap.appendChild(vPrompt);
-  }
-
-  if(!approved.length) return;
+  if(!approved.length){alert('Approve at least one email first (toggle Include on each email).');return;}
 
   S.validationDone=false;
+  S.validationRunning=true;
   S.validationResults={summary:null,results:[]};
   draw();
 
@@ -892,10 +855,12 @@ async function validateEmails(){
     const data=await resp.json();
     S.validationResults=data;
     S.validationDone=true;
+    S.validationRunning=false;
     draw();
   }catch(e){
     console.warn('Email validation error:',e.message);
     S.validationDone=true;
+    S.validationRunning=false;
     S.validationResults={summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0},results:[],error:e.message};
     draw();
   }
@@ -922,6 +887,53 @@ function p4(){
     const card=h('div',{cls:'stat-card'});card.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';sg4.appendChild(card);
   });
   wrap.appendChild(sg4);
+
+  // -- DELIVERABILITY VALIDATION SECTION --
+  if(S.validationRunning){
+    const vRun=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.3)',background:'rgba(59,130,246,.05)',marginBottom:'14px',textAlign:'center',padding:'18px'}});
+    vRun.innerHTML='<p style="font-weight:700;font-size:13px;color:var(--blue)">Running deliverability checks...</p><p style="font-size:12px;color:var(--text2);margin-top:4px">Checking DNS records, spam score, and firewall risk for each recipient</p>';
+    wrap.appendChild(vRun);
+  } else if(S.validationDone&&S.validationResults&&S.validationResults.summary){
+    const vs=S.validationResults.summary;
+    const ca=S.validationResults.contentAnalysis;
+    const scoreColor=vs.avgDelivScore>=80?'var(--green)':vs.avgDelivScore>=50?'var(--gold)':'var(--red)';
+    const contentColor=ca&&(ca.rating==='excellent'||ca.rating==='good')?'var(--green)':ca&&ca.rating==='fair'?'var(--gold)':'var(--red)';
+    const vPanel=h('div',{cls:'card',style:{borderColor:vs.highRisk>0?'rgba(245,158,11,.4)':'rgba(16,185,129,.3)',background:vs.highRisk>0?'rgba(245,158,11,.05)':'rgba(16,185,129,.04)',marginBottom:'14px'}});
+    var vHtml='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px">'+
+      '<div style="font-weight:700;font-size:14px">Pre-send Deliverability Report</div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+'">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
+        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+'">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT</div></div>':'')+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
+        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold)">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
+        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
+      '</div></div>';
+    if(ca&&ca.issues&&ca.issues.length>0){
+      vHtml+='<div style="margin-top:8px;padding:10px 12px;background:rgba(245,158,11,.08);border-radius:8px;border-left:3px solid var(--gold)">'+
+        '<p style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--gold)">Content Issues</p>'+
+        ca.issues.slice(0,4).map(function(i){return '<p style="font-size:12px;color:var(--text2);margin-bottom:2px">'+i+'</p>';}).join('')+
+        '</div>';
+    }
+    if(vs.highRisk>0){
+      const risky=(S.validationResults.results||[]).filter(function(r){return r.risk==='high'||r.risk==='critical'||r.status==='invalid';});
+      vHtml+='<div style="margin-top:8px;padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;border-left:3px solid var(--red)">'+
+        '<p style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--red)">'+risky.length+' High-Risk Recipients</p>'+
+        risky.slice(0,5).map(function(r){return '<p style="font-size:12px;color:var(--text2);margin-bottom:2px"><strong>'+r.email+'</strong>: '+(r.warnings&&r.warnings[0]||r.risk)+'</p>';}).join('')+
+        '</div>';
+    }
+    vHtml+='<button class="btn" style="margin-top:10px;font-size:12px" onclick="validateEmails()">Re-run Check</button>';
+    vPanel.innerHTML=vHtml;
+    wrap.appendChild(vPanel);
+  } else {
+    const vPrompt=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.35)',background:'rgba(59,130,246,.06)',marginBottom:'14px',cursor:'pointer'},onClick:validateEmails});
+    vPrompt.innerHTML='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+      '<div style="flex:1;min-width:200px"><p style="font-weight:700;font-size:14px;margin-bottom:3px;color:var(--blue)">Run Deliverability Check</p>'+
+      '<p style="font-size:12px;color:var(--text2)">Validates DNS records, detects corporate firewalls, scores spam risk, and flags invalid addresses before any email is sent.</p></div>'+
+      '<button class="btn btn-primary" style="white-space:nowrap" onclick="event.stopPropagation();validateEmails()">Run Check Now</button>'+
+      '</div>';
+    wrap.appendChild(vPrompt);
+  }
+
 
   if(S.bulkSending){
     const pct=S.bulkProgress.total>0?Math.round((S.bulkProgress.sent+S.bulkProgress.failed)/S.bulkProgress.total*100):0;
