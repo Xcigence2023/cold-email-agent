@@ -69,10 +69,17 @@ exports.handler = async function(event) {
   const results = { sent: 0, failed: 0, scheduled: 0, messageIds: {}, errors: [] };
   const BATCH = 20;
 
+  const optOutPattern = /unsubscribe|opt.?out|remove (you|me)|take (you|me) off|reply stop|stop receiving|not relevant.{0,30}reply|reply.{0,30}remove/i;
+
   async function sendOne(ed) {
     if (!ed.to || !emailRegex.test(ed.to)) return { id: ed.id, success: false, error: 'Invalid email: ' + ed.to };
 
-    const htmlBody = (ed.body || '')
+    let bodyText = ed.body || '';
+    if (bodyText && !optOutPattern.test(bodyText)) {
+      bodyText = bodyText + '\n\nIf this is not relevant, just reply and I will remove you from my list.';
+    }
+
+    const htmlBody = (bodyText)
       .split('\n\n')
       .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g,'<br>')}</p>`)
       .join('');
@@ -82,7 +89,7 @@ exports.handler = async function(event) {
       from: { email: fromEmail, name: fromName },
       reply_to: { email: fromEmail, name: fromName },
       content: [
-        { type: 'text/plain', value: ed.body || '' },
+        { type: 'text/plain', value: bodyText || '' },
         { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;background:#fff;max-width:600px;font-family:Arial,sans-serif">${htmlBody}<hr style="margin-top:32px;border:none;border-top:1px solid #eee"><p style="font-size:11px;color:#aaa;margin-top:12px">Sent by ${fromName} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>` }
       ],
       tracking_settings: {
