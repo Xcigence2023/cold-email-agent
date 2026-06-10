@@ -116,7 +116,7 @@ exports.handler = async function(event) {
     }
 
     // Add human touch instructions
-    enrichedPrompt += '\nHUMAN TOUCH REQUIREMENTS -- MANDATORY:\n- Open with something SPECIFIC and unexpected about their company or role (not generic)\n- Use natural contractions, vary sentence length\n- NO corporate buzzwords: leverage, synergy, scalable, robust\n- End casually: Would it make sense to grab 15 minutes?\n- Sign off with just first name, under 165 words';
+    enrichedPrompt += '\nHUMAN TOUCH REQUIREMENTS -- MANDATORY:\n- Open with something SPECIFIC and unexpected about their company or role (not generic)\n- Use natural contractions, vary sentence length\n- NO corporate buzzwords: leverage, synergy, scalable, robust\n- End casually: Would it make sense to grab 15 minutes?\n- Sign off with just first name, under 165 words\n- MANDATORY COMPLIANCE: the very last line after the signature must be exactly: If this is not relevant, just reply and I will remove you from my list.';
 
     const result = await callClaude([{ role: 'user', content: enrichedPrompt }], 1000);
     return { statusCode: 200, headers, body: JSON.stringify(result) };
