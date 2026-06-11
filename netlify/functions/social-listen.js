@@ -68,13 +68,13 @@ function extractPainPoints(text) {
 function extractCompany(text) {
   if (!text) return '';
   var patterns = [
-    /(?:work(?:ing)? at|employed at|i'm at|we are|we're a|our company is|as (?:a|an)[^,.]*at)\s+([A-Z][A-Za-z0-9&.\- ]{2,40})/,
-    /\bat\s+([A-Z][A-Za-z0-9&.\-]{2,30}(?:\s(?:Inc|LLC|Ltd|Corp|Group|Technologies|Solutions|Software|Systems))?)\b/,
+    /(?:work(?:ing)? at|employed at|i'm at|our company is|as (?:a|an)[^,.]*at)\s+([A-Z][A-Za-z0-9&.\-]+(?:\s[A-Z][A-Za-z0-9&.\-]+){0,2})\b/,
+    /\bat\s+([A-Z][A-Za-z0-9&.\-]+(?:\s[A-Z][A-Za-z0-9&.\-]+){0,2})\b/,
   ];
   for (var i = 0; i < patterns.length; i++) {
     var m = text.match(patterns[i]);
     if (m && m[1]) {
-      var c = m[1].trim().replace(/[.,]$/, '');
+      var c = m[1].trim().split(/[.,;!?]/)[0].trim().replace(/\s+(and|but|or|the|we|i|they|our|my)$/i, '').trim();
       // Filter out common false positives
       if (!/^(the|our|my|this|that|a|an|all|home|work|first|last|least|most|best)$/i.test(c) && c.length > 2) {
         return c;
@@ -138,7 +138,7 @@ async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
   // ---- Source 3: Public web review search via Brave (G2/Trustpilot/Capterra snippets) ----
   if (BRAVE_KEY) {
     try {
-      var braveQ = encodeURIComponent(comp + ' reviews (site:g2.com OR site:trustpilot.com OR site:capterra.com OR site:trustradius.com)');
+      var braveQ = encodeURIComponent(comp + ' customer reviews complaints (site:g2.com OR site:trustpilot.com OR site:capterra.com OR site:trustradius.com OR site:bbb.org OR site:yelp.com OR site:sitejabber.com OR site:reviews.io OR site:consumeraffairs.com OR site:pissedconsumer.com)');
       var bResp = await safeFetch('https://api.search.brave.com/res/v1/web/search?q=' + braveQ + '&count=' + Math.min(limit, 20), {
         headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY }
       });
@@ -148,7 +148,30 @@ async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
         webResults.forEach(function(wr){
           var text = (wr.description || '');
           if (text.length < 30) return;
-          var platform = wr.url && wr.url.indexOf('g2.com')>=0 ? 'g2' : wr.url && wr.url.indexOf('trustpilot')>=0 ? 'trustpilot' : wr.url && wr.url.indexOf('capterra')>=0 ? 'capterra' : 'review-site';
+          var u = (wr.url || '').toLowerCase();
+          var platform = u.indexOf('g2.com')>=0 ? 'g2' : u.indexOf('trustpilot')>=0 ? 'trustpilot' : u.indexOf('capterra')>=0 ? 'capterra' : u.indexOf('trustradius')>=0 ? 'trustradius' : u.indexOf('bbb.org')>=0 ? 'bbb' : (u.indexOf('google.com/maps')>=0 || u.indexOf('google.com/search')>=0) ? 'google' : u.indexOf('sitejabber')>=0 ? 'sitejabber' : u.indexOf('reviews.io')>=0 ? 'reviews.io' : u.indexOf('yelp.com')>=0 ? 'yelp' : u.indexOf('consumeraffairs')>=0 ? 'consumeraffairs' : u.indexOf('pissedconsumer')>=0 ? 'pissedconsumer' : 'review-site';
+          results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
+        });
+      }
+    } catch(e) {}
+  }
+
+  // ---- Source 4: Google Reviews + BBB (targeted via Brave for richer coverage) ----
+  if (BRAVE_KEY) {
+    try {
+      var gbQ = encodeURIComponent('"' + comp + '" customer reviews complaints (site:bbb.org OR site:google.com)');
+      var gbResp = await safeFetch('https://api.search.brave.com/res/v1/web/search?q=' + gbQ + '&count=' + Math.min(limit, 15), {
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY }
+      });
+      if (gbResp) {
+        var gbData = await gbResp.json();
+        var gbResults = (gbData && gbData.web && gbData.web.results) || [];
+        gbResults.forEach(function(wr){
+          var text = (wr.description || '');
+          if (text.length < 30) return;
+          var u = (wr.url || '').toLowerCase();
+          if (u.indexOf('bbb.org') < 0 && u.indexOf('google.') < 0) return;
+          var platform = u.indexOf('bbb.org')>=0 ? 'bbb' : 'google';
           results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
         });
       }
