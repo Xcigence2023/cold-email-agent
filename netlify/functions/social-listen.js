@@ -30,27 +30,80 @@ const HDR = {
 // private contact info -- that is by design and by law.
 // ============================================================
 
-var POSITIVE_WORDS = ['love','great','excellent','amazing','best','fantastic','perfect','wonderful','easy','intuitive','reliable','responsive','helpful','recommend','impressed','seamless','smooth','solid','worth','happy','satisfied','game changer','life saver','works well','highly recommend'];
-var NEGATIVE_WORDS = ['hate','terrible','awful','worst','horrible','useless','frustrating','disappointed','buggy','slow','expensive','overpriced','confusing','difficult','broken','crash','poor','lacking','missing','unreliable','unresponsive','nightmare','waste','cancel','switching','switched away','looking for alternative','migrated away','regret','avoid','stay away','no support','bad support','ignored'];
+var POSITIVE_WORDS = {
+  // strong positive (weight 3)
+  'highly recommend':3,'love it':3,'best decision':3,'game changer':3,'life saver':3,'could not be happier':3,'couldnt be happier':3,'absolutely love':3,'exceeded expectations':3,'worth every penny':3,
+  // medium positive (weight 2)
+  'love':2,'excellent':2,'amazing':2,'fantastic':2,'perfect':2,'wonderful':2,'seamless':2,'intuitive':2,'impressed':2,'recommend':2,'reliable':2,'responsive':2,'saves us':2,'saves me':2,'saved us':2,'time saver':2,
+  // mild positive (weight 1)
+  'great':1,'best':1,'easy':1,'helpful':1,'smooth':1,'solid':1,'worth':1,'happy':1,'satisfied':1,'works well':1,'works great':1,'no complaints':1,'does what we need':1,'does the job':1,'pleased':1,'glad':1,'fine':1
+};
+var NEGATIVE_WORDS = {
+  // strong negative (weight 3) -- high-intent churn / complaint signals
+  'looking for alternative':3,'looking for an alternative':3,'switching away':3,'switched away':3,'migrated away':3,'migrating away':3,'moving away':3,'stay away':3,'do not recommend':3,'dont recommend':3,'would not recommend':3,'nightmare':3,'worst':3,'lost access':3,'lost sales':3,'cost us':3,'refused refund':3,'refused to refund':3,'charged twice':3,'kept charging':3,'avoid this':3,'cancelled my':3,'cancel my':3,'regret':3,'terrible customer service':3,'non-existent':3,'nonexistent':3,
+  // medium negative (weight 2)
+  'terrible':2,'awful':2,'horrible':2,'useless':2,'frustrating':2,'frustrated':2,'disappointed':2,'disappointing':2,'unreliable':2,'unresponsive':2,'overpriced':2,'too expensive':2,'hidden fees':2,'waste':2,'broken':2,'crash':2,'crashes':2,'outage':2,'outages':2,'downtime':2,'ignored':2,'no support':2,'bad support':2,'poor support':2,'avoid':2,'hate':2,'switching':2,'cancelled':2,'cancel':2,'refund':2,
+  // mild negative (weight 1)
+  'buggy':1,'slow':1,'expensive':1,'confusing':1,'difficult':1,'hard to use':1,'poor':1,'lacking':1,'missing':1,'clunky':1,'steep learning':1,'learning curve':1,'complicated':1,'issue':1,'issues':1,'problem':1,'problems':1,'glitch':1,'lag':1
+};
 
 var PAIN_CATEGORIES = {
-  pricing:      ['expensive','overpriced','cost','pricing','price','billing','charge','refund','hidden fee','too costly','not worth'],
-  support:      ['support','customer service','response time','no help','unresponsive','ignored ticket','slow support','no answer'],
-  reliability:  ['down','downtime','outage','crash','bug','glitch','unreliable','unstable','broken','error'],
-  usability:    ['confusing','complicated','hard to use','unintuitive','clunky','steep learning','difficult to navigate'],
-  features:     ['missing feature','lacking','limited','no integration','cannot','does not support','feature request','wish it had'],
-  performance:  ['slow','lag','laggy','sluggish','timeout','loading','performance'],
-  onboarding:   ['onboarding','setup','migration','implementation','getting started','hard to set up'],
+  pricing:      ['expensive','overpriced','too costly','cost is','costs too','pricing adds up','price increase','price hike','billing issue','billing problem','billed','charged','overcharged','hidden fee','hidden fees','refund','not worth the','cost us','hard to justify'],
+  support:      ['poor support','bad support','no support','slow support','terrible support','support ignored','support never','customer service was','customer service is non','unresponsive','no help','no answer','ignored ticket','ignored our','tickets ignored','support team ignored','support was a nightmare','support is non'],
+  reliability:  ['downtime','outage','outages','crash','crashes','crashed','bug','bugs','buggy','glitch','unreliable','unstable','broken','went down','lost access','keeps crashing','constant errors','frequent errors'],
+  usability:    ['confusing','complicated','hard to use','unintuitive','clunky','steep learning','learning curve','difficult to navigate','hard to navigate','not intuitive','overly complex'],
+  features:     ['missing feature','missing features','lacking','feature is missing','no integration','lacks integration','does not support','doesnt support','cannot do','wish it had','limited functionality','feature request'],
+  performance:  ['slow','laggy','sluggish','timeout','times out','too slow','very slow','performance issue','loading forever'],
+  onboarding:   ['onboarding was','hard to set up','difficult to set up','setup was','migration was','implementation was','painful to configure','weeks to configure','configuring basic'],
 };
 
 function scoreSentiment(text) {
   var t = (text || '').toLowerCase();
-  var pos = 0, neg = 0;
-  POSITIVE_WORDS.forEach(function(w){ if (t.indexOf(w) >= 0) pos++; });
-  NEGATIVE_WORDS.forEach(function(w){ if (t.indexOf(w) >= 0) neg++; });
+  // normalise punctuation/whitespace so phrase matching is reliable
+  t = t.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+
+  var pos = 0, neg = 0, posHits = 0, negHits = 0;
+
+  // Negation cues: if a positive word is negated, it flips to negative signal
+  function isNegated(idx) {
+    var before = t.substring(Math.max(0, idx - 22), idx);
+    return /\b(not|no|never|isn'?t|wasn'?t|aren'?t|don'?t|doesn'?t|didn'?t|can'?t|cannot|hardly|barely|lack of|far from)\s+[\w']*\s?$/.test(before);
+  }
+
+  // Score positive terms (weighted), respecting negation
+  Object.keys(POSITIVE_WORDS).forEach(function(w){
+    var idx = t.indexOf(w);
+    if (idx >= 0) {
+      var wt = POSITIVE_WORDS[w];
+      if (isNegated(idx)) { neg += wt; negHits++; }   // "not reliable" -> negative
+      else { pos += wt; posHits++; }
+    }
+  });
+
+  // Score negative terms (weighted); negated negatives are softened, not flipped
+  Object.keys(NEGATIVE_WORDS).forEach(function(w){
+    var idx = t.indexOf(w);
+    if (idx >= 0) {
+      var wt = NEGATIVE_WORDS[w];
+      if (isNegated(idx)) { pos += 1; }               // "no problems" -> slight positive
+      else { neg += wt; negHits++; }
+    }
+  });
+
+  // Churn-intent override: explicit switching/leaving language is decisively negative
+  var churnIntent = /(looking for (an? )?alternative|switching away|switched away|migrat(ing|ed) away|moving away|stay away|do(es)? ?n'?t recommend|cancel(led|ling)? (my|our|the)|refused (to )?refund)/.test(t);
+  if (churnIntent) neg += 3;
+
   var score = pos - neg;
-  var label = score > 1 ? 'positive' : score < -1 ? 'negative' : (pos > neg ? 'positive' : neg > pos ? 'negative' : 'mixed');
-  return { sentiment: label, posHits: pos, negHits: neg };
+  var label;
+  if (churnIntent && neg > pos) label = 'negative';
+  else if (score >= 2) label = 'positive';
+  else if (score <= -2) label = 'negative';
+  else if (neg > pos) label = 'negative';
+  else if (pos > neg) label = 'positive';
+  else label = 'mixed';
+
+  return { sentiment: label, posHits: posHits, negHits: negHits, posScore: pos, negScore: neg };
 }
 
 function extractPainPoints(text) {
@@ -204,6 +257,17 @@ function buildReview(platform, title, text, author, url, date, competitor) {
   var pains = extractPainPoints(text);
   var company = extractCompany(text);
   var firmo = extractFirmographics(text);
+
+  // Refinement: a 'mixed' review that names a concrete pain point is, for outreach
+  // purposes, a negative signal -- the reviewer has an actionable complaint.
+  var finalSentiment = sent.sentiment;
+  if (finalSentiment === 'mixed' && pains.length > 0 && sent.negScore >= sent.posScore) {
+    finalSentiment = 'negative';
+  }
+  // Inversely: a 'mixed' with zero complaints and net-positive wording reads positive
+  if (finalSentiment === 'mixed' && pains.length === 0 && sent.posScore > sent.negScore) {
+    finalSentiment = 'positive';
+  }
   return {
     id:          Math.random().toString(36).substr(2, 9),
     platform:    platform,
@@ -214,13 +278,13 @@ function buildReview(platform, title, text, author, url, date, competitor) {
     authorUrl:   author && platform === 'reddit' ? 'https://reddit.com/user/' + author : '',
     url:         url,
     date:        date,
-    sentiment:   sent.sentiment,
+    sentiment:   finalSentiment,
     painPoints:  pains,
     company:     company,            // company they work at, IF publicly stated
     companySize: firmo.companySize,
     industry:    firmo.industry,
     // Explicit: no email, no phone, no private data -- by design
-    leadReady:   company ? true : false
+    leadReady:   (company && (finalSentiment === 'negative' || pains.length > 0)) ? true : false
   };
 }
 
