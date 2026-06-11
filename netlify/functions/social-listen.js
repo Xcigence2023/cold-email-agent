@@ -155,12 +155,81 @@ function extractFirmographics(text) {
 async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
   var results = [];
   var comp = competitor.trim();
+  var maxPer = Math.min(limit || 50, 50);
 
-  // ---- Source 1: Reddit (people discuss competitor experiences candidly) ----
+  // ============================================================
+  // STRATEGY: Brave web search is the primary engine. Instead of
+  // restrictive `site:` filters (which return near-zero), we run
+  // several BROAD review-intent queries, then classify each result
+  // by its domain after the fact. This surfaces G2, Trustpilot,
+  // Gartner, Reddit, Capterra, TrustRadius, BBB, etc. -- whatever
+  // the index actually has -- instead of forcing a narrow filter.
+  // ============================================================
+
+  if (BRAVE_KEY) {
+    // Multiple complementary queries hit different review surfaces.
+    var queries = [
+      comp + ' reviews',
+      comp + ' customer reviews complaints',
+      comp + ' review reddit',
+      comp + ' alternative OR competitor "switched from"',
+      comp + ' problems OR issues OR disappointed',
+      comp + ' g2 OR trustpilot OR capterra OR gartner reviews'
+    ];
+
+    // Run all Brave queries in PARALLEL to stay within function timeout
+    var braveResponses = await Promise.all(queries.map(function(q){
+      var braveQ = encodeURIComponent(q);
+      return safeFetch(
+        'https://api.search.brave.com/res/v1/web/search?q=' + braveQ + '&count=20&freshness=py&result_filter=web',
+        { headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY } }
+      ).then(function(resp){ return resp ? resp.json().catch(function(){ return null; }) : null; })
+       .catch(function(){ return null; });
+    }));
+
+    braveResponses.forEach(function(bData){
+      var webResults = (bData && bData.web && bData.web.results) || [];
+      webResults.forEach(function(wr){
+          // Combine title + description + any extra snippets for richer text
+          var parts = [wr.title || '', wr.description || ''];
+          if (wr.extra_snippets && wr.extra_snippets.length) {
+            parts = parts.concat(wr.extra_snippets);
+          }
+          var text = parts.join('. ').replace(/<[^>]+>/g, '').trim();
+          if (text.length < 40) return;
+
+          // Must actually mention the competitor (title or body)
+          var hay = (wr.title + ' ' + text + ' ' + (wr.url||'')).toLowerCase();
+          if (hay.indexOf(comp.toLowerCase()) < 0) return;
+
+          var u = (wr.url || '').toLowerCase();
+          var platform =
+            u.indexOf('g2.com') >= 0 ? 'g2' :
+            u.indexOf('trustpilot') >= 0 ? 'trustpilot' :
+            u.indexOf('capterra') >= 0 ? 'capterra' :
+            u.indexOf('trustradius') >= 0 ? 'trustradius' :
+            u.indexOf('gartner') >= 0 ? 'gartner' :
+            u.indexOf('bbb.org') >= 0 ? 'bbb' :
+            u.indexOf('reddit.com') >= 0 ? 'reddit' :
+            u.indexOf('yelp.com') >= 0 ? 'yelp' :
+            u.indexOf('sitejabber') >= 0 ? 'sitejabber' :
+            u.indexOf('consumeraffairs') >= 0 ? 'consumeraffairs' :
+            u.indexOf('pissedconsumer') >= 0 ? 'pissedconsumer' :
+            u.indexOf('softwareadvice') >= 0 ? 'softwareadvice' :
+            u.indexOf('peerspot') >= 0 ? 'peerspot' :
+            u.indexOf('reviews.io') >= 0 ? 'reviews.io' :
+            (u.indexOf('google.com') >= 0 || u.indexOf('google.') >= 0) ? 'google' :
+            'web';
+          results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
+      });
+    });
+  }
+
+  // ---- Reddit via JSON API (works when Reddit allows; harmless if blocked) ----
   try {
-    var redditQ = encodeURIComponent('"' + comp + '" (review OR experience OR alternative OR switching OR disappointed OR love OR hate)');
-    var rResp = await safeFetch('https://www.reddit.com/search.json?q=' + redditQ + '&sort=relevance&limit=' + Math.min(limit, 25) + '&t=year', {
-      headers: { 'User-Agent': 'Velorah-ReviewIntel/1.0' }
+    var redditQ = encodeURIComponent(comp + ' (review OR experience OR alternative OR problem OR disappointed)');
+    var rResp = await safeFetch('https://www.reddit.com/search.json?q=' + redditQ + '&sort=relevance&limit=20&t=year', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; VelorahReviewIntel/1.0)' }
     });
     if (rResp) {
       var rData = await rResp.json();
@@ -169,87 +238,46 @@ async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
         var d = ch.data || {};
         var text = (d.selftext || d.title || '');
         if (text.length < 30) return;
+        if ((d.title + ' ' + text).toLowerCase().indexOf(comp.toLowerCase()) < 0) return;
         results.push(buildReview('reddit', d.title || '', text, d.author || '', 'https://reddit.com' + (d.permalink || ''), d.created_utc ? new Date(d.created_utc*1000).toISOString() : '', comp));
       });
     }
   } catch(e) {}
 
-  // ---- Source 2: HackerNews (Ask HN / tool discussions) ----
+  // ---- HackerNews (works server-side, good for tech products) ----
   try {
-    var hnResp = await safeFetch('https://hn.algolia.com/api/v1/search?query=' + encodeURIComponent(comp) + '&tags=(story,comment)&hitsPerPage=' + Math.min(limit, 20));
+    var hnResp = await safeFetch('https://hn.algolia.com/api/v1/search?query=' + encodeURIComponent(comp) + '&tags=(story,comment)&hitsPerPage=20');
     if (hnResp) {
       var hnData = await hnResp.json();
       (hnData.hits || []).forEach(function(hit){
         var text = (hit.comment_text || hit.story_text || hit.title || '').replace(/<[^>]+>/g, '');
-        if (text.length < 30) return;
+        if (text.length < 40) return;
         if (text.toLowerCase().indexOf(comp.toLowerCase()) < 0) return;
-        results.push(buildReview('hackernews', hit.title || (text.substring(0,80)), text, hit.author || '', 'https://news.ycombinator.com/item?id=' + (hit.objectID || ''), hit.created_at || '', comp));
+        results.push(buildReview('hackernews', hit.title || '', text, hit.author || '', 'https://news.ycombinator.com/item?id=' + (hit.objectID || ''), hit.created_at || '', comp));
       });
     }
   } catch(e) {}
 
-  // ---- Source 3: Public web review search via Brave (G2/Trustpilot/Capterra snippets) ----
-  if (BRAVE_KEY) {
-    try {
-      var braveQ = encodeURIComponent(comp + ' customer reviews complaints (site:g2.com OR site:trustpilot.com OR site:capterra.com OR site:trustradius.com OR site:bbb.org OR site:yelp.com OR site:sitejabber.com OR site:reviews.io OR site:consumeraffairs.com OR site:pissedconsumer.com)');
-      var bResp = await safeFetch('https://api.search.brave.com/res/v1/web/search?q=' + braveQ + '&count=' + Math.min(limit, 20), {
-        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY }
-      });
-      if (bResp) {
-        var bData = await bResp.json();
-        var webResults = (bData && bData.web && bData.web.results) || [];
-        webResults.forEach(function(wr){
-          var text = (wr.description || '');
-          if (text.length < 30) return;
-          var u = (wr.url || '').toLowerCase();
-          var platform = u.indexOf('g2.com')>=0 ? 'g2' : u.indexOf('trustpilot')>=0 ? 'trustpilot' : u.indexOf('capterra')>=0 ? 'capterra' : u.indexOf('trustradius')>=0 ? 'trustradius' : u.indexOf('bbb.org')>=0 ? 'bbb' : (u.indexOf('google.com/maps')>=0 || u.indexOf('google.com/search')>=0) ? 'google' : u.indexOf('sitejabber')>=0 ? 'sitejabber' : u.indexOf('reviews.io')>=0 ? 'reviews.io' : u.indexOf('yelp.com')>=0 ? 'yelp' : u.indexOf('consumeraffairs')>=0 ? 'consumeraffairs' : u.indexOf('pissedconsumer')>=0 ? 'pissedconsumer' : 'review-site';
-          results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
-        });
-      }
-    } catch(e) {}
-  }
-
-  // ---- Source 4: Google Reviews + BBB (targeted via Brave for richer coverage) ----
-  if (BRAVE_KEY) {
-    try {
-      var gbQ = encodeURIComponent('"' + comp + '" customer reviews complaints (site:bbb.org OR site:google.com)');
-      var gbResp = await safeFetch('https://api.search.brave.com/res/v1/web/search?q=' + gbQ + '&count=' + Math.min(limit, 15), {
-        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY }
-      });
-      if (gbResp) {
-        var gbData = await gbResp.json();
-        var gbResults = (gbData && gbData.web && gbData.web.results) || [];
-        gbResults.forEach(function(wr){
-          var text = (wr.description || '');
-          if (text.length < 30) return;
-          var u = (wr.url || '').toLowerCase();
-          if (u.indexOf('bbb.org') < 0 && u.indexOf('google.') < 0) return;
-          var platform = u.indexOf('bbb.org')>=0 ? 'bbb' : 'google';
-          results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
-        });
-      }
-    } catch(e) {}
-  }
-
-  // ---- Sentiment filter + dedup ----
-  var seen = {};
+  // ---- Sentiment filter + dedup by URL and by snippet ----
+  var seenUrl = {}, seenText = {};
   results = results.filter(function(r){
-    var key = (r.snippet || '').substring(0, 60);
-    if (seen[key]) return false;
-    seen[key] = true;
+    var uKey = (r.url || '').split('?')[0];
+    var tKey = (r.snippet || '').substring(0, 80).toLowerCase().replace(/\s+/g, ' ');
+    if (uKey && seenUrl[uKey]) return false;
+    if (seenText[tKey]) return false;
+    seenUrl[uKey] = true; seenText[tKey] = true;
     if (sentimentFilter && sentimentFilter !== 'all' && r.sentiment !== sentimentFilter) return false;
     return true;
   });
 
-  // Sort: negative first (best sales signal) when filter is all, else by date
-  var sentRank = { negative: 3, mixed: 2, positive: 1 };
+  // Sort: negative + lead-ready first (most actionable), then by pain count
   results.sort(function(a, b){
-    var d = (sentRank[b.sentiment]||0) - (sentRank[a.sentiment]||0);
-    if (d !== 0) return d;
-    return (b.painPoints.length) - (a.painPoints.length);
+    var aScore = (a.sentiment === 'negative' ? 100 : a.sentiment === 'mixed' ? 50 : 0) + a.painPoints.length * 5 + (a.leadReady ? 20 : 0);
+    var bScore = (b.sentiment === 'negative' ? 100 : b.sentiment === 'mixed' ? 50 : 0) + b.painPoints.length * 5 + (b.leadReady ? 20 : 0);
+    return bScore - aScore;
   });
 
-  return results.slice(0, limit);
+  return results.slice(0, maxPer);
 }
 
 function buildReview(platform, title, text, author, url, date, competitor) {
@@ -347,7 +375,7 @@ exports.handler = async function(event) {
   // Safe fetch with 8s timeout
   async function safeFetch(url, opts) {
     const ctrl = new AbortController();
-    const timer = setTimeout(function() { ctrl.abort(); }, 8000);
+    const timer = setTimeout(function() { ctrl.abort(); }, 6000);
     try {
       const r = await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
       clearTimeout(timer);
