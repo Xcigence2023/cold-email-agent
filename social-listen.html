@@ -169,7 +169,7 @@ input::placeholder{color:var(--text3)}
 
   <div class="layout">
     <!-- SEARCH PANEL -->
-    <div>
+    <div id="listen-panel">
       <div class="card">
         <div class="card-title">Keywords</div>
         <div id="kw-tags" style="min-height:22px;margin-bottom:6px"></div>
@@ -248,7 +248,7 @@ input::placeholder{color:var(--text3)}
       <div id="review-panel" style="display:none">
         <div class="card">
           <div class="card-title">Competitor</div>
-          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Enter a competitor's product or company name. We'll surface public reviews and discussions where their customers express frustration.</p>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Enter a competitor's product or company name. We'll surface public reviews from G2, Trustpilot, Capterra, BBB, Google Reviews, Reddit & more where their customers express frustration.</p>
           <input type="text" id="competitor-inp" placeholder="e.g. Salesforce, HubSpot, Zendesk" style="width:100%;margin-bottom:8px"/>
         </div>
 
@@ -721,26 +721,18 @@ function switchMode(mode){
   var statsRow = document.getElementById('stats-row');
 
   if(mode === 'reviews'){
-    listenPanel.style.display = 'none';
-    reviewPanel.style.display = 'block';
-    listenTab.classList.remove('active');
-    listenTab.style.background = 'transparent';
-    listenTab.style.borderColor = 'var(--border)';
-    reviewTab.classList.add('active');
-    reviewTab.style.background = 'rgba(139,92,246,.08)';
-    reviewTab.style.borderColor = 'rgba(139,92,246,.4)';
+    if(listenPanel) listenPanel.style.display = 'none';
+    if(reviewPanel) reviewPanel.style.display = 'block';
+    if(listenTab){ listenTab.classList.remove('active'); listenTab.style.background = 'transparent'; listenTab.style.borderColor = 'var(--border)'; }
+    if(reviewTab){ reviewTab.classList.add('active'); reviewTab.style.background = 'rgba(139,92,246,.08)'; reviewTab.style.borderColor = 'rgba(139,92,246,.4)'; }
     if(statsRow) statsRow.style.display = 'none';
-    resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#11088;</div><p style="color:var(--text2)">Enter a competitor name and find their unhappy customers from public reviews.</p></div>';
+    if(resultsWrap) resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#11088;</div><p style="color:var(--text2)">Enter a competitor name and find their unhappy customers from public reviews.</p></div>';
   } else {
-    listenPanel.style.display = 'block';
-    reviewPanel.style.display = 'none';
-    reviewTab.classList.remove('active');
-    reviewTab.style.background = 'transparent';
-    reviewTab.style.borderColor = 'var(--border)';
-    listenTab.classList.add('active');
-    listenTab.style.background = 'rgba(59,130,246,.08)';
-    listenTab.style.borderColor = 'var(--border2)';
-    resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">📡</div><p style="color:var(--text2)">Add keywords and select platforms to find buyers discussing your space.</p></div>';
+    if(listenPanel) listenPanel.style.display = 'block';
+    if(reviewPanel) reviewPanel.style.display = 'none';
+    if(reviewTab){ reviewTab.classList.remove('active'); reviewTab.style.background = 'transparent'; reviewTab.style.borderColor = 'var(--border)'; }
+    if(listenTab){ listenTab.classList.add('active'); listenTab.style.background = 'rgba(59,130,246,.08)'; listenTab.style.borderColor = 'var(--border2)'; }
+    if(resultsWrap) resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#128225;</div><p style="color:var(--text2)">Add keywords and select platforms to find buyers discussing your space.</p></div>';
   }
 }
 
@@ -774,13 +766,36 @@ async function doReviewSearch(){
   }
 }
 
+
+function reviewPlatformLabel(p){
+  var map={
+    g2:{name:'G2',color:'#ff492c'},
+    trustpilot:{name:'Trustpilot',color:'#00b67a'},
+    capterra:{name:'Capterra',color:'#ff9d28'},
+    trustradius:{name:'TrustRadius',color:'#5856d6'},
+    bbb:{name:'BBB',color:'#0066b2'},
+    google:{name:'Google Reviews',color:'#4285f4'},
+    sitejabber:{name:'Sitejabber',color:'#7b68ee'},
+    'reviews.io':{name:'Reviews.io',color:'#00b67a'},
+    yelp:{name:'Yelp',color:'#d32323'},
+    consumeraffairs:{name:'ConsumerAffairs',color:'#0d8050'},
+    pissedconsumer:{name:'PissedConsumer',color:'#e8542f'},
+    reddit:{name:'Reddit',color:'#ff4500'},
+    hackernews:{name:'Hacker News',color:'#ff6600'},
+    'review-site':{name:'Review Site',color:'#7b91b4'}
+  };
+  return map[p]||{name:p.charAt(0).toUpperCase()+p.slice(1),color:'#7b91b4'};
+}
+
+
+
 function renderReviews(data){
   var wrap = document.getElementById('results-wrap');
   var reviews = data.reviews || [];
   var summary = data.summary || {};
 
   if(!reviews.length){
-    wrap.innerHTML = '<div class="empty"><div style="font-size:42px;margin-bottom:12px">🔍</div><p style="color:var(--text2)">No public reviews found for "' + (data.competitor||'') + '". Try a more common product name, or add a BRAVE_API_KEY for G2/Trustpilot/Capterra coverage.</p></div>';
+    wrap.innerHTML = '<div class="empty"><div style="font-size:42px;margin-bottom:12px">🔍</div><p style="color:var(--text2)">No public reviews found for "' + (data.competitor||'') + '". Try a more common product name, or add a BRAVE_API_KEY for G2, Trustpilot, Capterra, BBB & Google Reviews coverage.</p></div>';
     return;
   }
 
@@ -806,7 +821,8 @@ function renderReviews(data){
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">';
     html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
     html += '<span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:' + sentBg + ';color:' + sentColor + '">' + r.sentiment + '</span>';
-    html += '<span style="font-size:11px;color:var(--text3);text-transform:uppercase">' + r.platform + '</span>';
+    var pl = reviewPlatformLabel(r.platform);
+    html += '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:' + pl.color + '22;color:' + pl.color + '">' + pl.name + '</span>';
     html += '</div>';
     if(r.url) html += '<a href="' + r.url + '" target="_blank" style="font-size:11px;color:var(--blue);white-space:nowrap">View source &rarr;</a>';
     html += '</div>';
