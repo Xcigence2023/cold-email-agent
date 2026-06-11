@@ -780,6 +780,10 @@ function reviewPlatformLabel(p){
     yelp:{name:'Yelp',color:'#d32323'},
     consumeraffairs:{name:'ConsumerAffairs',color:'#0d8050'},
     pissedconsumer:{name:'PissedConsumer',color:'#e8542f'},
+    gartner:{name:'Gartner Peer Insights',color:'#5856d6'},
+    peerspot:{name:'PeerSpot',color:'#1a73e8'},
+    softwareadvice:{name:'Software Advice',color:'#ff6b35'},
+    web:{name:'Web Review',color:'#7b91b4'},
     reddit:{name:'Reddit',color:'#ff4500'},
     hackernews:{name:'Hacker News',color:'#ff6600'},
     'review-site':{name:'Review Site',color:'#7b91b4'}
@@ -795,7 +799,29 @@ function renderReviews(data){
   var summary = data.summary || {};
 
   if(!reviews.length){
-    wrap.innerHTML = '<div class="empty"><div style="font-size:42px;margin-bottom:12px">🔍</div><p style="color:var(--text2)">No public reviews found for "' + (data.competitor||'') + '". Try a more common product name, or add a BRAVE_API_KEY for G2, Trustpilot, Capterra, BBB & Google Reviews coverage.</p></div>';
+    var comp = data.competitor || '';
+    var enc = encodeURIComponent(comp);
+    var directLinks = [
+      ['G2','https://www.g2.com/search?query=' + enc],
+      ['Trustpilot','https://www.trustpilot.com/search?query=' + enc],
+      ['Gartner Peer Insights','https://www.gartner.com/reviews/search?keywords=' + enc],
+      ['Capterra','https://www.capterra.com/search/?query=' + enc],
+      ['Reddit','https://www.reddit.com/search/?q=' + enc + '%20review'],
+      ['BBB','https://www.bbb.org/search?find_text=' + enc]
+    ];
+    var linksHtml = directLinks.map(function(l){
+      return '<a href="' + l[1] + '" target="_blank" style="display:inline-block;margin:4px;padding:6px 12px;border-radius:6px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:var(--blue);font-size:12px;text-decoration:none">' + l[0] + ' &rarr;</a>';
+    }).join('');
+    wrap.innerHTML =
+      '<div class="card" style="text-align:center;padding:2rem">' +
+      '<div style="font-size:42px;margin-bottom:12px">&#x1F50D;</div>' +
+      '<p style="color:var(--text);font-weight:700;font-size:15px;margin-bottom:8px">No indexed reviews surfaced for "' + comp + '"</p>' +
+      '<p style="color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto">' +
+        'Many review sites (Gartner, Trustpilot, G2) block automated access and are not fully searchable via web index. ' +
+        'This can also happen if the product name is ambiguous &mdash; try the exact brand name (e.g. "SecurityScorecard" not "secure score card").</p>' +
+      '<p style="color:var(--text3);font-size:11px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Open the reviews directly:</p>' +
+      '<div>' + linksHtml + '</div>' +
+      '</div>';
     return;
   }
 
