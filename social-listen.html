@@ -12,6 +12,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+.mode-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.mode-btn.active{background:rgba(59,130,246,.12);border-color:var(--blue);color:var(--blue)}
+.rev-card{background:var(--glass,rgba(255,255,255,.03));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color .2s}
+.rev-card:hover{border-color:var(--blue)}
+.sent-badge{display:inline-flex;padding:2px 9px;border-radius:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.sent-positive{background:rgba(16,185,129,.15);color:#10b981}
+.sent-negative{background:rgba(239,68,68,.15);color:#ef4444}
+.sent-mixed{background:rgba(245,158,11,.15);color:#f59e0b}
+.pain-chip{display:inline-flex;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;background:rgba(139,92,246,.12);color:#a78bfa;margin:2px 3px 2px 0}
 :root{--bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;--blue:#3b82f6;--cyan:#06b6d4;--green:#10b981;--red:#ef4444;--gold:#f59e0b;--purple:#8b5cf6;--border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);--glass:rgba(255,255,255,.03);--r:10px;--rl:14px}
 body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 20% 0%,rgba(59,130,246,.08),transparent 60%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(139,92,246,.06),transparent 60%);pointer-events:none}
@@ -146,6 +155,18 @@ input::placeholder{color:var(--text3)}
     </div>
   </div>
 
+  <!-- MODE SWITCHER -->
+  <div style="display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+    <button class="mode-tab active" id="mode-listen" onclick="switchMode('listen')" style="flex:1;min-width:200px;padding:14px;border-radius:10px;border:1px solid var(--border2);background:rgba(59,130,246,.08);color:var(--text);font-family:'Outfit',sans-serif;cursor:pointer;text-align:left">
+      <div style="font-weight:800;font-size:14px;color:var(--blue);margin-bottom:2px">📡 Social Listening</div>
+      <div style="font-size:11px;color:var(--text2)">Find buyers discussing your space across 10 platforms</div>
+    </button>
+    <button class="mode-tab" id="mode-reviews" onclick="switchMode('reviews')" style="flex:1;min-width:200px;padding:14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'Outfit',sans-serif;cursor:pointer;text-align:left">
+      <div style="font-weight:800;font-size:14px;color:var(--purple);margin-bottom:2px">&#11088; Competitor Review Intel</div>
+      <div style="font-size:11px;color:var(--text2)">Surface unhappy customers of competitors from public reviews</div>
+    </button>
+  </div>
+
   <div class="layout">
     <!-- SEARCH PANEL -->
     <div>
@@ -221,6 +242,43 @@ input::placeholder{color:var(--text3)}
           <div style="margin-top:6px"><span class="badge ib-search_link">Search Link</span> &nbsp;Manual search required</div>
         </div>
       </div>
+      </div><!-- /#listen-panel -->
+
+      <!-- REVIEW INTEL PANEL -->
+      <div id="review-panel" style="display:none">
+        <div class="card">
+          <div class="card-title">Competitor</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Enter a competitor's product or company name. We'll surface public reviews and discussions where their customers express frustration.</p>
+          <input type="text" id="competitor-inp" placeholder="e.g. Salesforce, HubSpot, Zendesk" style="width:100%;margin-bottom:8px"/>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">Sentiment Focus</div>
+          <select id="sentiment-sel" style="width:100%">
+            <option value="negative" selected>Negative -- unhappy customers (best for outreach)</option>
+            <option value="all">All sentiments</option>
+            <option value="positive">Positive -- what customers love</option>
+            <option value="mixed">Mixed reviews</option>
+          </select>
+        </div>
+
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">Results Limit</div>
+          <select id="review-limit" style="width:100%">
+            <option value="25">25 reviews</option>
+            <option value="50" selected>50 reviews</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="review-btn" onclick="doReviewSearch()" style="margin-top:12px;background:linear-gradient(135deg,var(--purple),var(--blue))">⭐ Find Unhappy Customers</button>
+
+        <div class="card" style="margin-top:10px;background:rgba(16,185,129,.04);border-color:rgba(16,185,129,.2)">
+          <div style="font-size:11px;color:var(--text2);line-height:1.7">
+            <strong style="color:var(--green)">Compliant by design:</strong> We surface public reviews and the company a reviewer mentions -- never private emails or phone numbers. Use the "Find in Koios Intel" button on each result to reach the right decision-maker through consented B2B data.
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- RESULTS PANEL -->
@@ -647,6 +705,142 @@ function clearAll(){
   selected.clear();
   renderResults();
 }
+
+
+// ===== COMPETITOR REVIEW INTELLIGENCE =====
+var currentMode = 'listen';
+var reviewResults = [];
+
+function switchMode(mode){
+  currentMode = mode;
+  var listenPanel = document.getElementById('listen-panel');
+  var reviewPanel = document.getElementById('review-panel');
+  var listenTab = document.getElementById('mode-listen');
+  var reviewTab = document.getElementById('mode-reviews');
+  var resultsWrap = document.getElementById('results-wrap');
+  var statsRow = document.getElementById('stats-row');
+
+  if(mode === 'reviews'){
+    listenPanel.style.display = 'none';
+    reviewPanel.style.display = 'block';
+    listenTab.classList.remove('active');
+    listenTab.style.background = 'transparent';
+    listenTab.style.borderColor = 'var(--border)';
+    reviewTab.classList.add('active');
+    reviewTab.style.background = 'rgba(139,92,246,.08)';
+    reviewTab.style.borderColor = 'rgba(139,92,246,.4)';
+    if(statsRow) statsRow.style.display = 'none';
+    resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#11088;</div><p style="color:var(--text2)">Enter a competitor name and find their unhappy customers from public reviews.</p></div>';
+  } else {
+    listenPanel.style.display = 'block';
+    reviewPanel.style.display = 'none';
+    reviewTab.classList.remove('active');
+    reviewTab.style.background = 'transparent';
+    reviewTab.style.borderColor = 'var(--border)';
+    listenTab.classList.add('active');
+    listenTab.style.background = 'rgba(59,130,246,.08)';
+    listenTab.style.borderColor = 'var(--border2)';
+    resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">📡</div><p style="color:var(--text2)">Add keywords and select platforms to find buyers discussing your space.</p></div>';
+  }
+}
+
+async function doReviewSearch(){
+  var competitor = document.getElementById('competitor-inp').value.trim();
+  if(!competitor){alert('Enter a competitor name first.');return;}
+  var sentiment = document.getElementById('sentiment-sel').value;
+  var limit = parseInt(document.getElementById('review-limit').value) || 50;
+
+  var btn = document.getElementById('review-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Scanning reviews...';
+  var wrap = document.getElementById('results-wrap');
+  wrap.innerHTML = '<div style="text-align:center;padding:3rem"><div class="spin" style="width:32px;height:32px;border-width:3px;margin:0 auto 14px"></div><p style="color:var(--text2)">Searching public reviews and discussions about ' + competitor + '...</p></div>';
+
+  try{
+    var resp = await fetch('/.netlify/functions/social-listen',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'reviews',competitor:competitor,sentiment:sentiment,limit:limit})
+    });
+    if(!resp.ok) throw new Error('Search failed: ' + resp.status);
+    var data = await resp.json();
+    reviewResults = data.reviews || [];
+    renderReviews(data);
+  }catch(e){
+    wrap.innerHTML = '<div class="empty"><p style="color:var(--red)">Error: ' + e.message + '</p></div>';
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '&#11088; Find Unhappy Customers';
+  }
+}
+
+function renderReviews(data){
+  var wrap = document.getElementById('results-wrap');
+  var reviews = data.reviews || [];
+  var summary = data.summary || {};
+
+  if(!reviews.length){
+    wrap.innerHTML = '<div class="empty"><div style="font-size:42px;margin-bottom:12px">🔍</div><p style="color:var(--text2)">No public reviews found for "' + (data.competitor||'') + '". Try a more common product name, or add a BRAVE_API_KEY for G2/Trustpilot/Capterra coverage.</p></div>';
+    return;
+  }
+
+  // Summary bar
+  var topPains = Object.keys(summary.topPains||{}).sort(function(a,b){return summary.topPains[b]-summary.topPains[a];}).slice(0,5);
+  var html = '<div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(139,92,246,.06),rgba(59,130,246,.04))">';
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--purple)">' + summary.total + '</div><div style="font-size:10px;color:var(--text2)">REVIEWS</div></div>';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--red)">' + summary.negative + '</div><div style="font-size:10px;color:var(--text2)">NEGATIVE</div></div>';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--green)">' + summary.positive + '</div><div style="font-size:10px;color:var(--text2)">POSITIVE</div></div>';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--blue)">' + summary.leadReady + '</div><div style="font-size:10px;color:var(--text2)">LEAD-READY</div></div>';
+  html += '</div>';
+  if(topPains.length){
+    html += '<div style="font-size:11px;color:var(--text2);margin-top:6px">Top pain points: ' + topPains.map(function(p){return '<span style="display:inline-block;background:rgba(239,68,68,.12);color:var(--red);padding:2px 8px;border-radius:4px;margin:2px;font-weight:600">' + p + ' (' + summary.topPains[p] + ')</span>';}).join('') + '</div>';
+  }
+  html += '</div>';
+
+  // Review cards
+  reviews.forEach(function(r){
+    var sentColor = r.sentiment==='negative'?'var(--red)':r.sentiment==='positive'?'var(--green)':'var(--gold)';
+    var sentBg = r.sentiment==='negative'?'rgba(239,68,68,.1)':r.sentiment==='positive'?'rgba(16,185,129,.1)':'rgba(245,158,11,.1)';
+    html += '<div class="card" style="margin-bottom:10px">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">';
+    html += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+    html += '<span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:' + sentBg + ';color:' + sentColor + '">' + r.sentiment + '</span>';
+    html += '<span style="font-size:11px;color:var(--text3);text-transform:uppercase">' + r.platform + '</span>';
+    html += '</div>';
+    if(r.url) html += '<a href="' + r.url + '" target="_blank" style="font-size:11px;color:var(--blue);white-space:nowrap">View source &rarr;</a>';
+    html += '</div>';
+    if(r.title) html += '<div style="font-weight:700;font-size:13px;margin-bottom:4px">' + esc(r.title) + '</div>';
+    html += '<p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px">' + esc(r.snippet) + (r.snippet.length>=500?'...':'') + '</p>';
+
+    if(r.painPoints && r.painPoints.length){
+      html += '<div style="margin-bottom:8px">' + r.painPoints.map(function(p){return '<span style="display:inline-block;font-size:10px;background:rgba(239,68,68,.1);color:var(--red);padding:2px 7px;border-radius:4px;margin:1px;font-weight:600">' + p + '</span>';}).join('') + '</div>';
+    }
+
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">';
+    html += '<div style="font-size:11px;color:var(--text3)">';
+    html += 'By ' + esc(r.author);
+    if(r.company) html += ' &middot; <span style="color:var(--cyan);font-weight:600">' + esc(r.company) + '</span>';
+    if(r.industry) html += ' &middot; ' + esc(r.industry);
+    html += '</div>';
+    if(r.company){
+      html += '<button class="btn btn-sm" style="font-size:11px;background:rgba(139,92,246,.12);color:var(--purple);border-color:rgba(139,92,246,.3)" onclick="findInKoios(\'' + encodeURIComponent(r.company) + '\',\'' + encodeURIComponent(r.industry||'') + '\')">🧠 Find in Koios Intel</button>';
+    }
+    html += '</div></div>';
+  });
+
+  wrap.innerHTML = html;
+}
+
+function findInKoios(company, industry){
+  var co = decodeURIComponent(company);
+  var ind = decodeURIComponent(industry);
+  sessionStorage.setItem('koios_prefill_company', co);
+  if(ind) sessionStorage.setItem('koios_prefill_industry', ind);
+  sessionStorage.setItem('koios_source', 'review_intel');
+  window.location.href = '/find-leads.html';
+}
+
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
