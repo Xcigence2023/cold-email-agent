@@ -74,9 +74,16 @@ exports.handler = async function(event) {
     const sty  = styleMap[style] || styleMap.photorealistic;
     const seed = Math.floor(Math.random() * 9999999);
     const prompt = ind + ', ' + sty + ', wide 16:9 composition, no text overlay, no logos, no recognisable faces, commercial photography quality';
-    const imageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1792&height=1024&model=flux&seed=' + seed + '&nologo=true&enhance=true';
+    // Fallback chain: turbo (free) -> default (free) -> frontend Canvas brand image
+    const encPrompt = encodeURIComponent(prompt);
+    const imageUrl  = 'https://image.pollinations.ai/prompt/' + encPrompt + '?width=1792&height=1024&model=turbo&seed=' + seed + '&nologo=true';
+    const fallbacks = [
+      'https://image.pollinations.ai/prompt/' + encPrompt + '?width=1792&height=1024&seed=' + seed + '&nologo=true',
+      'https://image.pollinations.ai/prompt/' + encPrompt + '?width=1024&height=576&seed=' + seed,
+      'canvas'
+    ];
 
-    return { statusCode: 200, headers: HDR, body: JSON.stringify({ imageUrl: imageUrl, source: 'pollinations-flux', free: true }) };
+    return { statusCode: 200, headers: HDR, body: JSON.stringify({ imageUrl: imageUrl, fallbacks: fallbacks, source: 'pollinations-turbo', free: true }) };
   }
 
   // -- 2. GENERATE SCRIPT -- Claude -------------------------
