@@ -457,11 +457,31 @@ async function runGeneration(){
   // 1. Generate campaign image
   addLog('spin','Generating campaign image...');
   try{
-    var imgResp=await fetch('/.netlify/functions/video-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-image',payload:{industry:S.industry,company:S.leads[0]?S.leads[0].company:'',tone:S.tone,campaignGoal:S.goal}})});
+    var imgResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-image',payload:{industry:S.industry,company:S.leads[0]?S.leads[0].company:'',tone:S.tone,campaignGoal:S.goal}})});
     var imgData=await imgResp.json();
-    if(imgData.imageUrl){S.imageUrl=imgData.imageUrl;addLog('ok','Campaign image generated');}
-    else addLog('err','Image generation: '+(imgData.error||'failed'));
-  }catch(e){addLog('err','Image: '+e.message);}
+    if(imgData.imageUrl){
+      var chain=[imgData.imageUrl].concat(imgData.fallbacks||['canvas']);
+      await new Promise(function(resolve){
+        loadImageWithFallback(chain,
+          function(finalUrl,src){
+            S.imageUrl=finalUrl;
+            addLog('ok',src==='canvas'?'Campaign image created with built-in designer (free image service unavailable)':'Campaign image generated');
+            resolve();
+          },
+          function(){
+            S.imageUrl=generateCanvasBrandImage();
+            addLog('ok','Campaign image created with built-in designer');
+            resolve();
+          });
+      });
+    } else {
+      S.imageUrl=generateCanvasBrandImage();
+      addLog('ok','Campaign image created with built-in designer');
+    }
+  }catch(e){
+    S.imageUrl=generateCanvasBrandImage();
+    addLog('ok','Campaign image created with built-in designer');
+  }
 
   // 2. Generate video script for first lead (template)
   addLog('spin','Generating personalised video scripts...');
@@ -469,7 +489,7 @@ async function runGeneration(){
   for(var i=0;i<S.leads.length;i++){
     var lead=S.leads[i];
     try{
-      var scriptResp=await fetch('/.netlify/functions/video-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:'Velorah'}})});
+      var scriptResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:'Velorah'}})});
       var scriptData=await scriptResp.json();
       S.leadResults.push({lead:lead,script:scriptData,videoId:null,videoUrl:null,youtubeUrl:null,emailSent:false});
       addLog('ok','Script: '+lead.name+' @ '+lead.company);
@@ -504,7 +524,7 @@ async function runGeneration(){
         addLog('spin','Generating voice audio via HuggingFace TTS...');
         var ttsRetries=0;var ttsData=null;
         while(ttsRetries<3){
-          var ttsResp=await fetch('/.netlify/functions/video-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,500),voice:'male'}})});
+          var ttsResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,500),voice:'male'}})});
           ttsData=await ttsResp.json();
           if(ttsData.loading){addLog('info','TTS loading, waiting...');await delay((ttsData.waitSeconds||20)*1000);ttsRetries++;}
           else break;
@@ -512,7 +532,7 @@ async function runGeneration(){
         if(ttsData&&ttsData.audioBase64){
           addLog('ok','Audio ready. Running SadTalker...');
           try{
-            var stResp=await fetch('/.netlify/functions/video-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create-video',payload:{imageBase64:imgB64,audioBase64:ttsData.audioBase64,mimeType:ttsData.mimeType||'audio/flac'}})});
+            var stResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create-video',payload:{imageBase64:imgB64,audioBase64:ttsData.audioBase64,mimeType:ttsData.mimeType||'audio/flac'}})});
             var stData=await stResp.json();
             if(stData.videoUrl){S.videoUrl=stData.videoUrl;addLog('ok','Talking-head video ready!');}
             else{addLog('err','SadTalker: '+(stData.error||'failed'));S.videoMode='canvas';}
@@ -544,7 +564,7 @@ function renderStep2(){
   var ic=mk('div','card');ic.appendChild(mkTitle('Campaign Image'));
   if(S.imageUrl){
     var imgWrap=mk('div','img-preview');
-    var img=document.createElement('img');img.src=S.imageUrl;img.alt='Campaign image';
+    var img=document.createElement('img');img.src=S.imageUrl;img.alt='Campaign image';img.onerror=function(){S.imageUrl=generateCanvasBrandImage();img.onerror=null;img.src=S.imageUrl;};
     imgWrap.appendChild(img);ic.appendChild(imgWrap);
     var dlBtn=mk('a','btn btn-sm');dlBtn.href=S.imageUrl;dlBtn.target='_blank';dlBtn.style.marginTop='8px';dlBtn.textContent='View Full Image';ic.appendChild(dlBtn);
   }else{
@@ -720,7 +740,7 @@ async function runDistribution(){
     if(S.platforms.indexOf('youtube')>=0&&S.videoUrl&&S.ytAccessToken){
       addLog('spin','Uploading video for '+r.lead.name+' to YouTube...');
       try{
-        var ytResp=await fetch('/.netlify/functions/video-agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'upload-youtube',payload:{videoUrl:S.videoUrl,title:'Video for '+r.lead.name+' | '+S.campaignName,description:r.script?r.script.script:'',accessToken:S.ytAccessToken}})});
+        var ytResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'upload-youtube',payload:{videoUrl:S.videoUrl,title:'Video for '+r.lead.name+' | '+S.campaignName,description:r.script?r.script.script:'',accessToken:S.ytAccessToken}})});
         var ytData=await ytResp.json();
         if(ytData.youtubeUrl){r.youtubeUrl=ytData.youtubeUrl;addLog('ok','Uploaded: '+ytData.shareUrl);}
         else addLog('err','YouTube: '+(ytData.error||'failed'));
@@ -782,7 +802,61 @@ function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
 
 // -- CANVAS VIDEO GENERATOR (100% free, browser-native) --------------
 // Creates an animated MP4 from image + text using Canvas + MediaRecorder
-async function generateCanvasVideo(imageUrl, script, recipientName){
+async 
+// -- CANVAS BRAND IMAGE (zero-API fallback when Pollinations is unavailable) --
+function generateCanvasBrandImage(){
+  var cnv=document.createElement('canvas');cnv.width=1792;cnv.height=1024;
+  var ctx=cnv.getContext('2d');
+  // Midnight gradient background
+  var grad=ctx.createLinearGradient(0,0,1792,1024);
+  grad.addColorStop(0,'#0d1526');grad.addColorStop(0.5,'#111e35');grad.addColorStop(1,'#070c18');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,1792,1024);
+  // Glow accents
+  var g1=ctx.createRadialGradient(300,200,0,300,200,600);
+  g1.addColorStop(0,'rgba(59,130,246,.25)');g1.addColorStop(1,'rgba(59,130,246,0)');
+  ctx.fillStyle=g1;ctx.fillRect(0,0,1792,1024);
+  var g2=ctx.createRadialGradient(1500,850,0,1500,850,520);
+  g2.addColorStop(0,'rgba(139,92,246,.2)');g2.addColorStop(1,'rgba(139,92,246,0)');
+  ctx.fillStyle=g2;ctx.fillRect(0,0,1792,1024);
+  // Grid lines
+  ctx.strokeStyle='rgba(59,130,246,.08)';ctx.lineWidth=1;
+  for(var x=0;x<1792;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1024);ctx.stroke();}
+  for(var y=0;y<1024;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1792,y);ctx.stroke();}
+  // Campaign text
+  ctx.textAlign='center';
+  ctx.fillStyle='#06b6d4';ctx.font='700 34px Outfit,Arial,sans-serif';
+  ctx.fillText((S.industry||'B2B').toUpperCase()+' CAMPAIGN',896,420);
+  ctx.fillStyle='#e8f0fe';ctx.font='900 88px Outfit,Arial,sans-serif';
+  var goal=(S.goal||S.campaignName||'Personalised Outreach');
+  if(goal.length>34) goal=goal.substring(0,32)+'...';
+  ctx.fillText(goal,896,540);
+  ctx.fillStyle='#7b91b4';ctx.font='400 30px Outfit,Arial,sans-serif';
+  ctx.fillText('A personal message for you from '+(S.senderName||'our team'),896,620);
+  // Bottom brand strip
+  ctx.fillStyle='rgba(59,130,246,.12)';ctx.fillRect(0,944,1792,80);
+  ctx.fillStyle='#3b82f6';ctx.font='700 26px Outfit,Arial,sans-serif';
+  ctx.fillText('VELORAH',896,996);
+  return cnv.toDataURL('image/jpeg',0.92);
+}
+
+// -- IMAGE LOAD WITH FALLBACK CHAIN --
+function loadImageWithFallback(urls, onSuccess, onAllFailed){
+  var queue=urls.slice();
+  function tryNext(){
+    if(!queue.length){onAllFailed();return;}
+    var url=queue.shift();
+    if(url==='canvas'){onSuccess(generateCanvasBrandImage(),'canvas');return;}
+    var probe=new Image();
+    var done=false;
+    var timer=setTimeout(function(){if(!done){done=true;tryNext();}},20000);
+    probe.onload=function(){if(!done){done=true;clearTimeout(timer);onSuccess(url,'remote');}};
+    probe.onerror=function(){if(!done){done=true;clearTimeout(timer);tryNext();}};
+    probe.src=url;
+  }
+  tryNext();
+}
+
+function generateCanvasVideo(imageUrl, script, recipientName){
   return new Promise(function(resolve, reject){
     var canvas=document.createElement('canvas');
     canvas.width=1280;canvas.height=720;
