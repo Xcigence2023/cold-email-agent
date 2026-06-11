@@ -237,12 +237,39 @@ var statFound=0;var statEnriched=0;
 
 var TITLE_PRESETS=['CISO','CTO','CEO','CFO','COO','VP of Security','Chief Compliance Officer','Security Manager','Head of IT','Director of Technology','VP Engineering','Chief Information Officer','Risk Officer','Data Protection Officer','VP Sales','Marketing Director'];
 
+
+function applyKoiosPrefill(){
+  try{
+    var co = sessionStorage.getItem('koios_prefill_company');
+    var ind = sessionStorage.getItem('koios_prefill_industry');
+    var src = sessionStorage.getItem('koios_source');
+    if(co){
+      sessionStorage.removeItem('koios_prefill_company');
+      sessionStorage.removeItem('koios_prefill_industry');
+      sessionStorage.removeItem('koios_source');
+      var kwInp = document.getElementById('kw-inp');
+      if(kwInp) kwInp.value = co;
+      if(ind){
+        var indInp = document.getElementById('industry-inp');
+        if(indInp) indInp.value = ind;
+      }
+      // Show a banner
+      var banner = document.createElement('div');
+      banner.style.cssText = 'background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--text)';
+      banner.innerHTML = '&#129504; Searching for <strong>' + co + '</strong> from Athena One Review Intel. Click Search to find decision-makers at this company.';
+      var layout = document.querySelector('.layout');
+      if(layout && layout.parentNode) layout.parentNode.insertBefore(banner, layout);
+    }
+  }catch(e){}
+}
+
 async function init(){
   try{
     var r=await sbClient.auth.getSession();
     if(!r.data.session){window.location.href='/login.html';return;}
     _session=r.data.session;
     document.getElementById('user-email').textContent=r.data.session.user.email;
+    applyKoiosPrefill();
   }catch(e){}
   renderPresets();
   document.getElementById('title-inp').addEventListener('keydown',function(e){if(e.key==='Enter'){addTitle(e.target.value.trim());e.target.value='';}});
