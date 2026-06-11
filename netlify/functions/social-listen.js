@@ -22,6 +22,186 @@ const HDR = {
   'X-Content-Type-Options':       'nosniff'
 };
 
+
+// ============================================================
+// COMPETITOR REVIEW INTELLIGENCE (public reviews only)
+// Surfaces public reviews, sentiment, pain points, reviewer
+// DISPLAY NAME and company (when stated). Never collects
+// private contact info -- that is by design and by law.
+// ============================================================
+
+var POSITIVE_WORDS = ['love','great','excellent','amazing','best','fantastic','perfect','wonderful','easy','intuitive','reliable','responsive','helpful','recommend','impressed','seamless','smooth','solid','worth','happy','satisfied','game changer','life saver','works well','highly recommend'];
+var NEGATIVE_WORDS = ['hate','terrible','awful','worst','horrible','useless','frustrating','disappointed','buggy','slow','expensive','overpriced','confusing','difficult','broken','crash','poor','lacking','missing','unreliable','unresponsive','nightmare','waste','cancel','switching','switched away','looking for alternative','migrated away','regret','avoid','stay away','no support','bad support','ignored'];
+
+var PAIN_CATEGORIES = {
+  pricing:      ['expensive','overpriced','cost','pricing','price','billing','charge','refund','hidden fee','too costly','not worth'],
+  support:      ['support','customer service','response time','no help','unresponsive','ignored ticket','slow support','no answer'],
+  reliability:  ['down','downtime','outage','crash','bug','glitch','unreliable','unstable','broken','error'],
+  usability:    ['confusing','complicated','hard to use','unintuitive','clunky','steep learning','difficult to navigate'],
+  features:     ['missing feature','lacking','limited','no integration','cannot','does not support','feature request','wish it had'],
+  performance:  ['slow','lag','laggy','sluggish','timeout','loading','performance'],
+  onboarding:   ['onboarding','setup','migration','implementation','getting started','hard to set up'],
+};
+
+function scoreSentiment(text) {
+  var t = (text || '').toLowerCase();
+  var pos = 0, neg = 0;
+  POSITIVE_WORDS.forEach(function(w){ if (t.indexOf(w) >= 0) pos++; });
+  NEGATIVE_WORDS.forEach(function(w){ if (t.indexOf(w) >= 0) neg++; });
+  var score = pos - neg;
+  var label = score > 1 ? 'positive' : score < -1 ? 'negative' : (pos > neg ? 'positive' : neg > pos ? 'negative' : 'mixed');
+  return { sentiment: label, posHits: pos, negHits: neg };
+}
+
+function extractPainPoints(text) {
+  var t = (text || '').toLowerCase();
+  var found = [];
+  Object.keys(PAIN_CATEGORIES).forEach(function(cat){
+    var hit = PAIN_CATEGORIES[cat].some(function(kw){ return t.indexOf(kw) >= 0; });
+    if (hit) found.push(cat);
+  });
+  return found;
+}
+
+// Try to extract a company name when the reviewer states their employer.
+// Patterns: "we're a <X> company", "at <Company>", "our company <Company>", "as a <role> at <Company>"
+function extractCompany(text) {
+  if (!text) return '';
+  var patterns = [
+    /(?:work(?:ing)? at|employed at|i'm at|we are|we're a|our company is|as (?:a|an)[^,.]*at)\s+([A-Z][A-Za-z0-9&.\- ]{2,40})/,
+    /\bat\s+([A-Z][A-Za-z0-9&.\-]{2,30}(?:\s(?:Inc|LLC|Ltd|Corp|Group|Technologies|Solutions|Software|Systems))?)\b/,
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    var m = text.match(patterns[i]);
+    if (m && m[1]) {
+      var c = m[1].trim().replace(/[.,]$/, '');
+      // Filter out common false positives
+      if (!/^(the|our|my|this|that|a|an|all|home|work|first|last|least|most|best)$/i.test(c) && c.length > 2) {
+        return c;
+      }
+    }
+  }
+  return '';
+}
+
+// Try to extract company size / industry hints (used to qualify the lead)
+function extractFirmographics(text) {
+  var t = (text || '').toLowerCase();
+  var size = '';
+  var sizeMatch = t.match(/(\d{1,3}(?:,\d{3})*)\s*(?:\+\s*)?(?:person|people|employee|staff|seat|user)/);
+  if (sizeMatch) size = sizeMatch[1] + ' employees';
+  else if (/enterprise|large (?:company|organization|org)|fortune \d/.test(t)) size = 'Enterprise';
+  else if (/small business|smb|startup|small team|small company/.test(t)) size = 'SMB';
+  else if (/mid.?market|mid.?size/.test(t)) size = 'Mid-market';
+  var industry = '';
+  var inds = ['healthcare','finance','fintech','saas','ecommerce','retail','manufacturing','logistics','education','legal','real estate','marketing','agency','nonprofit','hospitality','insurance'];
+  for (var i=0;i<inds.length;i++){ if (t.indexOf(inds[i])>=0){ industry = inds[i]; break; } }
+  return { companySize: size, industry: industry };
+}
+
+async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
+  var results = [];
+  var comp = competitor.trim();
+
+  // ---- Source 1: Reddit (people discuss competitor experiences candidly) ----
+  try {
+    var redditQ = encodeURIComponent('"' + comp + '" (review OR experience OR alternative OR switching OR disappointed OR love OR hate)');
+    var rResp = await safeFetch('https://www.reddit.com/search.json?q=' + redditQ + '&sort=relevance&limit=' + Math.min(limit, 25) + '&t=year', {
+      headers: { 'User-Agent': 'Velorah-ReviewIntel/1.0' }
+    });
+    if (rResp) {
+      var rData = await rResp.json();
+      var children = (rData && rData.data && rData.data.children) || [];
+      children.forEach(function(ch){
+        var d = ch.data || {};
+        var text = (d.selftext || d.title || '');
+        if (text.length < 30) return;
+        results.push(buildReview('reddit', d.title || '', text, d.author || '', 'https://reddit.com' + (d.permalink || ''), d.created_utc ? new Date(d.created_utc*1000).toISOString() : '', comp));
+      });
+    }
+  } catch(e) {}
+
+  // ---- Source 2: HackerNews (Ask HN / tool discussions) ----
+  try {
+    var hnResp = await safeFetch('https://hn.algolia.com/api/v1/search?query=' + encodeURIComponent(comp) + '&tags=(story,comment)&hitsPerPage=' + Math.min(limit, 20));
+    if (hnResp) {
+      var hnData = await hnResp.json();
+      (hnData.hits || []).forEach(function(hit){
+        var text = (hit.comment_text || hit.story_text || hit.title || '').replace(/<[^>]+>/g, '');
+        if (text.length < 30) return;
+        if (text.toLowerCase().indexOf(comp.toLowerCase()) < 0) return;
+        results.push(buildReview('hackernews', hit.title || (text.substring(0,80)), text, hit.author || '', 'https://news.ycombinator.com/item?id=' + (hit.objectID || ''), hit.created_at || '', comp));
+      });
+    }
+  } catch(e) {}
+
+  // ---- Source 3: Public web review search via Brave (G2/Trustpilot/Capterra snippets) ----
+  if (BRAVE_KEY) {
+    try {
+      var braveQ = encodeURIComponent(comp + ' reviews (site:g2.com OR site:trustpilot.com OR site:capterra.com OR site:trustradius.com)');
+      var bResp = await safeFetch('https://api.search.brave.com/res/v1/web/search?q=' + braveQ + '&count=' + Math.min(limit, 20), {
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_KEY }
+      });
+      if (bResp) {
+        var bData = await bResp.json();
+        var webResults = (bData && bData.web && bData.web.results) || [];
+        webResults.forEach(function(wr){
+          var text = (wr.description || '');
+          if (text.length < 30) return;
+          var platform = wr.url && wr.url.indexOf('g2.com')>=0 ? 'g2' : wr.url && wr.url.indexOf('trustpilot')>=0 ? 'trustpilot' : wr.url && wr.url.indexOf('capterra')>=0 ? 'capterra' : 'review-site';
+          results.push(buildReview(platform, wr.title || '', text, '', wr.url || '', '', comp));
+        });
+      }
+    } catch(e) {}
+  }
+
+  // ---- Sentiment filter + dedup ----
+  var seen = {};
+  results = results.filter(function(r){
+    var key = (r.snippet || '').substring(0, 60);
+    if (seen[key]) return false;
+    seen[key] = true;
+    if (sentimentFilter && sentimentFilter !== 'all' && r.sentiment !== sentimentFilter) return false;
+    return true;
+  });
+
+  // Sort: negative first (best sales signal) when filter is all, else by date
+  var sentRank = { negative: 3, mixed: 2, positive: 1 };
+  results.sort(function(a, b){
+    var d = (sentRank[b.sentiment]||0) - (sentRank[a.sentiment]||0);
+    if (d !== 0) return d;
+    return (b.painPoints.length) - (a.painPoints.length);
+  });
+
+  return results.slice(0, limit);
+}
+
+function buildReview(platform, title, text, author, url, date, competitor) {
+  var sent = scoreSentiment(text);
+  var pains = extractPainPoints(text);
+  var company = extractCompany(text);
+  var firmo = extractFirmographics(text);
+  return {
+    id:          Math.random().toString(36).substr(2, 9),
+    platform:    platform,
+    competitor:  competitor,
+    title:       title.substring(0, 120),
+    snippet:     text.substring(0, 500),
+    author:      author || 'Anonymous reviewer',  // PUBLIC display name only
+    authorUrl:   author && platform === 'reddit' ? 'https://reddit.com/user/' + author : '',
+    url:         url,
+    date:        date,
+    sentiment:   sent.sentiment,
+    painPoints:  pains,
+    company:     company,            // company they work at, IF publicly stated
+    companySize: firmo.companySize,
+    industry:    firmo.industry,
+    // Explicit: no email, no phone, no private data -- by design
+    leadReady:   company ? true : false
+  };
+}
+
+
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: HDR, body: '' };
 
@@ -40,8 +220,34 @@ exports.handler = async function(event) {
     platforms  = Array.isArray(body.platforms) ? body.platforms : ['reddit', 'hackernews'];
     subreddits = Array.isArray(body.subreddits) ? body.subreddits : [];
     limit      = Math.min(parseInt(body.limit) || 25, 50);
+    var action     = String(body.action || 'listen');
+    var competitor = String(body.competitor || '').substring(0, 80).trim();
+    var sentimentFilter = String(body.sentiment || 'all');
   } catch(e) {
     return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'Invalid JSON' }) };
+  }
+
+  // -- COMPETITOR REVIEW INTELLIGENCE MODE --
+  if (action === 'reviews') {
+    if (!competitor) {
+      return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'competitor name required' }) };
+    }
+    const BRAVE_KEY = process.env.BRAVE_API_KEY || '';
+    var reviews = await searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY);
+    var summary = {
+      total:     reviews.length,
+      positive:  reviews.filter(function(r){return r.sentiment==='positive';}).length,
+      negative:  reviews.filter(function(r){return r.sentiment==='negative';}).length,
+      mixed:     reviews.filter(function(r){return r.sentiment==='mixed';}).length,
+      leadReady: reviews.filter(function(r){return r.leadReady;}).length,
+      topPains:  {}
+    };
+    reviews.forEach(function(r){ r.painPoints.forEach(function(p){ summary.topPains[p]=(summary.topPains[p]||0)+1; }); });
+    return {
+      statusCode: 200,
+      headers: HDR,
+      body: JSON.stringify({ reviews: reviews, summary: summary, competitor: competitor })
+    };
   }
 
   if (!keywords) {
