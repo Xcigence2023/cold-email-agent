@@ -136,9 +136,9 @@ var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
 var _session=null;
 
 // State
-var S={
+var S={page:1,
   raw:[], filtered:[], selected:new Set(), messages:[],
-  filters:{titles:[], locations:[], companies:[], keywords:''},
+  filters:{emailOnly:false,searchText:'',titles:[], locations:[], companies:[], keywords:''},
   channel:'both', angle:'connection',
   sender:{name:'', email:'', company:'Velorah'},
   generating:false, genProgress:0
@@ -373,8 +373,8 @@ function renderFilter(wrap){
   var rh=mk('div','fb');rh.style.marginBottom='12px';
   var rTitle=mk('p',null);rTitle.style.fontWeight='700';rTitle.textContent='Results: '+S.filtered.length+' connections';
   var rBadges=mk('div','flex');
-  var b1=mk('span','badge');b1.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';b1.textContent=withEmail+' have email';
-  var b2=mk('span','badge');b2.style.cssText='background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)';b2.textContent=noEmail+' need enrichment';
+  var b1=mk('span','badge');b1.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';b1.id='badge-with-email';b1.textContent=withEmail+' have email';
+  var b2=mk('span','badge');b2.style.cssText='background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)';b2.id='badge-no-email';b2.textContent=noEmail+' need enrichment';
   rBadges.appendChild(b1);rBadges.appendChild(b2);
   rh.appendChild(rTitle);rh.appendChild(rBadges);rc.appendChild(rh);
 
@@ -385,22 +385,46 @@ function renderFilter(wrap){
     rc.appendChild(eb);
   }
 
+  // Search + email-only filter row
+  var searchRow=mk('div','flex');searchRow.style.cssText='margin-bottom:10px;gap:8px;flex-wrap:wrap;align-items:center';
+  var searchInp=document.createElement('input');searchInp.type='text';searchInp.placeholder='Search by name, title, company, email...';
+  searchInp.style.cssText='flex:1;min-width:200px;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit';
+  searchInp.value=S.filters.searchText||'';
+  searchInp.addEventListener('input',function(e){S.filters.searchText=e.target.value;applyFilters();rerenderTable();updateEmailBadges();});
+  var emailToggle=mk('label',null);emailToggle.style.cssText='display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap';
+  var emailCb=document.createElement('input');emailCb.type='checkbox';emailCb.checked=S.filters.emailOnly;emailCb.style.cssText='width:14px;height:14px;accent-color:var(--green);cursor:pointer';
+  emailCb.addEventListener('change',function(e){S.filters.emailOnly=e.target.checked;applyFilters();rerenderTable();updateEmailBadges();});
+  emailToggle.appendChild(emailCb);
+  var emailLbl=mk('span',null);emailLbl.textContent='Only show contacts with email';emailToggle.appendChild(emailLbl);
+  searchRow.appendChild(searchInp);searchRow.appendChild(emailToggle);
+  rc.appendChild(searchRow);
+
   // Select all row
   var selRow=mk('div','flex');selRow.style.marginBottom='8px';
   var selCount=mk('span',null);selCount.style.cssText='font-size:12px;color:var(--text2)';selCount.id='sel-count';selCount.textContent=S.selected.size+' selected';
   var saBtn=mk('button','btn btn-sm');saBtn.textContent='Select All';
   var snBtn=mk('button','btn btn-sm');snBtn.textContent='Clear';
-  saBtn.addEventListener('click',function(){S.filtered.forEach(function(r){S.selected.add(r.email||r.firstName+r.lastName);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
+  saBtn.textContent='Select All ('+S.filtered.length+')';
+  saBtn.addEventListener('click',function(){S.filtered.forEach(function(r,i){S.selected.add(r.email||r.firstName+r.lastName+i);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
+  var saEmailBtn=mk('button','btn btn-sm');saEmailBtn.style.cssText='background:rgba(16,185,129,.12);color:var(--green);border-color:rgba(16,185,129,.3)';
+  var emailRows=S.filtered.filter(function(r){return r.email;});
+  saEmailBtn.textContent='Select All With Email ('+emailRows.length+')';
+  saEmailBtn.addEventListener('click',function(){emailRows.forEach(function(r){S.selected.add(r.email);});buildTable(tBody,S.filtered);selCount.textContent=S.selected.size+' selected';});
   snBtn.addEventListener('click',function(){S.selected.clear();buildTable(tBody,S.filtered);selCount.textContent='0 selected';});
-  selRow.appendChild(selCount);selRow.appendChild(saBtn);selRow.appendChild(snBtn);
+  selRow.appendChild(selCount);selRow.appendChild(saBtn);selRow.appendChild(saEmailBtn);selRow.appendChild(snBtn);
   rc.appendChild(selRow);
 
   var tWrap=mk('div',null);tWrap.style.overflowX='auto';
   var table=mk('table',null);
   table.innerHTML='<thead><tr><th>Select</th><th>Name</th><th>Job Title</th><th>Company</th><th>Location</th><th>Email</th><th>LinkedIn</th></tr></thead>';
-  var tBody=mk('tbody',null);
+  var tBody=mk('tbody',null);tBody.id='contact-tbody';
   buildTable(tBody,S.filtered);
   table.appendChild(tBody);tWrap.appendChild(table);rc.appendChild(tWrap);
+
+  // Pagination controls
+  var pagWrap=mk('div','flex');pagWrap.id='pagination-controls';pagWrap.style.cssText='margin-top:12px;gap:6px;align-items:center;justify-content:flex-end';
+  rc.appendChild(pagWrap);
+  renderPagination(S.filtered.length);
 
   var nextRow=mk('div',null);nextRow.style.cssText='text-align:right;margin-top:14px';
   var nextBtn=mk('button','btn btn-primary');nextBtn.textContent='Compose Messages ->';
@@ -414,9 +438,25 @@ function renderFilter(wrap){
   wrap.appendChild(rc);
 }
 
+
+function updateEmailBadges(){
+  var withEmail=S.filtered.filter(function(r){return r.email;}).length;
+  var noEmail=S.filtered.length-withEmail;
+  var b1=document.getElementById('badge-with-email');
+  var b2=document.getElementById('badge-no-email');
+  if(b1)b1.id='badge-with-email';b1.textContent=withEmail+' have email';
+  if(b2)b2.id='badge-no-email';b2.textContent=noEmail+' need enrichment';
+}
+
+var PAGE_SIZE=50;
 function buildTable(tbody,rows){
   tbody.innerHTML='';
-  rows.slice(0,150).forEach(function(r,i){
+  var totalPages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+  if(S.page>totalPages)S.page=totalPages;
+  if(S.page<1)S.page=1;
+  var startIdx=(S.page-1)*PAGE_SIZE;
+  var pageRows=rows.slice(startIdx,startIdx+PAGE_SIZE);
+  pageRows.forEach(function(r,i){
     var key=r.email||r.firstName+r.lastName+i;
     var isSel=S.selected.has(key);
     var tr=mk('tr',null);
@@ -429,9 +469,34 @@ function buildTable(tbody,rows){
     });
     td0.appendChild(cb);tr.appendChild(td0);
     tr.innerHTML+=('<td><strong>'+esc(r.firstName)+' '+esc(r.lastName)+'</strong></td><td style="font-size:12px">'+esc(r.title||'-')+'</td><td style="font-size:12px">'+esc(r.company||'-')+'</td><td style="font-size:11px">'+esc(r.location||'-')+'</td><td style="font-size:11px;color:'+(r.email?'var(--green)':'var(--red)')+'">'+esc(r.email||'No email')+'</td><td>'+(r.linkedinUrl?('<a href="'+esc(r.linkedinUrl)+'" target="_blank" style="font-size:11px;color:#0077b5">View</a>'):'-')+'</td>');
-    tbody.insertBefore(tr,tbody.firstChild);tbody.insertBefore(tr,null);
     tbody.appendChild(tr);
   });
+  // Render pagination controls
+  renderPagination(rows.length);
+}
+
+function renderPagination(totalRows){
+  var pc=document.getElementById('pagination-controls');
+  if(!pc)return;
+  var totalPages=Math.max(1,Math.ceil(totalRows/PAGE_SIZE));
+  if(totalPages<=1){pc.innerHTML='';return;}
+  var startIdx=(S.page-1)*PAGE_SIZE;
+  var endIdx=Math.min(startIdx+PAGE_SIZE,totalRows);
+  pc.innerHTML='';
+  var info=mk('span',null);info.style.cssText='font-size:12px;color:var(--text2);margin-right:auto';
+  info.textContent='Showing '+(startIdx+1)+'-'+endIdx+' of '+totalRows;
+  var prev=mk('button','btn btn-sm');prev.textContent='< Prev';prev.disabled=S.page<=1;
+  prev.addEventListener('click',function(){if(S.page>1){S.page--;rerenderTable();}});
+  var pageInfo=mk('span',null);pageInfo.style.cssText='font-size:12px;color:var(--text);padding:0 10px';
+  pageInfo.textContent='Page '+S.page+' of '+totalPages;
+  var next=mk('button','btn btn-sm');next.textContent='Next >';next.disabled=S.page>=totalPages;
+  next.addEventListener('click',function(){if(S.page<totalPages){S.page++;rerenderTable();}});
+  pc.appendChild(info);pc.appendChild(prev);pc.appendChild(pageInfo);pc.appendChild(next);
+}
+
+function rerenderTable(){
+  var tbody=document.getElementById('contact-tbody');
+  if(tbody)buildTable(tbody,S.filtered);
 }
 
 function applyFilters(){
@@ -452,8 +517,23 @@ function applyFilters(){
       var kw=S.filters.keywords.toLowerCase();
       if(!((r.title&&r.title.toLowerCase().indexOf(kw)>=0)||(r.company&&r.company.toLowerCase().indexOf(kw)>=0)))return false;
     }
+    if(S.filters.emailOnly && !r.email){
+      return false;
+    }
+    if(S.filters.searchText){
+      var st=S.filters.searchText.toLowerCase();
+      var hay=((r.firstName||'')+' '+(r.lastName||'')+' '+(r.title||'')+' '+(r.company||'')+' '+(r.email||'')+' '+(r.location||'')).toLowerCase();
+      if(hay.indexOf(st)<0)return false;
+    }
     return true;
   });
+  // Sort: contacts WITH email first, then those without
+  S.filtered.sort(function(a,b){
+    var ae=a.email?1:0, be=b.email?1:0;
+    if(ae!==be) return be-ae;
+    return 0;
+  });
+  S.page=1;
 }
 
 async function enrichEmails(btn){
@@ -476,6 +556,8 @@ async function enrichEmails(btn){
     if(!r.firstName||!r.lastName){continue;}
     tried++;
     btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
+    // Throttle to respect rate limits (250ms between contacts)
+    if(i>0)await new Promise(function(res){setTimeout(res,250);});
 
     // Try Koios Intel people match first (most accurate)
     try{
@@ -484,6 +566,11 @@ async function enrichEmails(btn){
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({action:'match',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',linkedinUrl:r.linkedinUrl||''}})
       });
+      if(ra.status===429){
+        btn.textContent='Rate limited - pausing 5s...';
+        await new Promise(function(res){setTimeout(res,5000);});
+        i--; tried--; continue;
+      }
       if(ra.ok){var da=await ra.json();if(da.email){r.email=da.email;r._source='apollo';found++;continue;}}
     }catch(e){}
 
@@ -659,7 +746,7 @@ async function generateAll(contacts,wrap){
 
 function buildPrompt(r){
   var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with their most pressing business risk.',roi:'Lead with financial impact and ROI.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising industry data point.'};
-  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, peer-to-peer, reference LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
+  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, professional. ALWAYS open with the salutation "Dear [FirstName]," - reference the LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
 }
 
 function buildLinkedIn(r,email){
@@ -668,10 +755,10 @@ function buildLinkedIn(r,email){
     var body=email.body||'';
     var first=body.split('\n\n')[0]||body;
     first=first.replace(/^(Hi|Dear|Hello)\s+\w+[,.]?\s*/i,'').trim();
-    var msg='Hi '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
+    var msg='Dear '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
     return msg.substring(0,300);
   }
-  return ('Hi '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
+  return ('Dear '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
 }
 
 // ========== STEP 4: SEND ==========
