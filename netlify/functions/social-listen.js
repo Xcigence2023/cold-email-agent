@@ -22,7 +22,6 @@ const HDR = {
   'X-Content-Type-Options':       'nosniff'
 };
 
-
 // ============================================================
 // COMPETITOR REVIEW INTELLIGENCE (public reviews only)
 // Surfaces public reviews, sentiment, pain points, reviewer
@@ -173,6 +172,19 @@ function extractFirmographics(text) {
   return { companySize: size, industry: industry };
 }
 
+async function safeFetch(url, opts) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(function() { ctrl.abort(); }, 6000);
+    try {
+      const r = await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
+      clearTimeout(timer);
+      return r;
+    } catch(e) {
+      clearTimeout(timer);
+      return null;
+    }
+  }
+
 async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
   var results = [];
   var comp = competitor.trim();
@@ -180,7 +192,7 @@ async function searchReviews(competitor, sentimentFilter, limit, BRAVE_KEY) {
 
   // ============================================================
   // STRATEGY: Brave web search is the primary engine. Instead of
-  // restrictive `site:` filters (which return near-zero), we run
+  // restrictive 'site:' filters (which return near-zero), we run
   // several BROAD review-intent queries, then classify each result
   // by its domain after the fact. This surfaces G2, Trustpilot,
   // Gartner, Reddit, Capterra, TrustRadius, BBB, etc. -- whatever
@@ -339,7 +351,6 @@ function buildReview(platform, title, text, author, url, date, competitor) {
   };
 }
 
-
 exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: HDR, body: '' };
 
@@ -400,18 +411,6 @@ exports.handler = async function(event) {
   const encodedQ = encodeURIComponent(keywords);
 
   // Safe fetch with 8s timeout
-  async function safeFetch(url, opts) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(function() { ctrl.abort(); }, 6000);
-    try {
-      const r = await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
-      clearTimeout(timer);
-      return r;
-    } catch(e) {
-      clearTimeout(timer);
-      return null;
-    }
-  }
 
   // Intent detection
   function detectIntent(text) {
