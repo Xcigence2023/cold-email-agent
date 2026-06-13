@@ -33,7 +33,7 @@ exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: HDR, body: '' };
 
   const ip = (event.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (!_rate(ip, 30, 60000)) {
+  if (!_rate(ip, 200, 60000)) {
     return { statusCode: 429, headers: HDR, body: JSON.stringify({ error: 'Too many requests' }) };
   }
   if (event.httpMethod !== 'POST') {
