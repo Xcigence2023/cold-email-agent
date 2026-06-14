@@ -273,6 +273,50 @@ async function pushHubSpot(apiKey, leads) {
 
 // -- DRAFT PERSISTENCE -----------------------------------------
 
+async function saveSession(userId, sessionKey, state) {
+  const payload = {
+    user_id:    userId,
+    session_key: sessionKey,
+    state:      JSON.stringify(state || {}),
+    updated_at: new Date().toISOString(),
+  };
+  // Upsert by (user_id, session_key)
+  const existing = await sbFetch(
+    '/rest/v1/compose_sessions?user_id=eq.' + userId + '&session_key=eq.' + encodeURIComponent(sessionKey) + '&select=id&limit=1',
+    { method: 'GET' }
+  );
+  const rows = await existing.json();
+  if (rows && rows.length > 0) {
+    await sbFetch('/rest/v1/compose_sessions?user_id=eq.' + userId + '&session_key=eq.' + encodeURIComponent(sessionKey), {
+      method: 'PATCH', body: JSON.stringify(payload)
+    });
+    return { saved: true, updated: true };
+  } else {
+    payload.created_at = new Date().toISOString();
+    await sbFetch('/rest/v1/compose_sessions', { method: 'POST', body: JSON.stringify(payload) });
+    return { saved: true, created: true };
+  }
+}
+
+async function loadSession(userId, sessionKey) {
+  const r = await sbFetch(
+    '/rest/v1/compose_sessions?user_id=eq.' + userId + '&session_key=eq.' + encodeURIComponent(sessionKey) + '&select=state&limit=1',
+    { method: 'GET' }
+  );
+  const rows = await r.json();
+  if (rows && rows.length > 0 && rows[0].state) {
+    try { return JSON.parse(rows[0].state); } catch(e) { return null; }
+  }
+  return null;
+}
+
+async function clearSession(userId, sessionKey) {
+  await sbFetch('/rest/v1/compose_sessions?user_id=eq.' + userId + '&session_key=eq.' + encodeURIComponent(sessionKey), {
+    method: 'DELETE'
+  });
+  return true;
+}
+
 async function saveDraft(userId, body) {
   const payload = {
     user_id:      userId,
@@ -358,6 +402,20 @@ exports.handler = async function(event) {
     if (!body.leads || !body.leads.length) return err('leads required');
     const result = await saveDraft(user.id, body);
     return ok(result);
+  }
+
+  // -- SESSION STATE (compose auto-save / crash recovery) --------
+  if (action === 'save_session') {
+    const result = await saveSession(user.id, body.sessionKey || 'linkedin', body.state || {});
+    return ok(result);
+  }
+  if (action === 'load_session') {
+    const state = await loadSession(user.id, body.sessionKey || 'linkedin');
+    return ok({ state: state });
+  }
+  if (action === 'clear_session') {
+    await clearSession(user.id, body.sessionKey || 'linkedin');
+    return ok({ cleared: true });
   }
 
   // -- LIST / LOAD DRAFTS ----------------------------------------
