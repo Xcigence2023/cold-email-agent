@@ -148,6 +148,25 @@ tr:hover td{background:var(--bg2)}
 <script>
 const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+
+// === BUILD VERSION (confirm which file is live) ===
+window.__VISITORS_BUILD='2026-06-16-fixed';
+console.log('[Argus Watch] build:', window.__VISITORS_BUILD);
+
+// === SAFE FETCH GUARD ===
+// Prevents a broken/stale build from ever sending an un-interpolated URL.
+// If SB_URL didn't resolve, this fails loudly with a clear message instead
+// of a confusing 404 on a literal ${SB_URL} string.
+var _origFetch = window.fetch.bind(window);
+window.fetch = function(url, opts){
+  var u = String(url);
+  if(u.indexOf('${') >= 0 || u.indexOf('%7B') >= 0 || u.indexOf('undefined/rest') >= 0){
+    console.error('[Argus Watch] BLOCKED malformed URL (stale build or unset SB_URL):', u);
+    return Promise.reject(new Error('Configuration error: the Supabase URL did not resolve. This usually means an old version of this page is cached or deployed. Hard-refresh (Ctrl+Shift+R), and if it persists, the deploy did not update.'));
+  }
+  return _origFetch(url, opts);
+};
+
 const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
 let _session=null, allVisits=[], filtered=[], selected=new Set();
 let currentPage=1; const PAGE=50;
@@ -162,8 +181,8 @@ async function init(){
 
 async function loadVisitors(){
   try{
-    const resp=await fetch('${SB_URL}/rest/v1/website_visitors?order=visited_at.desc&limit=5000',{
-      headers:{'Authorization':'Bearer ${_session.access_token}','apikey':SB_KEY}
+    const resp=await fetch(SB_URL+'/rest/v1/website_visitors?order=visited_at.desc&limit=5000',{
+      headers:{'Authorization':'Bearer '+_session.access_token,'apikey':SB_KEY}
     });
     allVisits=await resp.json();
     if(!Array.isArray(allVisits))allVisits=[];
@@ -363,7 +382,7 @@ async function launchToSelected(){
   for(const v of toContact){
     if(v.id){
       try{
-        await fetch('${SB_URL}/rest/v1/website_visitors?id=eq.${v.id}',{
+        await fetch(SB_URL+'/rest/v1/website_visitors?id=eq.'+v.id,{
           method:'PATCH',
           headers:{'Authorization':'Bearer '+_session.access_token,'apikey':SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
           body:JSON.stringify({contacted:true,campaign_sent:'visitor-outreach-'+new Date().toISOString().slice(0,10)})
