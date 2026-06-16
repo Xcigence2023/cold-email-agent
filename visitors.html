@@ -234,69 +234,68 @@ function changePage(dir){
 }
 
 function renderTable(){
-  const mode=document.getElementById('view-mode').value;
-  const wrap=document.getElementById('table-wrap');
-
+  var mode=document.getElementById('view-mode').value;
+  var wrap=document.getElementById('table-wrap');
   if(!filtered.length){
-    wrap.innerHTML='<div class="empty"><div class="empty-icon">🌐</div><h3 style="margin-bottom:8px">No visitors yet</h3><p>Install the tracking script on your website to start seeing visitor data.</p></div>';
-    document.getElementById('pagination').style.display='none';
+    wrap.innerHTML='<div class="empty"><p style="color:var(--text2)">No visitor data yet. Add the tracker to xcigence.com to start capturing visitors.</p></div>';
     return;
   }
-
-  const page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
-
-  let html='<table><thead><tr><th style="width:30px"><input type="checkbox" class="cb" id="select-all-cb" onchange="toggleSelectAll(this)"/></th>';
-  if(mode==='company'){
-    html+='<th>Company</th><th>Location</th><th>Visits</th><th>Pages Viewed</th><th>Last Visit</th><th>Industry</th><th>Website</th><th>Status</th></tr></thead><tbody>';
-    page.forEach(v=>{
-      const id=v.id||v.company_name;
-      const isSel=selected.has(id);
-      html+='<tr>
-        <td><input type="checkbox" class="cb" data-id="${id}" ${isSel?'checked':''} onchange="toggleSelect('${id}',this)"/></td>
-        <td>
-          <div style="font-weight:700">${v.company_name||'Unknown'}</div>
-          ${v.company_domain?'<div style="font-size:11px;color:var(--blue)"><a href="https://${v.company_domain}" target="_blank">${v.company_domain}</a></div>':''}
-        </td>
-        <td style="font-size:12px">${[v.city,v.region,v.country].filter(Boolean).join(', ')||'-'}</td>
-        <td><span class="badge" style="background:var(--blue-bg);color:var(--blue)">${v.visitCount||1}</span></td>
-        <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(v.pages||[v.page]).slice(0,3).join(' . ')||'-'}</td>
-        <td style="font-size:11px;white-space:nowrap">${v.lastVisit?new Date(v.lastVisit).toLocaleString():'-'}</td>
-        <td style="font-size:12px">${v.company_industry||'-'}</td>
-        <td>${v.company_website?'<a href="${v.company_website}" target="_blank" style="font-size:11px;color:var(--blue)">Website -></a>':'-'}</td>
-        <td>${v.contacted?'<span class="badge" style="background:var(--green-bg);color:var(--green)">OK Contacted</span>':'<span class="badge" style="background:var(--bg2);color:var(--text2)">Not contacted</span>'}</td>
-      </tr>';
+  var page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);
+  var html='';
+  if(mode==='cards'){
+    html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">';
+    page.forEach(function(v){
+      var id=String(v.id||v.company_name||v.ip||'');
+      var isSel=selected.has(id);
+      html+='<div style="background:var(--glass);border:1px solid '+(isSel?'var(--blue)':'var(--border)')+';border-radius:var(--rl);padding:14px">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+      html+='<div style="font-weight:700;font-size:14px">'+(v.company_name||'Unknown')+'</div>';
+      html+='<input type="checkbox" class="vis-cb" data-id="'+id+'" '+(isSel?'checked':'')+' style="width:14px;height:14px;accent-color:var(--blue)"/>';
+      html+='</div>';
+      html+='<div style="font-size:12px;color:var(--text2);margin-bottom:3px">'+(v.company_industry||'-')+'</div>';
+      html+='<div style="font-size:11px;color:var(--text3)">'+(v.city?v.city+', ':'')+( v.country||'')+'</div>';
+      html+='<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:8px">';
+      html+='<span style="color:var(--blue)">'+(v.visitCount||1)+' visit(s)</span>';
+      html+='<span style="color:var(--text3)">'+(v.lastVisit?new Date(v.lastVisit).toLocaleDateString():'-')+'</span>';
+      html+='</div></div>';
     });
+    html+='</div>';
   }else{
-    html+='<th>Page Visited</th><th>Company</th><th>Location</th><th>Date & Time</th><th>Duration</th><th>Referrer</th></tr></thead><tbody>';
-    page.forEach(v=>{
-      const id=v.id;const isSel=selected.has(id);
-      html+='<tr>
-        <td><input type="checkbox" class="cb" data-id="${id}" ${isSel?'checked':''} onchange="toggleSelect('${id}',this)"/></td>
-        <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.page||'-'}</td>
-        <td>
-          <div style="font-weight:600">${v.company_name||'Unknown'}</div>
-          <div style="font-size:11px;color:var(--text2)">${v.company_domain||''}</div>
-        </td>
-        <td style="font-size:12px">${[v.city,v.country].filter(Boolean).join(', ')||'-'}</td>
-        <td style="font-size:11px;white-space:nowrap">${v.visited_at?new Date(v.visited_at).toLocaleString():'-'}</td>
-        <td style="font-size:12px">${v.time_spent?v.time_spent+'s':'-'}</td>
-        <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.referrer||'Direct'}</td>
-      </tr>';
+    html='<div style="overflow-x:auto"><table><thead><tr>';
+    html+='<th style="width:36px"><input type="checkbox" style="width:13px;height:13px" onchange="toggleSelectAll(this)"/></th>';
+    html+='<th>Company</th><th>Location</th><th>Visits</th><th>Last Seen</th><th>Industry</th><th>Device</th><th>Status</th>';
+    html+='</tr></thead><tbody>';
+    page.forEach(function(v){
+      var id=String(v.id||v.company_name||v.ip||'');
+      var isSel=selected.has(id);
+      html+='<tr style="'+(isSel?'background:rgba(59,130,246,.05)':'')+'">';
+      html+='<td><input type="checkbox" class="vis-cb" data-id="'+id+'" style="width:13px;height:13px;accent-color:var(--blue);cursor:pointer" '+(isSel?'checked':'')+'/></td>';
+      html+='<td><div style="font-weight:700;font-size:13px">'+(v.company_name||'Unknown')+'</div>';
+      if(v.company_domain)html+='<div style="font-size:11px"><a href="https://'+v.company_domain+'" target="_blank" style="color:var(--blue)">'+v.company_domain+'</a></div>';
+      html+='</td>';
+      html+='<td style="font-size:12px;white-space:nowrap">'+([v.city,v.country].filter(Boolean).join(', ')||'-')+'</td>';
+      html+='<td><span style="background:rgba(59,130,246,.15);color:var(--blue);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">'+(v.visitCount||1)+'</span></td>';
+      html+='<td style="font-size:11px;color:var(--text2);white-space:nowrap">'+(v.lastVisit?new Date(v.lastVisit).toLocaleDateString():'-')+'</td>';
+      html+='<td style="font-size:12px;color:var(--text2)">'+(v.company_industry||'-')+'</td>';
+      html+='<td style="font-size:11px;color:var(--text3)">'+(v.device||'-')+'</td>';
+      html+='<td>'+(v.contacted?'<span style="background:rgba(16,185,129,.15);color:var(--green);padding:2px 6px;border-radius:4px;font-size:11px">Contacted</span>':'<span style="background:var(--bg3);color:var(--text3);padding:2px 6px;border-radius:4px;font-size:11px">New</span>')+'</td>';
+      html+='</tr>';
     });
+    html+='</tbody></table></div>';
   }
-  html+='</tbody></table>';
   wrap.innerHTML=html;
-
-  const total=Math.ceil(filtered.length/PAGE);
-  const pag=document.getElementById('pagination');
+  // Wire up checkboxes via event delegation (avoids inline quote escaping)
+  wrap.querySelectorAll('.vis-cb').forEach(function(cb){
+    cb.onchange=function(){toggleSelect(this.dataset.id,this);};
+  });
+  var total=Math.ceil(filtered.length/PAGE);
+  var pag=document.getElementById('pagination');
   if(total>1){
     pag.style.display='flex';
-    document.getElementById('page-info').textContent='Showing '+(((currentPage-1)*PAGE)+1)+'-'+Math.min(currentPage*PAGE,filtered.length)+' of '+filtered.length;
+    document.getElementById('page-info').textContent='Showing '+((currentPage-1)*PAGE+1)+'-'+Math.min(currentPage*PAGE,filtered.length)+' of '+filtered.length;
     document.getElementById('prev-btn').disabled=currentPage<=1;
     document.getElementById('next-btn').disabled=currentPage>=total;
-  }else pag.style.display='none';
-
-  document.getElementById('selected-count').textContent=selected.size+' selected';
+  }else{pag.style.display='none';}
 }
 
 function toggleSelect(id,cb){
@@ -378,11 +377,11 @@ async function launchToSelected(){
 }
 
 function copyInstall(){
-  const code='<!-- Add before 
-<script>
-// Performance: debounce helper
-function debounce(fn, ms) {
-  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
+  var code='<script src="https://portal.xcigence.com/velorah-tracker.js"><\/script>';
+  navigator.clipboard.writeText(code).then(function(){
+    var b=document.getElementById('copy-install-btn');
+    if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},2000);}
+  }).catch(function(){prompt('Add this before </body> on xcigence.com:',code);});
 }
 // Performance: lazy-load non-critical content
 if ('IntersectionObserver' in window) {
@@ -404,11 +403,25 @@ window.cachedFetch = function(url, opts, ttlMs) {
     }).catch(function(){ return r; });
   });
 };
+
+
+async function launchWithAres(){
+  var toSend=[];
+  if(typeof S_selected!=='undefined'&&S_selected&&S_selected.size>0){
+    toSend=allVisitors.filter(function(v){return S_selected.has(v.id||v.company_name||v.ip);});
+  }
+  if(!toSend.length&&typeof allVisitors!=='undefined') toSend=allVisitors.slice(0,20);
+  if(!toSend.length){alert('No visitor data to send to Ares.');return;}
+  var rows=toSend.map(function(v){
+    return [v.company_name||'','',(v.email||''),v.company_name||'','Decision Maker',v.company_industry||''].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+  });
+  sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows.join('\n'));
+  window.location.href='/campaign-video.html';
 }
-</script>
-</body> on every page of xcigence.com -->\n<script src="/velorah-tracker.js"><\/script>`;
-  navigator.clipboard.writeText(code).then(()=>alert('Install code copied! Paste before </body> on every page of your website.'));
-}
+
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+// Auto-refresh visitors every 60 seconds
+setInterval(function(){if(typeof loadVisitors==='function')loadVisitors(true);},60000);
 
 function exportCSV(){
   if(!filtered.length){alert('No data to export.');return;}
@@ -418,19 +431,6 @@ function exportCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='website_visitors_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
-
-async function launchWithAres(){
-  var toContact=filtered.filter(function(v){return S_selected&&S_selected.has(v.id||v.company_name);});
-  if(!toContact.length&&typeof filtered!=='undefined')toContact=filtered.slice(0,20);
-  if(!toContact.length){alert('No visitor data to send to Ares.');return;}
-  var rows=toContact.map(function(v){return [v.company_name||'','','',v.company_name||'','Decision Maker',v.company_industry||''].map(function(x){return '"'+String(x).replace(/"/g,'""')+'"';}).join(',');});
-  sessionStorage.setItem('velorah_leads_csv','First Name,Last Name,Email,Company,Job Title,Industry\n'+rows.join('\n'));
-  sessionStorage.setItem('velorah_leads_count',toContact.length);
-  sessionStorage.setItem('velorah_source','argus');
-  window.location.href='/campaign-video.html';
-}
-
-async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
 </script>
 </body>
