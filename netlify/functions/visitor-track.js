@@ -94,9 +94,10 @@ exports.handler = async function(event) {
   }
 
   // 3. Save visit to Supabase
+  var saveError = null;
   if (SUPABASE_URL && SERVICE_KEY) {
     try {
-      await fetch((SUPABASE_URL) + '/rest/v1/website_visitors', {
+      var insertResp = await fetch((SUPABASE_URL) + '/rest/v1/website_visitors', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + (SERVICE_KEY),
@@ -125,14 +126,29 @@ exports.handler = async function(event) {
           visited_at: new Date().toISOString()
         })
       });
-    } catch(e) { console.error('Supabase save error:', e.message); }
+      // CRITICAL: a non-2xx response is NOT a thrown error -- check it explicitly
+      if (!insertResp.ok) {
+        var errText = '';
+        try { errText = await insertResp.text(); } catch(e) {}
+        saveError = 'Supabase insert failed (' + insertResp.status + '): ' + errText.slice(0, 300);
+        console.error(saveError);
+      }
+    } catch(e) {
+      saveError = 'Supabase request error: ' + e.message;
+      console.error(saveError);
+    }
+  } else {
+    saveError = 'Missing SUPABASE_URL or SUPABASE_SERVICE_KEY env var';
+    console.error(saveError);
   }
 
   return {
     statusCode: 200,
     headers,
     body: JSON.stringify({
-      ok: true,
+      ok: !saveError,
+      saved: !saveError,
+      saveError: saveError || undefined,
       company: companyData.name || companyData.orgName || 'Unknown',
       location: locationData.city + ', ' + locationData.country
     })
