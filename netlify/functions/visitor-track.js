@@ -47,8 +47,8 @@ exports.handler = async function(event) {
 
   // 1. Get location from IP (IPInfo - free 50k/month)
   try {
-    const token = IPINFO_TOKEN ? `?token=${IPINFO_TOKEN}` : '';
-    const ipRes = await fetch(`https://ipinfo.io/${ip}/json${token}`);
+    const token = IPINFO_TOKEN ? '?token=' + (IPINFO_TOKEN) : '';
+    const ipRes = await fetch('https://ipinfo.io/' + (ip) + '/json' + (token));
     const ipData = await ipRes.json();
     locationData = {
       city:     ipData.city     || '',
@@ -69,8 +69,8 @@ exports.handler = async function(event) {
   // 2. Clearbit Reveal for richer company data (if key provided)
   if (CLEARBIT_KEY) {
     try {
-      const cbRes = await fetch(`https://reveal.clearbit.com/v1/companies/find?ip=${ip}`, {
-        headers: { 'Authorization': `Bearer ${CLEARBIT_KEY}` }
+      const cbRes = await fetch('https://reveal.clearbit.com/v1/companies/find?ip=' + (ip), {
+        headers: { 'Authorization': 'Bearer ' + (CLEARBIT_KEY) }
       });
       if (cbRes.ok) {
         const cbData = await cbRes.json();
@@ -96,10 +96,10 @@ exports.handler = async function(event) {
   // 3. Save visit to Supabase
   if (SUPABASE_URL && SERVICE_KEY) {
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/website_visitors`, {
+      await fetch((SUPABASE_URL) + '/rest/v1/website_visitors', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SERVICE_KEY}`,
+          'Authorization': 'Bearer ' + (SERVICE_KEY),
           'apikey': SERVICE_KEY,
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
