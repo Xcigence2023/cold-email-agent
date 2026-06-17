@@ -16,6 +16,11 @@ exports.handler = async function(event) {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
+  // Get visitor IP (must be declared before the rate limiter uses it)
+  const ip = (event.headers['x-forwarded-for'] ? event.headers['x-forwarded-for'].split(',')[0].trim() : '')
+    || event.headers['x-real-ip']
+    || '0.0.0.0';
+
   const _rlip = ip||'unknown';
   if(!_rate(_rlip, 60, 60000)) return {statusCode:429, headers, body:JSON.stringify({error:'Too many requests. Please slow down.'})};
 
@@ -26,11 +31,6 @@ exports.handler = async function(event) {
 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
-
-  // Get visitor IP
-  const ip = event.headers['x-forwarded-for']?.split(',')[0]?.trim()
-    || event.headers['x-real-ip']
-    || '0.0.0.0';
 
   const page     = body.page     || '/';
   const referrer = body.referrer || '';
