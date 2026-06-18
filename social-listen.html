@@ -165,6 +165,10 @@ input::placeholder{color:var(--text3)}
       <div style="font-weight:800;font-size:14px;color:var(--purple);margin-bottom:2px">&#11088; Competitor Review Intel</div>
       <div style="font-size:11px;color:var(--text2)">Analyze all reviews of competitors -- find what customers love and hate</div>
     </button>
+    <button class="mode-tab" id="mode-aivis" onclick="switchMode('aivis')" style="flex:1;min-width:200px;padding:14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'Outfit',sans-serif;cursor:pointer;text-align:left">
+      <div style="font-weight:800;font-size:14px;color:var(--purple,#8b5cf6);margin-bottom:2px">&#129504; AI Visibility</div>
+      <div style="font-size:11px;color:var(--text2)">See how AI models (ChatGPT, Claude, Gemini) surface your brand &mdash; and improve it</div>
+    </button>
   </div>
 
   <div class="layout">
@@ -280,6 +284,22 @@ input::placeholder{color:var(--text3)}
       </div>
 
     </div>
+
+      <!-- AI VISIBILITY PANEL -->
+      <div id="aivis-panel" style="display:none">
+        <div class="card">
+          <div class="card-title">AI Visibility Analysis</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">
+            See how likely AI models (ChatGPT, Claude, Gemini, Copilot, Perplexity) are to surface your brand when buyers ask, and get concrete steps to improve it. This analyzes your public web presence the way a retrieval-augmented model does &mdash; it does not (and cannot) buy placement inside those products.
+          </p>
+          <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Company website</label>
+          <input type="text" id="aivis-domain" placeholder="yourcompany.com" style="width:100%;padding:10px 12px;margin:6px 0 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px"/>
+          <label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Company name (for the AI knowledge probe)</label>
+          <input type="text" id="aivis-company" placeholder="Your Company Inc" style="width:100%;padding:10px 12px;margin:6px 0 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px"/>
+          <button onclick="runAiVisibility()" id="aivis-btn" style="width:100%;padding:11px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;border-radius:8px;font-weight:700;font-family:inherit;cursor:pointer;font-size:13px">Analyze AI Visibility</button>
+          <div id="aivis-results" style="margin-top:16px"></div>
+        </div>
+      </div>
 
     <!-- RESULTS PANEL -->
     <div>
@@ -715,58 +735,40 @@ function switchMode(mode){
   currentMode = mode;
   var listenPanel = document.getElementById('listen-panel');
   var reviewPanel = document.getElementById('review-panel');
+  var aivisPanel = document.getElementById('aivis-panel');
   var listenTab = document.getElementById('mode-listen');
   var reviewTab = document.getElementById('mode-reviews');
+  var aivisTab = document.getElementById('mode-aivis');
   var resultsWrap = document.getElementById('results-wrap');
   var statsRow = document.getElementById('stats-row');
 
+  // Hide all panels first
+  if(listenPanel) listenPanel.style.display = 'none';
+  if(reviewPanel) reviewPanel.style.display = 'none';
+  if(aivisPanel) aivisPanel.style.display = 'none';
+  // Deactivate all tabs
+  [listenTab, reviewTab, aivisTab].forEach(function(t){
+    if(t){ t.classList.remove('active'); t.style.background='transparent'; }
+  });
+
   if(mode === 'reviews'){
-    if(listenPanel) listenPanel.style.display = 'none';
     if(reviewPanel) reviewPanel.style.display = 'block';
-    if(listenTab){ listenTab.classList.remove('active'); listenTab.style.background = 'transparent'; listenTab.style.borderColor = 'var(--border)'; }
-    if(reviewTab){ reviewTab.classList.add('active'); reviewTab.style.background = 'rgba(139,92,246,.08)'; reviewTab.style.borderColor = 'rgba(139,92,246,.4)'; }
+    if(reviewTab){ reviewTab.classList.add('active'); reviewTab.style.background='rgba(245,158,11,.08)'; }
+    if(statsRow) statsRow.style.display = '';
+    if(resultsWrap) resultsWrap.style.display = '';
+  } else if(mode === 'aivis'){
+    if(aivisPanel) aivisPanel.style.display = 'block';
+    if(aivisTab){ aivisTab.classList.add('active'); aivisTab.style.background='rgba(139,92,246,.08)'; }
+    // AI Visibility has its own results area; hide the shared listening results/stats
     if(statsRow) statsRow.style.display = 'none';
-    if(resultsWrap) resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#11088;</div><p style="color:var(--text2)">Enter a competitor name to analyze all their public reviews -- positive and negative.</p></div>';
+    if(resultsWrap) resultsWrap.style.display = 'none';
   } else {
     if(listenPanel) listenPanel.style.display = 'block';
-    if(reviewPanel) reviewPanel.style.display = 'none';
-    if(reviewTab){ reviewTab.classList.remove('active'); reviewTab.style.background = 'transparent'; reviewTab.style.borderColor = 'var(--border)'; }
-    if(listenTab){ listenTab.classList.add('active'); listenTab.style.background = 'rgba(59,130,246,.08)'; listenTab.style.borderColor = 'var(--border2)'; }
-    if(resultsWrap) resultsWrap.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:16px">&#128225;</div><p style="color:var(--text2)">Add keywords and select platforms to find buyers discussing your space.</p></div>';
+    if(listenTab){ listenTab.classList.add('active'); listenTab.style.background='rgba(59,130,246,.08)'; }
+    if(statsRow) statsRow.style.display = '';
+    if(resultsWrap) resultsWrap.style.display = '';
   }
 }
-
-async function doReviewSearch(){
-  var competitor = document.getElementById('competitor-inp').value.trim();
-  if(!competitor){alert('Enter a competitor name first.');return;}
-  var sentiment = document.getElementById('sentiment-sel').value;
-  var limit = parseInt(document.getElementById('review-limit').value) || 50;
-
-  var btn = document.getElementById('review-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Scanning reviews...';
-  var wrap = document.getElementById('results-wrap');
-  wrap.innerHTML = '<div style="text-align:center;padding:3rem"><div class="spin" style="width:32px;height:32px;border-width:3px;margin:0 auto 14px"></div><p style="color:var(--text2)">Searching public reviews and discussions about ' + competitor + '...</p></div>';
-
-  try{
-    var resp = await fetch('/.netlify/functions/social-listen',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'reviews',competitor:competitor,sentiment:sentiment,limit:limit})
-    });
-    if(!resp.ok) throw new Error('Search failed: ' + resp.status);
-    var data = await resp.json();
-    reviewResults = data.reviews || [];
-    renderReviews(data);
-  }catch(e){
-    wrap.innerHTML = '<div class="empty"><p style="color:var(--red)">Error: ' + e.message + '</p></div>';
-  }finally{
-    btn.disabled = false;
-    btn.innerHTML = '&#11088; Find Unhappy Customers';
-  }
-}
-
-
 function reviewPlatformLabel(p){
   var map={
     g2:{name:'G2',color:'#ff492c'},
@@ -792,6 +794,35 @@ function reviewPlatformLabel(p){
 }
 
 
+
+async function doReviewSearch(){
+  var competitor=(document.getElementById('competitor-inp').value||'').trim();
+  if(!competitor){alert('Enter a competitor or company name to analyze reviews for.');return;}
+  var sentiment=(document.getElementById('sentiment-sel')||{}).value||'all';
+  var limit=parseInt((document.getElementById('review-limit')||{}).value||'50')||50;
+  var btn=document.getElementById('review-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing reviews...';}
+  var wrap=document.getElementById('results-wrap');
+  if(wrap)wrap.innerHTML='<div style="text-align:center;padding:3rem"><div class="spin" style="width:32px;height:32px;border-width:3px;margin:0 auto 14px"></div><p style="color:var(--text2)">Searching reviews across G2, Trustpilot, Gartner and more...</p></div>';
+  try{
+    var resp=await fetch('/.netlify/functions/social-listen',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'reviews',competitor:competitor,sentiment:sentiment,limit:limit})
+    });
+    if(!resp.ok){
+      var et='';try{var ej=await resp.json();et=ej.error||'';}catch(e){}
+      throw new Error(resp.status===404?'Review service not deployed.':(et||('Service error '+resp.status)));
+    }
+    var data=await resp.json();
+    if(typeof renderReviews==='function'){renderReviews(data);}
+    else if(wrap){var reviews=data.reviews||data.results||[];wrap.innerHTML='<div class="empty"><p>'+reviews.length+' reviews found.</p></div>';}
+  }catch(e){
+    if(wrap)wrap.innerHTML='<div style="padding:14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:var(--text);margin:1rem">Could not load reviews: '+e.message+'</div>';
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='Analyze Competitor Reviews';}
+  }
+}
 
 function renderReviews(data){
   var wrap = document.getElementById('results-wrap');
@@ -890,6 +921,95 @@ function findInKoios(company, industry){
   window.location.href = '/find-leads.html';
 }
 
+
+// ===== AI VISIBILITY =====
+async function runAiVisibility(){
+  var domain = (document.getElementById('aivis-domain').value||'').trim();
+  var company = (document.getElementById('aivis-company').value||'').trim();
+  var btn = document.getElementById('aivis-btn');
+  var out = document.getElementById('aivis-results');
+  if(!domain){ alert('Enter your company website first.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Analyzing...';
+  out.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Fetching and analyzing your web presence...</div>';
+
+  try{
+    var resp = await fetch('/.netlify/functions/ai-visibility', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(typeof _session!=='undefined'&&_session?_session.access_token:'')},
+      body: JSON.stringify({ action:'analyze', domain: domain })
+    });
+    if(!resp.ok){
+      var et=''; try{var ej=await resp.json(); et=ej.error||'';}catch(e){}
+      throw new Error(resp.status===404?'AI Visibility service not deployed yet.':(et||('Service error '+resp.status)));
+    }
+    var data = await resp.json();
+    renderAiVisibility(data, company);
+  }catch(e){
+    out.innerHTML = '<div style="padding:14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:var(--text)">'+e.message+'</div>';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Analyze AI Visibility';
+  }
+}
+
+function renderAiVisibility(data, company){
+  var out = document.getElementById('aivis-results');
+  if(!data.reachable){
+    out.innerHTML = '<div style="padding:14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px">Could not reach that site. Check the URL and try again.</div>';
+    return;
+  }
+  var scoreColor = data.score>=80?'#16c784':(data.score>=60?'#3b82f6':(data.score>=40?'#f5a524':'#ef4444'));
+  var html = '';
+  // Score header
+  html += '<div style="display:flex;align-items:center;gap:16px;padding:16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;margin-bottom:14px">';
+  html += '<div style="font-size:38px;font-weight:800;color:'+scoreColor+'">'+data.score+'</div>';
+  html += '<div><div style="font-weight:700;font-size:15px">AI-Readiness: '+data.grade+'</div><div style="font-size:12px;color:var(--text2)">How well your site is structured for AI models to understand and cite you</div></div>';
+  html += '</div>';
+
+  // Findings
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">';
+  (data.findings||[]).forEach(function(f){
+    var icon = f.ok ? '&#10003;' : '&#9888;';
+    var col = f.ok ? '#16c784' : '#f5a524';
+    html += '<div style="display:flex;gap:10px;padding:9px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px">';
+    html += '<span style="color:'+col+';font-weight:700">'+icon+'</span>';
+    html += '<div><div style="font-size:12px;font-weight:700">'+f.area+'</div><div style="font-size:12px;color:var(--text2)">'+f.note+'</div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // AI knowledge probe (optional, if company name given)
+  if(company){
+    html += '<button onclick="runAiProbe()" id="aiprobe-btn" style="width:100%;padding:10px;background:rgba(139,92,246,.12);color:#8b5cf6;border:1px solid rgba(139,92,246,.3);border-radius:8px;font-weight:700;font-family:inherit;cursor:pointer;font-size:12px;margin-bottom:10px">Probe what AI models know about "'+company+'"</button>';
+    html += '<div id="aiprobe-result"></div>';
+  }
+  out.innerHTML = html;
+}
+
+async function runAiProbe(){
+  var company = (document.getElementById('aivis-company').value||'').trim();
+  var btn = document.getElementById('aiprobe-btn');
+  var out = document.getElementById('aiprobe-result');
+  if(!company) return;
+  btn.disabled = true; btn.textContent = 'Asking the model...';
+  try{
+    var resp = await fetch('/.netlify/functions/ai-visibility', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(typeof _session!=='undefined'&&_session?_session.access_token:'')},
+      body: JSON.stringify({ action:'simulate', company: company })
+    });
+    var data = await resp.json();
+    if(data.probe){
+      out.innerHTML = '<div style="padding:14px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:10px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">'+esc(data.probe)+'</div>';
+    }else{
+      out.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">'+(data.error||'No response')+'</div>';
+    }
+  }catch(e){
+    out.innerHTML = '<div style="padding:12px;color:var(--text2);font-size:12px">Probe failed: '+e.message+'</div>';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Probe what AI models know';
+  }
+}
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 init();
