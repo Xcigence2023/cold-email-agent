@@ -104,6 +104,7 @@ tr:hover td{background:rgba(59,130,246,.04)}
   </div>
   <div class="flex">
     <span id="user-email" style="font-size:12px;color:var(--text2)"></span>
+    <span id="autosave-indicator" style="font-size:11px;color:var(--green);opacity:.5;margin-left:10px"></span>
     <button class="btn btn-sm" onclick="signOut()">Sign out</button>
   </div>
 </div>
@@ -146,6 +147,142 @@ var S={page:1,
 
 var PRESETS=['CISO','CTO','CEO','VP of Security','Chief Security Officer','Security Manager','Head of IT','Director of IT','VP of IT','Chief Information Officer','CISO','Chief Compliance Officer'];
 
+
+// ===== AUTO-SAVE / CRASH RECOVERY =====
+var _saveTimer=null;
+var _lastSaveHash='';
+
+function serializeSession(){
+  return {
+    raw: S.raw,
+    filtered: S.filtered,
+    selected: Array.from(S.selected),
+    messages: S.messages,
+    filters: S.filters,
+    channel: S.channel,
+    angle: S.angle,
+    sender: S.sender,
+    genProgress: S.genProgress,
+    page: S.page,
+    savedAt: Date.now()
+  };
+}
+
+async function saveSession(force){
+  if(!_session)return;
+  try{
+    var snapshot=serializeSession();
+    // Skip if nothing meaningful to save
+    if(!snapshot.raw.length && !snapshot.messages.length)return;
+    var hash=JSON.stringify(snapshot).length+':'+snapshot.messages.length+':'+snapshot.selected.length;
+    if(!force && hash===_lastSaveHash)return;
+    _lastSaveHash=hash;
+    await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'save_session',sessionKey:'linkedin',state:snapshot})
+    });
+    var ind=document.getElementById('autosave-indicator');
+    if(ind){ind.textContent='Saved '+new Date().toLocaleTimeString();ind.style.opacity='1';setTimeout(function(){if(ind)ind.style.opacity='.5';},2000);}
+  }catch(e){}
+}
+
+function scheduleSave(){
+  if(_saveTimer)clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(function(){saveSession(false);},3000);
+}
+
+async function loadSession(){
+  if(!_session)return null;
+  try{
+    var resp=await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'load_session',sessionKey:'linkedin'})
+    });
+    var d=await resp.json();
+    return d.state||null;
+  }catch(e){return null;}
+}
+
+function restoreSession(st){
+  S.raw=st.raw||[];
+  S.filtered=st.filtered||[];
+  S.selected=new Set(st.selected||[]);
+  S.messages=st.messages||[];
+  S.filters=st.filters||S.filters;
+  S.channel=st.channel||'both';
+  S.angle=st.angle||'connection';
+  S.sender=st.sender||S.sender;
+  S.genProgress=st.genProgress||0;
+  S.page=st.page||1;
+}
+
+async function clearSession(){
+  if(!_session)return;
+  try{
+    await fetch('/.netlify/functions/crm',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},
+      body:JSON.stringify({action:'clear_session',sessionKey:'linkedin'})
+    });
+  }catch(e){}
+  _lastSaveHash='';
+}
+
+async function checkForRecovery(){
+  // First: is a server-side generation job still running/finished?
+  var resumed=await resumeServerJob(null);
+  if(resumed){
+    showTab('compose');
+    var rb=document.createElement('div');
+    rb.style.cssText='background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px';
+    rb.textContent='Resumed your server-side generation -- '+S.messages.length+' messages were generated while you were away.';
+    var root=document.getElementById('root');
+    if(root&&root.parentNode)root.parentNode.insertBefore(rb,root);
+    setTimeout(function(){rb.remove();},8000);
+    return;
+  }
+  var st=await loadSession();
+  if(st && (st.messages && st.messages.length || st.raw && st.raw.length)){
+    var when=st.savedAt?new Date(st.savedAt).toLocaleString():'a previous session';
+    var msgCount=(st.messages||[]).length;
+    var contactCount=(st.raw||[]).length;
+    var detail=msgCount>0?(msgCount+' composed messages'):(contactCount+' uploaded contacts');
+    showRecoveryBanner(detail, when, st);
+  }
+}
+
+function showRecoveryBanner(detail, when, st){
+  var banner=document.createElement('div');
+  banner.id='recovery-banner';
+  banner.style.cssText='background:linear-gradient(135deg,rgba(59,130,246,.15),rgba(139,92,246,.1));border:1px solid rgba(59,130,246,.4);border-radius:12px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
+  banner.innerHTML='<div style="flex:1;min-width:240px"><p style="font-weight:700;font-size:14px;margin-bottom:2px">Unsaved work recovered</p><p style="font-size:12px;color:var(--text2)">We found '+detail+' from '+when+'. Restore where you left off?</p></div>';
+  var restoreBtn=mk('button','btn btn-primary btn-sm');restoreBtn.textContent='Restore my work';
+  restoreBtn.addEventListener('click',function(){
+    restoreSession(st);
+    banner.remove();
+    var sb=document.getElementById('step-bar');
+    if(S.messages.length){showTab('compose');}else if(S.raw.length){showTab('filter');}else{showTab('import');}
+  });
+  var dismissBtn=mk('button','btn btn-sm');dismissBtn.textContent='Start fresh';
+  dismissBtn.addEventListener('click',function(){clearSession();banner.remove();});
+  banner.appendChild(restoreBtn);banner.appendChild(dismissBtn);
+  var root=document.getElementById('root')||document.body;
+  root.parentNode.insertBefore(banner,root);
+}
+
+// Save on page-hide (covers tab close, navigation) -- best effort
+window.addEventListener('beforeunload',function(){
+  if(_session && (S.messages.length || S.raw.length)){
+    try{
+      var snapshot=serializeSession();
+      var blob=new Blob([JSON.stringify({action:'save_session',sessionKey:'linkedin',state:snapshot})],{type:'application/json'});
+      navigator.sendBeacon('/.netlify/functions/crm?token='+encodeURIComponent(_session.access_token),blob);
+    }catch(e){}
+  }
+});
+
 async function init(){
   try{
     var r=await sbClient.auth.getSession();
@@ -153,6 +290,7 @@ async function init(){
     if(!session){window.location.href='/login.html';return;}
     _session=session;
     document.getElementById('user-email').textContent=session.user.email;
+    checkForRecovery();
     try{var kr=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'Velorah';}}catch(e){}
   }catch(e){}
   showTab('import', document.querySelector('.tab-btn'));
@@ -160,7 +298,12 @@ async function init(){
 
 function showTab(tab, btn){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
+  if(!btn){
+    var tabs=document.querySelectorAll('.tab-btn');
+    var order={import:0,filter:1,compose:2,send:3};
+    btn=tabs[order[tab]]||tabs[0];
+  }
+  if(btn)btn.classList.add('active');
   var content=document.getElementById('tab-content');
   content.innerHTML='';
   if(tab==='import') renderImport(content);
@@ -390,10 +533,10 @@ function renderFilter(wrap){
   var searchInp=document.createElement('input');searchInp.type='text';searchInp.placeholder='Search by name, title, company, email...';
   searchInp.style.cssText='flex:1;min-width:200px;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit';
   searchInp.value=S.filters.searchText||'';
-  searchInp.addEventListener('input',function(e){S.filters.searchText=e.target.value;applyFilters();rerenderTable();updateEmailBadges();});
+  searchInp.addEventListener('input',function(e){S.filters.searchText=e.target.value;applyFilters();rerenderTable();updateEmailBadges();scheduleSave();});
   var emailToggle=mk('label',null);emailToggle.style.cssText='display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap';
   var emailCb=document.createElement('input');emailCb.type='checkbox';emailCb.checked=S.filters.emailOnly;emailCb.style.cssText='width:14px;height:14px;accent-color:var(--green);cursor:pointer';
-  emailCb.addEventListener('change',function(e){S.filters.emailOnly=e.target.checked;applyFilters();rerenderTable();updateEmailBadges();});
+  emailCb.addEventListener('change',function(e){S.filters.emailOnly=e.target.checked;applyFilters();rerenderTable();updateEmailBadges();scheduleSave();});
   emailToggle.appendChild(emailCb);
   var emailLbl=mk('span',null);emailLbl.textContent='Only show contacts with email';emailToggle.appendChild(emailLbl);
   searchRow.appendChild(searchInp);searchRow.appendChild(emailToggle);
@@ -538,28 +681,43 @@ function applyFilters(){
 
 async function enrichEmails(btn){
   var orig=btn.textContent;
-  var noEmail=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName;});
-  if(!noEmail.length){alert('All selected contacts already have email addresses.');return;}
 
-  // Check if contacts have company names
-  var noCompany=noEmail.filter(function(r){return !r.company;});
-  if(noCompany.length===noEmail.length){
-    alert('Email enrichment requires company names. Your LinkedIn export may not include company data. Try uploading a more complete CSV or use the Find Leads page to search by job title.');
+  // Only contacts that are actually enrichable: need name AND company
+  var candidates=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName&&r.company;});
+  var noCompanyCount=S.filtered.filter(function(r){return !r.email&&r.firstName&&r.lastName&&!r.company;}).length;
+  var alreadyHave=S.filtered.filter(function(r){return r.email;}).length;
+
+  if(!candidates.length){
+    var why='No contacts can be enriched right now.\n\n';
+    if(alreadyHave>0)why+=alreadyHave+' contact(s) already have emails.\n';
+    if(noCompanyCount>0)why+=noCompanyCount+' contact(s) are missing a company name (required to find a work email). LinkedIn\'s basic export often omits company -- re-export with "Connections" including company, or add company names.\n';
+    alert(why);
     return;
   }
 
-  btn.disabled=true;
-  var found=0;var tried=0;var errors=[];
+  // Cost / scale guard: don't silently fire thousands of paid API lookups
+  var BATCH_CAP=200;
+  var willTry=candidates.length;
+  if(candidates.length>BATCH_CAP){
+    var proceed=confirm('You have '+candidates.length+' enrichable contacts.\n\nEmail enrichment uses paid data credits (Apollo) and is rate-limited, so it runs in batches of '+BATCH_CAP+'.\n\nThis run will process the first '+BATCH_CAP+' contacts. Continue?');
+    if(!proceed)return;
+    willTry=BATCH_CAP;
+  } else {
+    var ok=confirm('Enrich '+candidates.length+' contacts? This uses Apollo data credits and takes about '+Math.ceil(candidates.length*0.4/60)+' minute(s). Keep this tab open while it runs.');
+    if(!ok)return;
+  }
+  var work=candidates.slice(0,willTry);
 
-  for(var i=0;i<noEmail.length;i++){
-    var r=noEmail[i];
-    if(!r.firstName||!r.lastName){continue;}
+  btn.disabled=true;
+  var found=0,tried=0;
+  var reasons={noKey:0,noCredits:0,notFound:0,apiError:0};
+
+  for(var i=0;i<work.length;i++){
+    var r=work[i];
     tried++;
-    btn.textContent='Enriching '+tried+'/'+noEmail.length+'...';
-    // Throttle to respect rate limits (250ms between contacts)
+    btn.textContent='Enriching '+tried+'/'+work.length+' ('+found+' found)...';
     if(i>0)await new Promise(function(res){setTimeout(res,250);});
 
-    // Try Koios Intel people match first (most accurate)
     try{
       var ra=await fetch('/.netlify/functions/find-leads',{
         method:'POST',
@@ -569,49 +727,39 @@ async function enrichEmails(btn){
       if(ra.status===429){
         btn.textContent='Rate limited - pausing 5s...';
         await new Promise(function(res){setTimeout(res,5000);});
-        i--; tried--; continue;
+        i--;tried--;continue;
       }
-      if(ra.ok){var da=await ra.json();if(da.email){r.email=da.email;r._source='apollo';found++;continue;}}
-    }catch(e){}
-
-    // Try Koios Intel second
-    try{
-      var rh=await fetch('/.netlify/functions/find-leads',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'find-email',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company||'',domain:''}})
-      });
-      if(rh.ok){var dh=await rh.json();if(dh.email){r.email=dh.email;r._source='hunter';found++;continue;}if(dh.error)errors.push('Enrichment: '+dh.error);}
-    }catch(e){errors.push('Enrichment error');}
-
-    // Try Koios Intel last
-    if(!r.email&&r.company){
-      try{
-        var rl=await fetch('/.netlify/functions/find-leads',{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'enrich',contact:{firstName:r.firstName,lastName:r.lastName,company:r.company}})
-        });
-        if(rl.ok){var dl=await rl.json();if(dl.email){r.email=dl.email;r._source='lusha';found++;}}
-      }catch(e){}
-    }
-    await delay(400);
+      var da=await ra.json();
+      if(da.email){r.email=da.email;r._source='apollo';found++;rerenderTable&&rerenderTable();continue;}
+      // Capture the REAL reason
+      if(da.error){
+        var e=da.error.toLowerCase();
+        if(e.indexOf('not configured')>=0||e.indexOf('api_key')>=0||e.indexOf('apollo_api_key')>=0)reasons.noKey++;
+        else if(e.indexOf('credit')>=0||e.indexOf('limit')>=0||e.indexOf('quota')>=0||e.indexOf('exhaust')>=0)reasons.noCredits++;
+        else reasons.apiError++;
+      } else {
+        reasons.notFound++;
+      }
+    }catch(e){reasons.apiError++;}
   }
 
   btn.disabled=false;btn.textContent=orig;
-  showTab('filter',document.querySelectorAll('.tab-btn')[1]);
+  applyFilters();rerenderTable&&rerenderTable();updateEmailBadges&&updateEmailBadges();saveSession&&saveSession(true);
 
+  // HONEST reporting based on what actually happened
   if(found>0){
-    alert('Email enrichment complete! Found '+found+' email addresses out of '+tried+' contacts searched.');
+    alert('Enrichment complete.\n\nFound '+found+' email(s) out of '+tried+' searched.'+(candidates.length>willTry?('\n\n'+(candidates.length-willTry)+' more enrichable contacts remain -- run again to continue.'):''));
   } else {
-    var msg='No emails found for '+tried+' contacts.\n\nCommon reasons:\n';
-    msg+='1. HUNTER_API_KEY or LUSHA_API_KEY not set in Netlify environment variables\n';
-    msg+='2. Koios Intel free plan limit reached (25/month)\n';
-    msg+='3. These contacts haven\'t shared their emails publicly\n\n';
-    msg+='Check Netlify -> Environment Variables for HUNTER_API_KEY and LUSHA_API_KEY.';
+    var msg='No emails found for '+tried+' contacts.\n\nWhat actually happened:\n';
+    if(reasons.noKey>0)msg+='\n- APOLLO_API_KEY is not set in Netlify. This is the primary email source. Add it in Netlify -> Site settings -> Environment variables, then redeploy.';
+    if(reasons.noCredits>0)msg+='\n- Apollo data credits are exhausted ('+reasons.noCredits+' lookups hit the limit). Your plan\'s monthly credits are used up -- upgrade the Apollo plan or wait for the reset.';
+    if(reasons.notFound>0)msg+='\n- '+reasons.notFound+' contact(s): Apollo had no email on file for that person + company.';
+    if(reasons.apiError>0)msg+='\n- '+reasons.apiError+' contact(s): the data service returned an error.';
+    if(reasons.noKey===0&&reasons.noCredits===0&&reasons.notFound===0&&reasons.apiError===0)msg+='\n- No specific reason returned. Check that APOLLO_API_KEY is set and valid.';
     alert(msg);
   }
 }
+
 
 // ========== STEP 3: COMPOSE ==========
 function renderCompose(wrap){
@@ -671,7 +819,7 @@ function renderCompose(wrap){
 
   if(!S.generating){
     var genBtn=mk('button','btn btn-primary');genBtn.textContent='🤖 Generate All Messages';
-    genBtn.addEventListener('click',function(){generateAll(contacts,wrap);});
+    genBtn.addEventListener('click',function(){generateAllServerSide(contacts,wrap);});
     gRow.appendChild(genBtn);
   }
   gc.appendChild(gRow);
@@ -718,6 +866,73 @@ function renderCompose(wrap){
   }
 }
 
+
+// ===== SERVER-SIDE BULK GENERATION (resumes if page closed) =====
+async function generateAllServerSide(contacts,wrap){
+  S.generating=true;S.genProgress=0;S.messages=[];
+  renderCompose(wrap);
+
+  var remaining=contacts.slice();
+  var allDone=false;
+
+  while(!allDone && remaining.length){
+    try{
+      var resp=await fetch('/.netlify/functions/bulk-generate',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},
+        body:JSON.stringify({action:'start',contacts:remaining,sender:S.sender})
+      });
+      var d=await resp.json();
+      if(d.messages){
+        // Merge returned messages, rebuild LinkedIn text client-side
+        d.messages.forEach(function(m){
+          var liMsg=buildLinkedIn(m.contact,m.email);
+          S.messages.push({contact:m.contact,email:m.email,linkedin:liMsg});
+        });
+        S.genProgress=S.messages.length;
+        renderCompose(wrap);
+        saveSession(true);
+      }
+      // How many were completed this round?
+      var done=d.completed||0;
+      if(d.status==='done'||done>=remaining.length){
+        allDone=true;
+      }else{
+        // Continue with the rest
+        remaining=remaining.slice(done);
+      }
+    }catch(e){
+      // Fall back to client-side for the rest if server errors
+      console.warn('Server generation error, falling back:',e.message);
+      await generateAll(remaining,wrap);
+      allDone=true;
+    }
+  }
+  S.generating=false;saveSession(true);
+  renderCompose(wrap);
+}
+
+// On reopening, check if a server-side job is still running and resume polling
+async function resumeServerJob(wrap){
+  try{
+    var resp=await fetch('/.netlify/functions/bulk-generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},
+      body:JSON.stringify({action:'status'})
+    });
+    var d=await resp.json();
+    if(d.status==='running'||d.status==='done'){
+      if(d.messages&&d.messages.length){
+        S.messages=d.messages.map(function(m){return {contact:m.contact,email:m.email,linkedin:buildLinkedIn(m.contact,m.email)};});
+        S.genProgress=S.messages.length;
+        if(wrap)renderCompose(wrap);
+        return true;
+      }
+    }
+  }catch(e){}
+  return false;
+}
+
 async function generateAll(contacts,wrap){
   S.generating=true;S.genProgress=0;S.messages=[];
   renderCompose(wrap);
@@ -736,11 +951,11 @@ async function generateAll(contacts,wrap){
     }
     var liMsg=buildLinkedIn(r,emailResult);
     S.messages.push({contact:r,email:emailResult,linkedin:liMsg});
-    S.genProgress=i+1;
+    S.genProgress=i+1;scheduleSave();
     renderCompose(wrap);
     await delay(4000);
   }
-  S.generating=false;
+  S.generating=false;saveSession(true);
   renderCompose(wrap);
 }
 
@@ -762,6 +977,95 @@ function buildLinkedIn(r,email){
 }
 
 // ========== STEP 4: SEND ==========
+
+// ===== DIRECT SEND (server-side, runs even if page closes) =====
+async function sendEmailsDirectly(btn){
+  var withEm=S.messages.filter(function(m){return m.contact.email&&m.email;});
+  if(!withEm.length){alert('No contacts have both an email address and a generated email. Enrich emails in Step 2 and generate in Step 3 first.');return;}
+
+  if(!S.sender.email){
+    var senderEmail=prompt('Enter the From email address for this campaign (must be a verified SendGrid sender):');
+    if(!senderEmail)return;
+    S.sender.email=senderEmail.trim();
+  }
+
+  if(!confirm('Send '+withEm.length+' emails now through your campaign?\n\nThis runs on the server -- you can safely close this page once it starts.')){return;}
+
+  btn.disabled=true;btn.textContent='Sending '+withEm.length+' emails...';
+
+  // Build the emails array send-bulk expects: {to, subject, body}
+  var emails=withEm.map(function(m){
+    return {
+      to: m.contact.email,
+      subject: (m.email.subject||'Quick question').replace(/\{\{firstName\}\}/g,m.contact.firstName||''),
+      body: (m.email.body||'').replace(/\{\{firstName\}\}/g,m.contact.firstName||'').replace(/\{\{company\}\}/g,m.contact.company||'')
+    };
+  });
+
+  try{
+    var resp=await fetch('/.netlify/functions/send-bulk',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},
+      body:JSON.stringify({
+        emails:emails,
+        fromEmail:S.sender.email,
+        fromName:S.sender.name||S.sender.company||'Velorah',
+        campaignName:'LinkedIn Outreach '+new Date().toLocaleDateString()
+      })
+    });
+    var d=await resp.json();
+    if(resp.ok){
+      // Mark sent + clear the recovery session (campaign is now server-side)
+      btn.textContent='Sent! '+(d.sent||emails.length)+' emails queued';
+      btn.style.background='var(--green)';
+      // Tag messages as sent so they show status
+      withEm.forEach(function(m){m._sent=true;});
+      await clearSession();
+      var note=document.getElementById('send-result');
+      if(note){
+        note.style.display='block';
+        note.innerHTML='<div style="padding:14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;color:var(--text)"><strong style="color:var(--green)">Campaign launched.</strong> '+(d.sent||emails.length)+' emails are sending on the server. You can close this page -- they will continue to send. Check the History page for delivery status.</div>';
+      }
+    }else{
+      throw new Error(d.error||'Send failed: '+resp.status);
+    }
+  }catch(e){
+    btn.disabled=false;btn.textContent='Send All Emails Now';
+    alert('Send failed: '+e.message);
+  }
+}
+
+// ===== COMPLIANT LINKEDIN: copy message + open profile =====
+function sendViaLinkedIn(m,btn){
+  var msg=m.linkedin||'';
+  // Copy to clipboard
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg).then(function(){
+      btn.textContent='Copied! Opening LinkedIn...';
+      setTimeout(function(){btn.textContent='Copy + Open LinkedIn';},2500);
+    });
+  }else{
+    var ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    btn.textContent='Copied! Opening LinkedIn...';
+    setTimeout(function(){btn.textContent='Copy + Open LinkedIn';},2500);
+  }
+  // Open the person's LinkedIn (messaging if we have their URL)
+  var url=m.contact.linkedinUrl||'https://www.linkedin.com/feed/';
+  window.open(url,'_blank');
+}
+
+function copyAllLinkedInMessages(){
+  var liMsgs=S.messages.filter(function(m){return m.linkedin;});
+  if(!liMsgs.length){alert('No LinkedIn messages generated.');return;}
+  var text=liMsgs.map(function(m){
+    return '=== '+m.contact.firstName+' '+m.contact.lastName+' ('+(m.contact.linkedinUrl||'no url')+') ===\n'+m.linkedin+'\n';
+  }).join('\n');
+  if(navigator.clipboard){navigator.clipboard.writeText(text);}
+  alert('Copied '+liMsgs.length+' LinkedIn messages to clipboard. Paste into a doc to work through them, or use the per-contact Copy + Open buttons to send each one.');
+}
+
 function renderSend(wrap){
   if(!S.messages.length){
     wrap.innerHTML='<div class="card"><div class="empty" style="text-align:center;padding:3rem;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">🤖</div><h3 style="margin-bottom:8px">No messages generated yet</h3><p>Go to Step 3 and generate your messages first.</p></div></div>';
@@ -783,10 +1087,15 @@ function renderSend(wrap){
 
   // Action bar
   var ac=mk('div','card');ac.style.marginBottom='12px';ac.appendChild(mkTitle('Launch Campaign'));
-  var aRow=mk('div','flex');
+  var aRow=mk('div','flex');aRow.style.cssText='gap:10px;flex-wrap:wrap;align-items:center';
 
   if(S.channel!=='linkedin'){
-    var emailBtn=mk('button','btn btn-primary');emailBtn.textContent='📧 Send Emails via Campaign Agent ->';
+    // PRIMARY: one-click direct send (server-side)
+    var directBtn=mk('button','btn btn-primary');directBtn.style.cssText='font-size:15px;padding:12px 20px';directBtn.textContent='Send All Emails Now';
+    directBtn.addEventListener('click',function(){sendEmailsDirectly(directBtn);});
+    aRow.appendChild(directBtn);
+
+    var emailBtn=mk('button','btn btn-sm');emailBtn.textContent='Or refine in Campaign Agent ->';
     emailBtn.addEventListener('click',function(){
       var withEm=S.messages.filter(function(m){return m.contact.email&&m.email;});
       if(!withEm.length){alert('No contacts have email addresses. Enrich emails in Step 2 first.');return;}
@@ -817,6 +1126,23 @@ function renderSend(wrap){
   expBtn.addEventListener('click',function(){exportCSV();});
   aRow.appendChild(expBtn);
   ac.appendChild(aRow);
+  // LinkedIn compliant section
+  if(S.channel!=='email'){
+    var liCard=mk('div','card');liCard.style.marginBottom='12px';
+    liCard.appendChild(mkTitle('LinkedIn Messages (compliant manual send)'));
+    var liNote=mk('p',null);liNote.style.cssText='font-size:12px;color:var(--text2);margin-bottom:10px';
+    liNote.innerHTML='LinkedIn does not allow automated message sending (it risks account bans). Generate your messages here, then copy + open each profile to send manually -- or copy them all at once.';
+    liCard.appendChild(liNote);
+    var liAllBtn=mk('button','btn btn-sm');liAllBtn.style.cssText='background:#0077b5;color:#fff;border:none';
+    liAllBtn.textContent='Copy All LinkedIn Messages';
+    liAllBtn.addEventListener('click',copyAllLinkedInMessages);
+    liCard.appendChild(liAllBtn);
+    wrap.appendChild(liCard);
+  }
+
+  var resultNote=mk('div',null);resultNote.id='send-result';resultNote.style.display='none';resultNote.style.marginBottom='12px';
+  wrap.appendChild(resultNote);
+
   wrap.appendChild(ac);
 
   // Individual message cards
@@ -938,5 +1264,9 @@ window.cachedFetch = function(url, opts, ttlMs) {
   });
 };
 </script>
+
+<!-- Twilio Voice SDK + Velorah Dialer -->
+<script src="https://sdk.twilio.com/js/voice/releases/2.11.0/twilio.min.js"></script>
+<script src="/dialer-widget.js"></script>
 </body>
 </html>
