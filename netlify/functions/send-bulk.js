@@ -39,7 +39,7 @@ exports.handler = async function(event) {
     } catch(e) {}
   }
 
-  let emails, fromEmail, fromName, scheduleAt, campaignName;
+  let emails, fromEmail, fromName, scheduleAt, campaignName, attachments;
   try {
     const body = JSON.parse(event.body);
     emails     = body.emails || [];
@@ -47,6 +47,20 @@ exports.handler = async function(event) {
     fromName   = body.fromName || 'Velorah';
     scheduleAt = body.scheduleAt || null; // ISO string or null
     campaignName = body.campaignName || 'Campaign ' + new Date().toLocaleDateString();
+    attachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 5) : [];
+
+  // Prepare attachments once (shared across all emails in the campaign)
+  var sgAttachments = (attachments || [])
+    .filter(function(a){ return a && a.base64 && a.name && typeof a.name === 'string'; })
+    .map(function(a){
+      return {
+        content: String(a.base64),
+        type: String(a.type || 'application/octet-stream').substring(0, 100),
+        filename: String(a.name).replace(/[^a-zA-Z0-9._\-\s]/g, '').substring(0, 200),
+        disposition: 'attachment'
+      };
+    });
+
   } catch(e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) };
   }
@@ -92,6 +106,7 @@ exports.handler = async function(event) {
         { type: 'text/plain', value: bodyText || '' },
         { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;background:#fff;max-width:600px;font-family:Arial,sans-serif">${htmlBody}<hr style="margin-top:32px;border:none;border-top:1px solid #eee"><p style="font-size:11px;color:#aaa;margin-top:12px">Sent by ${fromName} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>` }
       ],
+      attachments: sgAttachments.length ? sgAttachments : undefined,
       tracking_settings: {
         click_tracking: { enable: true, enable_text: false },
         open_tracking: { enable: true },
