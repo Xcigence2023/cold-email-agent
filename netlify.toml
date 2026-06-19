@@ -7,6 +7,13 @@
   NODE_VERSION = "18"
 
 # ── FUNCTION TIMEOUTS ─────────────────────────────────────
+[functions]
+  # Force Netlify to install + bundle these npm packages with the functions.
+  # 'twilio' is required by twilio-token.js; listing it here guarantees it is
+  # installed from the root package.json even if auto-detection misses it.
+  external_node_modules = ["twilio"]
+  node_bundler = "esbuild"
+
 [functions."generate"]
   timeout = 26
 
