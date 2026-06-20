@@ -1,8 +1,0 @@
-{
-  "name": "velorah-functions",
-  "version": "1.0.0",
-  "description": "Velorah Netlify Functions dependencies",
-  "dependencies": {
-    "twilio": "^5.3.0"
-  }
-}
