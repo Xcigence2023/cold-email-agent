@@ -9,9 +9,9 @@
 # ── FUNCTION TIMEOUTS ─────────────────────────────────────
 [functions]
   # Force Netlify to install + bundle these npm packages with the functions.
-  # 'twilio' is required by twilio-token.js; listing it here guarantees it is
-  # installed from the root package.json even if auto-detection misses it.
-  external_node_modules = ["twilio"]
+  # stripe + supabase are required by create-checkout.js and stripe-webhook.js;
+  # listing them here guarantees they are bundled even if auto-detection misses them.
+  external_node_modules = ["stripe", "@supabase/supabase-js"]
   node_bundler = "esbuild"
 
 [functions."generate"]
