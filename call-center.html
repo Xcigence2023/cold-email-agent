@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Call Center — Velorah</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070c18; --panel:#0c1424; --panel2:#0e1730; --border:#1b2942; --text:#e8eefc; --text2:#8b9bbd; --accent:#3b82f6; --accent2:#8b5cf6; --green:#16c784; --red:#ef4444; --amber:#f59e0b; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Outfit',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:24px 20px 80px; }
+  h1{ font-size:22px; font-weight:600; margin-bottom:4px; }
+  .sub{ color:var(--text2); font-size:13px; margin-bottom:24px; }
+  .grid{ display:grid; grid-template-columns:380px 1fr; gap:20px; }
+  @media(max-width:880px){ .grid{ grid-template-columns:1fr; } }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; }
+  .panel h2{ font-size:14px; font-weight:600; margin-bottom:14px; color:var(--text); }
+  label{ display:block; font-size:12px; color:var(--text2); margin:12px 0 6px; }
+  input,select,textarea{ width:100%; background:var(--panel2); border:1px solid var(--border); border-radius:9px; padding:11px 13px; color:var(--text); font-family:inherit; font-size:14px; }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--accent); }
+  .phone-input{ font-family:'IBM Plex Mono',monospace; font-size:18px; letter-spacing:1px; text-align:center; }
+  .mode-row{ display:flex; gap:10px; margin:14px 0; }
+  .mode-btn{ flex:1; padding:14px 10px; border-radius:10px; border:1.5px solid var(--border); background:var(--panel2); color:var(--text2); cursor:pointer; text-align:center; transition:all .15s; font-family:inherit; }
+  .mode-btn .mt{ font-size:14px; font-weight:600; display:block; margin-bottom:3px; }
+  .mode-btn .md{ font-size:11px; opacity:.8; }
+  .mode-btn.active-human{ border-color:var(--green); background:rgba(22,199,132,.08); color:var(--text); }
+  .mode-btn.active-ai{ border-color:var(--accent2); background:rgba(139,92,246,.1); color:var(--text); }
+  .call-btn{ width:100%; padding:15px; border:none; border-radius:11px; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer; margin-top:16px; color:#fff; transition:opacity .15s; }
+  .call-btn.human{ background:linear-gradient(135deg,#16c784,#0ea968); }
+  .call-btn.ai{ background:linear-gradient(135deg,#8b5cf6,#6d28d9); }
+  .call-btn:disabled{ opacity:.5; cursor:not-allowed; }
+  .hint{ font-size:11px; color:var(--text2); margin-top:10px; line-height:1.5; }
+  .logs-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .filters select{ width:auto; font-size:12px; padding:7px 10px; }
+  .call-row{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:13px 15px; margin-bottom:9px; }
+  .call-row .cr-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .cr-num{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; }
+  .cr-name{ font-size:12px; color:var(--text2); }
+  .badge{ font-size:10px; padding:3px 8px; border-radius:20px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .badge.ai{ background:rgba(139,92,246,.15); color:#a78bfa; }
+  .badge.human{ background:rgba(22,199,132,.15); color:#34d399; }
+  .cr-meta{ display:flex; gap:14px; margin-top:8px; font-size:11px; color:var(--text2); flex-wrap:wrap; align-items:center; }
+  .outcome-sel{ width:auto; font-size:11px; padding:5px 8px; }
+  .cr-transcript{ margin-top:10px; font-size:12px; color:var(--text2); background:var(--bg); border-radius:8px; padding:10px; max-height:120px; overflow-y:auto; white-space:pre-wrap; display:none; }
+  .link-btn{ background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; padding:0; font-family:inherit; }
+  .empty{ text-align:center; color:var(--text2); padding:40px 20px; font-size:13px; }
+  .followups{ margin-top:20px; }
+  .fu-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.2); border-radius:9px; padding:11px 14px; margin-bottom:8px; }
+  .fu-info{ font-size:12px; }
+  .fu-due{ font-size:11px; color:var(--amber); margin-top:3px; }
+  .tabs{ display:flex; gap:6px; margin-bottom:16px; }
+  .tab{ padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text2); cursor:pointer; font-size:13px; font-family:inherit; }
+  .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--green); color:var(--text); padding:12px 20px; border-radius:10px; font-size:13px; z-index:9999; display:none; }
+  .stat-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .stat{ flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
+  .stat .sv{ font-size:22px; font-weight:700; }
+  .stat .sl{ font-size:11px; color:var(--text2); margin-top:2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Call Center</h1>
+  <div class="sub">Dial any number — choose a human call or the AI voice agent. Every call is logged with follow-ups.</div>
+
+  <div class="grid">
+    <!-- DIALER -->
+    <div class="panel">
+      <h2>New Call</h2>
+      <label>Phone number</label>
+      <input id="phone" class="phone-input" placeholder="+1 416 555 1234" autocomplete="off">
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:1"><label>Contact name (optional)</label><input id="cname" placeholder="Jane Doe"></div>
+      </div>
+      <label>Company (optional)</label>
+      <input id="ccompany" placeholder="Acme Corp">
+
+      <label>Choose how to call</label>
+      <div class="mode-row">
+        <div id="mHuman" class="mode-btn active-human" onclick="setMode('human')">
+          <span class="mt">Human dial</span>
+          <span class="md">You speak to them</span>
+        </div>
+        <div id="mAI" class="mode-btn" onclick="setMode('ai')">
+          <span class="mt">AI Voice agent</span>
+          <span class="md">Nick calls for you</span>
+        </div>
+      </div>
+
+      <button id="callBtn" class="call-btn human" onclick="placeCall()">Call now</button>
+      <div id="hint" class="hint">Human dial opens your in-browser phone. You'll talk to the lead directly, then log the outcome.</div>
+    </div>
+
+    <!-- LOGS + FOLLOW-UPS -->
+    <div class="panel">
+      <div class="tabs">
+        <div id="tabLogs" class="tab active" onclick="switchTab('logs')">Call Log</div>
+        <div id="tabFollow" class="tab" onclick="switchTab('follow')">Follow-ups</div>
+      </div>
+
+      <div id="logsView">
+        <div class="stat-row">
+          <div class="stat"><div class="sv" id="stTotal">0</div><div class="sl">Calls today</div></div>
+          <div class="stat"><div class="sv" id="stInterested">0</div><div class="sl">Interested</div></div>
+          <div class="stat"><div class="sv" id="stBooked">0</div><div class="sl">Booked</div></div>
+        </div>
+        <div class="filters">
+          <select id="fOutcome" onchange="loadCalls()">
+            <option value="">All outcomes</option>
+            <option value="interested">Interested</option>
+            <option value="not-interested">Not interested</option>
+            <option value="callback">Callback</option>
+            <option value="booked">Booked</option>
+            <option value="left-voicemail">Voicemail</option>
+            <option value="wrong-number">Wrong number</option>
+          </select>
+          <select id="fType" onchange="loadCalls()">
+            <option value="">Human + AI</option>
+            <option value="human">Human only</option>
+            <option value="ai">AI only</option>
+          </select>
+          <select id="fSince" onchange="loadCalls()">
+            <option value="today">Today</option>
+            <option value="week">Past 7 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div id="callList"><div class="empty">Loading calls…</div></div>
+      </div>
+
+      <div id="followView" style="display:none">
+        <div id="fuList"><div class="empty">Loading follow-ups…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Twilio Voice SDK + dialer + AI call -->
+<script src="/twilio.min.js"></script>
+<script>window.VELORAH_VOICE_AGENT_URL='https://velorah-voice-agent.fly.dev';</script>
+<script src="/dialer-widget.js"></script>
+<script src="/ai-call.js"></script>
+
+<script>
+const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+
+var _session=null;
+var mode='human';
+
+function toast(m,isErr){
+  var t=document.getElementById('toast');
+  t.textContent=m; t.style.borderColor=isErr?'var(--red)':'var(--green)'; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(function(){t.style.display='none';},4000);
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('mHuman').className='mode-btn'+(m==='human'?' active-human':'');
+  document.getElementById('mAI').className='mode-btn'+(m==='ai'?' active-ai':'');
+  var btn=document.getElementById('callBtn');
+  btn.className='call-btn '+m;
+  btn.textContent=m==='human'?'Call now':'Send AI agent';
+  document.getElementById('hint').textContent = m==='human'
+    ? "Human dial opens your in-browser phone. You'll talk to the lead directly, then log the outcome."
+    : "Nick (the disclosed AI voice agent) calls the number, qualifies the lead, and books a meeting. Logged automatically with transcript.";
+}
+
+function normalizePhone(v){
+  var n=String(v||'').replace(/[^\d+]/g,'');
+  if(n.indexOf('+')!==0){ if(n.length===10)n='+1'+n; else if(n.length===11&&n[0]==='1')n='+'+n; else n='+'+n; }
+  return n;
+}
+
+async function placeCall(){
+  var to=normalizePhone(document.getElementById('phone').value);
+  if(!to||to.length<8){ toast('Enter a valid phone number',true); return; }
+  var name=document.getElementById('cname').value.trim();
+  var company=document.getElementById('ccompany').value.trim();
+
+  if(mode==='ai'){
+    // AI agent calls; the voice-agent server logs it automatically.
+    if(window.VelorahAICall&&window.VelorahAICall.call){
+      window.VelorahAICall.call(to,{name:name,company:company});
+    } else { toast('AI dialer not loaded',true); }
+    return;
+  }
+
+  // HUMAN dial: open the in-browser dialer; on hangup, prompt for outcome + log.
+  if(window.VelorahDialer&&window.VelorahDialer.call){
+    var startedAt=new Date().toISOString();
+    window.VelorahDialer.call(to,{
+      name:name, company:company,
+      onEnd:function(info){
+        var durationSec=(info&&info.durationSeconds)||0;
+        logHumanCall(to,name,company,startedAt,durationSec);
+      }
+    });
+  } else {
+    toast('Dialer not loaded — check Twilio setup',true);
+  }
+}
+
+// After a human call, ask for the outcome and log it
+async function logHumanCall(to,name,company,startedAt,durationSec){
+  var outcome=window.prompt('Call outcome? (interested / not-interested / callback / booked / left-voicemail / wrong-number)','interested');
+  if(outcome===null) outcome='completed';
+  var notes=window.prompt('Notes (optional):','')||'';
+  try{
+    var resp=await fetch('/.netlify/functions/call-log',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},
+      body:JSON.stringify({
+        action:'log_call', to_number:to, contact_name:name, company:company,
+        call_type:'human', outcome:outcome, notes:notes,
+        duration_seconds:durationSec, started_at:startedAt, ended_at:new Date().toISOString()
+      })
+    });
+    var d=await resp.json();
+    if(d.ok){ toast('Call logged'+(d.followup?' + follow-up scheduled':'')); loadCalls(); loadFollowups(); }
+    else toast('Could not log call: '+(d.error||''),true);
+  }catch(e){ toast('Log error: '+e.message,true); }
+}
+
+function sinceValue(){
+  var v=document.getElementById('fSince').value;
+  if(v==='today'){ var d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
+  if(v==='week'){ return new Date(Date.now()-7*864e5).toISOString(); }
+  return null;
+}
+
+async function loadCalls(){
+  var list=document.getElementById('callList');
+  try{
+    var body={action:'list_calls'};
+    var o=document.getElementById('fOutcome').value; if(o)body.outcome=o;
+    var t=document.getElementById('fType').value; if(t)body.call_type=t;
+    var since=sinceValue(); if(since)body.since=since;
+    var resp=await fetch('/.netlify/functions/call-log',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify(body)});
+    var d=await resp.json();
+    if(!d.ok){ list.innerHTML='<div class="empty">'+(d.error||'Could not load calls')+'</div>'; return; }
+    renderCalls(d.calls||[]);
+    updateStats(d.calls||[]);
+  }catch(e){ list.innerHTML='<div class="empty">Error loading calls</div>'; }
+}
+
+function updateStats(calls){
+  var today=new Date(); today.setHours(0,0,0,0);
+  var todayCalls=calls.filter(function(c){ return new Date(c.started_at)>=today; });
+  document.getElementById('stTotal').textContent=todayCalls.length;
+  document.getElementById('stInterested').textContent=calls.filter(function(c){return c.outcome==='interested';}).length;
+  document.getElementById('stBooked').textContent=calls.filter(function(c){return c.outcome==='booked';}).length;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDur(s){ s=parseInt(s)||0; var m=Math.floor(s/60); var ss=s%60; return m+'m '+(ss<10?'0':'')+ss+'s'; }
+function fmtTime(t){ try{ return new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+
+var OUTCOMES=['','interested','not-interested','callback','booked','left-voicemail','wrong-number'];
+function renderCalls(calls){
+  var list=document.getElementById('callList');
+  if(!calls.length){ list.innerHTML='<div class="empty">No calls yet. Make your first call from the dialer.</div>'; return; }
+  list.innerHTML=calls.map(function(c){
+    var opts=OUTCOMES.map(function(o){ return '<option value="'+o+'"'+(c.outcome===o?' selected':'')+'>'+(o||'— set outcome —')+'</option>'; }).join('');
+    var transcript=c.transcript? '<div class="cr-transcript" id="tr-'+c.id+'">'+esc(c.transcript)+'</div>' : '';
+    var trBtn=c.transcript? '<button class="link-btn" onclick="toggleTranscript(\''+c.id+'\')">transcript</button>' : '';
+    var email=c.captured_email? '<span style="color:var(--green)">✉ '+esc(c.captured_email)+'</span>' : '';
+    return '<div class="call-row">'+
+      '<div class="cr-top">'+
+        '<div><span class="cr-num">'+esc(c.to_number)+'</span> '+(c.contact_name?'<span class="cr-name">'+esc(c.contact_name)+(c.company?' · '+esc(c.company):'')+'</span>':'')+'</div>'+
+        '<span class="badge '+(c.call_type==='ai'?'ai':'human')+'">'+(c.call_type==='ai'?'AI':'Human')+'</span>'+
+      '</div>'+
+      '<div class="cr-meta">'+
+        '<span>'+fmtTime(c.started_at)+'</span>'+
+        '<span>'+fmtDur(c.duration_seconds)+'</span>'+
+        email+
+        '<select class="outcome-sel" onchange="setOutcome(\''+c.id+'\',this.value)">'+opts+'</select>'+
+        trBtn+
+      '</div>'+
+      transcript+
+    '</div>';
+  }).join('');
+}
+
+function toggleTranscript(id){
+  var el=document.getElementById('tr-'+id);
+  if(el) el.style.display = el.style.display==='block'?'none':'block';
+}
+
+async function setOutcome(id,outcome){
+  try{
+    await fetch('/.netlify/functions/call-log',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({action:'update_call',id:id,outcome:outcome})});
+    toast('Outcome updated');
+    updateStatsFromDom();
+  }catch(e){ toast('Could not update',true); }
+}
+function updateStatsFromDom(){ loadCalls(); }
+
+async function loadFollowups(){
+  var list=document.getElementById('fuList');
+  try{
+    var resp=await fetch('/.netlify/functions/call-log',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({action:'list_followups',status:'open'})});
+    var d=await resp.json();
+    if(!d.ok){ list.innerHTML='<div class="empty">'+(d.error||'Could not load')+'</div>'; return; }
+    var fus=d.followups||[];
+    if(!fus.length){ list.innerHTML='<div class="empty">No open follow-ups. They appear here when a call is marked interested or callback.</div>'; return; }
+    list.innerHTML=fus.map(function(f){
+      return '<div class="fu-row">'+
+        '<div class="fu-info"><div>'+esc(f.to_number||'')+(f.contact_name?' · '+esc(f.contact_name):'')+'</div>'+
+        '<div class="fu-due">'+(f.followup_type||'callback')+' · due '+fmtTime(f.due_at)+'</div></div>'+
+        '<button class="link-btn" onclick="completeFu(\''+f.id+'\')">mark done</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){ list.innerHTML='<div class="empty">Error</div>'; }
+}
+
+async function completeFu(id){
+  try{
+    await fetch('/.netlify/functions/call-log',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({action:'complete_followup',id:id})});
+    toast('Follow-up completed'); loadFollowups();
+  }catch(e){ toast('Could not update',true); }
+}
+
+function switchTab(t){
+  document.getElementById('tabLogs').className='tab'+(t==='logs'?' active':'');
+  document.getElementById('tabFollow').className='tab'+(t==='follow'?' active':'');
+  document.getElementById('logsView').style.display=t==='logs'?'block':'none';
+  document.getElementById('followView').style.display=t==='follow'?'block':'none';
+  if(t==='follow') loadFollowups();
+}
+
+async function init(){
+  try{
+    var s=await sbClient.auth.getSession();
+    _session=s.data.session;
+    if(!_session){ toast('Please sign in',true); }
+  }catch(e){}
+  loadCalls();
+}
+init();
+</script>
+</body>
+</html>
