@@ -140,7 +140,16 @@
 
       device.on('registered', function(){ deviceReady = true; setStatus('Ready to call'); });
       device.on('error', function(err){
-        setStatus('Error: ' + (err && err.message ? err.message : 'unknown'), 'error');
+        var code = err && (err.code || (err.originalError && err.originalError.code));
+        var msg = (err && err.message) ? err.message : 'unknown error';
+        if (code === 53000 || (msg && msg.indexOf('53000') >= 0)) {
+          msg = 'Twilio rejected the connection (token/credentials). Check that TWILIO_API_SECRET matches TWILIO_API_KEY, and that the TwiML App SID is correct.';
+        } else if (code === 31204 || code === 20151) {
+          msg = 'Access token invalid — the API Key Secret likely does not match the API Key.';
+        } else if (code === 31402 || (msg && msg.toLowerCase().indexOf('microphone') >= 0)) {
+          msg = 'Microphone access is required. Allow the mic for this site and reload.';
+        }
+        setStatus('Error: ' + msg, 'error');
       });
       device.on('tokenWillExpire', async function(){
         // Refresh the token to keep the device alive
@@ -158,7 +167,8 @@
 
       await device.register();
     } catch(e) {
-      setStatus(e.message || 'Could not start dialer', 'error');
+      var em = (e && e.message) ? e.message : (typeof e === 'string' ? e : 'Could not start dialer');
+      setStatus(em, 'error');
     } finally {
       initializing = false;
     }
