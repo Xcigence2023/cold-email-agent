@@ -65,6 +65,7 @@ tr:hover td{background:var(--bg2)}
       <a href="/find-leads.html">Koios Intel</a>
       <a href="/social-listen.html">Athena One</a>
       <a href="/visitors.html" class="active">Argus Watch</a>
+      <a href="/call-center.html">Call Center</a>
       <a href="/history.html">History</a>
     </nav>
   </div>
@@ -114,6 +115,7 @@ tr:hover td{background:var(--bg2)}
         </select>
         <select id="contacted-filter" onchange="applyFilters()">
           <option value="">All Visitors</option>
+          <option value="companies">Real Companies Only (hide ISPs)</option>
           <option value="false">Not Yet Contacted</option>
           <option value="true">Already Contacted</option>
         </select>
@@ -171,6 +173,100 @@ const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
 let _session=null, allVisits=[], filtered=[], selected=new Set();
 let currentPage=1; const PAGE=50;
 
+
+// ===== ISP FILTERING + COMPANY ENRICHMENT (additive) =====
+// Known consumer ISPs / telecoms / hosting -- these are NOT real company visitors.
+var KNOWN_ISPS = ['rogers','bell canada','telus','comcast','xfinity','at&t','at and t','verizon','spectrum','charter',
+  'cox communications','centurylink','frontier','vodafone','t-mobile','sprint','virgin media','sky broadband','bt group',
+  'orange','telefonica','deutsche telekom','china mobile','china telecom','china unicom','shaw','videotron','cogeco',
+  'amazon','amazon technologies','aws','google cloud','google llc','microsoft','azure','digitalocean','cloudflare','ovh',
+  'hetzner','linode','akamai','fastly','godaddy','hostgator','bluehost','namecheap','liquid web','rackspace',
+  'starlink','spacex','hughesnet','viasat','windstream','mediacom','optimum','altice','suddenlink','wow internet'];
+
+function isLikelyISP(name){
+  if(!name)return true; // no company name = treat as non-actionable
+  var n=name.toLowerCase();
+  for(var i=0;i<KNOWN_ISPS.length;i++){
+    if(n.indexOf(KNOWN_ISPS[i])>=0)return true;
+  }
+  // Heuristics: telecom/hosting keywords
+  if(/\b(communications|telecom|broadband|wireless|internet services|isp|hosting|datacenter|data center|cable)\b/i.test(n))return true;
+  return false;
+}
+
+// Tag each visitor with whether it's a real company (actionable) or ISP/unknown
+function classifyVisitors(){
+  allVisits.forEach(function(v){
+    v._isISP = isLikelyISP(v.company_name);
+    v._actionable = !v._isISP;
+  });
+}
+
+// One-click: find decision-makers at a company via the existing Koios Intel (find-leads) engine
+async function findDecisionMakers(visitor, btnEl){
+  if(!visitor || !visitor.company_name || visitor._isISP){
+    alert('This visitor resolved to an internet provider, not a company, so there are no decision-makers to look up. Enrichment only works for visitors on a corporate network.');
+    return;
+  }
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='Finding people...';}
+  try{
+    var resp=await fetch('/.netlify/functions/find-leads',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},
+      body:JSON.stringify({
+        action:'search',
+        company:visitor.company_name,
+        domain:visitor.company_domain||'',
+        titles:['CEO','CTO','CISO','VP','Director','Head','Chief','Manager','Founder']
+      })
+    });
+    if(!resp.ok){
+      var et='';try{var ej=await resp.json();et=ej.error||'';}catch(e){}
+      throw new Error(resp.status===404?'Lead search service not deployed.':(et||('Service error '+resp.status)));
+    }
+    var data=await resp.json();
+    var people=data.leads||data.results||data.people||[];
+    showDecisionMakers(visitor, people);
+  }catch(e){
+    alert('Could not find decision-makers: '+e.message);
+  }finally{
+    if(btnEl){btnEl.disabled=false;btnEl.textContent='Find decision-makers';}
+  }
+}
+
+function showDecisionMakers(visitor, people){
+  var modal=document.getElementById('dm-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='dm-modal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px';
+    document.body.appendChild(modal);
+  }
+  var rows='';
+  if(!people.length){
+    rows='<p style="color:var(--text2);padding:16px 0">No decision-makers found for this company in Koios Intel. The company may be too small or not in the data provider\'s index.</p>';
+  }else{
+    people.forEach(function(p){
+      var nm=(p.first_name||p.firstName||'')+' '+(p.last_name||p.lastName||'');
+      var title=p.title||p.job_title||'';
+      var email=p.email||'';
+      rows+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">';
+      rows+='<div><div style="font-weight:600;font-size:13px">'+(nm.trim()||'Unknown')+'</div><div style="font-size:12px;color:var(--text2)">'+title+'</div></div>';
+      rows+='<div style="font-size:12px;color:var(--blue)">'+(email||'no email')+'</div>';
+      rows+='</div>';
+    });
+  }
+  modal.innerHTML='<div style="background:var(--bg,#0e1730);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:22px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+    +'<h3 style="font-size:16px;font-weight:700">Decision-makers at '+(visitor.company_name||'')+'</h3>'
+    +'<button onclick="document.getElementById(\'dm-modal\').remove()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">&times;</button>'
+    +'</div>'
+    +'<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Found via Koios Intel. Use the campaign tools to reach out.</p>'
+    +rows
+    +'<div style="margin-top:16px;text-align:right"><button onclick="document.getElementById(\'dm-modal\').remove()" style="background:var(--blue,#3b82f6);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px">Close</button></div>'
+    +'</div>';
+}
+
 async function init(){
   const{data:{session}}=await sbClient.auth.getSession();
   if(!session){window.location.href='/login.html';return;}
@@ -186,6 +282,7 @@ async function loadVisitors(){
     });
     allVisits=await resp.json();
     if(!Array.isArray(allVisits))allVisits=[];
+    classifyVisitors();
     updateStats();
     populateCountryFilter();
     applyFilters();
@@ -222,7 +319,8 @@ function applyFilters(){
 
   let data=allVisits.filter(v=>{
     if(country&&v.country!==country)return false;
-    if(contacted!=='')if(String(v.contacted)!==contacted)return false;
+    if(contacted==='companies'){ if(v._isISP)return false; }
+    else if(contacted!=='')if(String(v.contacted)!==contacted)return false;
     if(search){const s=(v.company_name+v.city+v.country+v.company_domain+v.page).toLowerCase();if(!s.includes(search))return false;}
     return true;
   });
@@ -289,8 +387,11 @@ function renderTable(){
       var isSel=selected.has(id);
       html+='<tr style="'+(isSel?'background:rgba(59,130,246,.05)':'')+'">';
       html+='<td><input type="checkbox" class="vis-cb" data-id="'+id+'" style="width:13px;height:13px;accent-color:var(--blue);cursor:pointer" '+(isSel?'checked':'')+'/></td>';
-      html+='<td><div style="font-weight:700;font-size:13px">'+(v.company_name||'Unknown')+'</div>';
+      html+='<td><div style="font-weight:700;font-size:13px">'+(v.company_name||'Unknown');
+      if(v._isISP)html+=' <span style="background:rgba(148,163,184,.15);color:var(--text3);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;vertical-align:middle">ISP</span>';
+      html+='</div>';
       if(v.company_domain)html+='<div style="font-size:11px"><a href="https://'+v.company_domain+'" target="_blank" style="color:var(--blue)">'+v.company_domain+'</a></div>';
+      if(v._actionable)html+='<button class="dm-btn" data-vid="'+id+'" style="margin-top:5px;background:rgba(16,185,129,.12);color:var(--green,#16c784);border:1px solid rgba(16,185,129,.3);padding:3px 9px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit">Find decision-makers</button>';
       html+='</td>';
       html+='<td style="font-size:12px;white-space:nowrap">'+([v.city,v.country].filter(Boolean).join(', ')||'-')+'</td>';
       html+='<td><span style="background:rgba(59,130,246,.15);color:var(--blue);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">'+(v.visitCount||1)+'</span></td>';
@@ -306,6 +407,14 @@ function renderTable(){
   // Wire up checkboxes via event delegation (avoids inline quote escaping)
   wrap.querySelectorAll('.vis-cb').forEach(function(cb){
     cb.onchange=function(){toggleSelect(this.dataset.id,this);};
+  });
+  document.querySelectorAll('.dm-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      var vid=btn.getAttribute('data-vid');
+      var v=allVisits.find(function(x){return String(x.id||x.company_name||x.ip||'')===vid;});
+      if(v)findDecisionMakers(v,btn);
+    });
   });
   var total=Math.ceil(filtered.length/PAGE);
   var pag=document.getElementById('pagination');
