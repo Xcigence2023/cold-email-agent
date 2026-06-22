@@ -812,6 +812,30 @@ function p3(){
     const bodyWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Email Body - Edit directly or use Rewrite Body above'));
     const ta=document.createElement('textarea');ta.value=ae.body;ta.addEventListener('input',e=>S.emails[S.activeIdx].body=e.target.value);
     bodyWrap.appendChild(ta);det.appendChild(bodyWrap);
+
+    // Per-recipient attachment: a file that goes ONLY to this lead.
+    const attWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Personalized attachment for this recipient (optional)'));
+    if(ae.attachment){
+      attWrap.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'12px',color:'var(--text2)',marginBottom:'6px'}},
+        h('span',{},'📎 '+ae.attachment.name+' ('+Math.round((ae.attachment.base64.length*0.75)/1024)+' KB)'),
+        h('button',{cls:'btn',style:{padding:'1px 6px',fontSize:'11px',background:'var(--red-dim)',color:'var(--red)',border:'none'},onClick:()=>{S.emails[S.activeIdx].attachment=null;draw();}},'x')
+      ));
+    } else {
+      const attInput=document.createElement('input');attInput.type='file';attInput.style.fontSize='12px';
+      attInput.addEventListener('change',function(e){
+        const f=e.target.files[0]; if(!f) return;
+        if(f.size>7*1024*1024){alert('"'+f.name+'" is larger than 7MB. Please use a smaller file.');return;}
+        const rd=new FileReader();
+        rd.onload=function(){
+          const base64=String(rd.result).split(',')[1]||'';
+          S.emails[S.activeIdx].attachment={name:f.name,type:f.type||'application/octet-stream',base64:base64};
+          draw();
+        };
+        rd.readAsDataURL(f);
+      });
+      attWrap.appendChild(attInput);
+    }
+    det.appendChild(attWrap);
     det.appendChild(h('div',{cls:'fb'},
       h('div',{cls:'flex'},
         h('button',{cls:'btn '+(ae.approved&&!ae.error?'btn-danger':'btn-success'),style:{fontSize:'12px'},onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;draw();}},ae.approved&&!ae.error?'Exclude':'Include'),
@@ -1031,7 +1055,7 @@ h('button',{cls:'btn btn-launch',onClick:async()=>{
 
 async function launchCampaign(approved){
   S.bulkSending=true;S.bulkProgress={total:approved.length,sent:0,failed:0};draw();
-  const emails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body}));
+  const emails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body,attachments:ed.attachment?[ed.attachment]:undefined}));
   try{
     const resp=await fetch('/.netlify/functions/send-bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({emails,fromEmail:S.sender.email,fromName:S.sender.name,scheduleAt:S.scheduleAt||null,campaignName:S.campaignName||'Campaign'})});
     const data=await resp.json();
