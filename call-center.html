@@ -59,9 +59,47 @@
   .stat{ flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
   .stat .sv{ font-size:22px; font-weight:700; }
   .stat .sl{ font-size:11px; color:var(--text2); margin-top:2px; }
+
+  /* Portal topbar (matches the rest of Velorah) */
+  .topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px}
+  .brand-name{font-size:16px;font-weight:800;color:var(--text)}
+  .nav{display:flex;gap:2px;margin-left:12px;flex-wrap:wrap}
+  .nav a{font-size:13px;color:var(--text2);text-decoration:none;padding:6px 10px;border-radius:7px;white-space:nowrap}
+  .nav a:hover{color:var(--text);background:rgba(255,255,255,.04)}
+  .nav a.active{color:var(--text);background:rgba(59,130,246,.12)}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .btn-sm{cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel2);color:var(--text2);font-family:'Outfit',sans-serif}
+  .user-email{font-size:11px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
 </style>
 </head>
 <body>
+<div class="topbar">
+  <div class="flex" style="display:flex;align-items:center;gap:0">
+    <div class="brand">
+      <div class="brand-logo">✉</div>
+      <span class="brand-name">Velorah</span>
+    </div>
+    <nav class="nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html">Campaigns</a>
+      <a href="/campaign-video.html">Ares</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html">Athena One</a>
+      <a href="/visitors.html">Argus Watch</a>
+      <a href="/crm-settings.html">CRM</a>
+      <a href="/call-center.html" class="active">Call Center</a>
+      <a href="/history.html">History</a>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span id="user-email" class="user-email"></span>
+    <button class="btn-sm" onclick="signOut()">Sign out</button>
+  </div>
+</div>
+
 <div class="wrap">
   <h1>Call Center</h1>
   <div class="sub">Dial any number — choose a human call or the AI voice agent. Every call is logged with follow-ups.</div>
@@ -336,12 +374,26 @@ function switchTab(t){
   if(t==='follow') loadFollowups();
 }
 
+async function signOut(){
+  try{ await sbClient.auth.signOut(); }catch(e){}
+  window.location.href='/login.html';
+}
+
 async function init(){
   try{
     var s=await sbClient.auth.getSession();
     _session=s.data.session;
-    if(!_session){ toast('Please sign in',true); }
-  }catch(e){}
+    if(!_session){
+      // Not signed in -> bounce to login. Call Center is portal-only.
+      window.location.href='/login.html';
+      return;
+    }
+    var ue=document.getElementById('user-email');
+    if(ue && _session.user) ue.textContent=_session.user.email||'';
+  }catch(e){
+    window.location.href='/login.html';
+    return;
+  }
   loadCalls();
 }
 init();
