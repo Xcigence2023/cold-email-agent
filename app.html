@@ -1054,19 +1054,83 @@ h('button',{cls:'btn btn-launch',onClick:async()=>{
   return wrap;
 }
 
+// Estimate the byte size of an email (incl. base64 attachment) to keep each
+// request under Netlify's ~6MB function payload limit.
+function _emailSize(e){
+  var n = (e.subject||'').length + (e.body||'').length + (e.to||'').length + 50;
+  if(e.attachments){ e.attachments.forEach(function(a){ n += (a.base64||'').length + (a.name||'').length; }); }
+  return n;
+}
+// Split emails into chunks that each stay safely under the size limit AND under
+// a max count. Attachments make payloads big, so size is the real constraint.
+function _chunkEmails(list){
+  var MAX_BYTES = 4.5 * 1024 * 1024; // stay well under Netlify's ~6MB
+  var MAX_COUNT = 100;               // also cap count per request
+  var chunks=[], cur=[], curBytes=0;
+  for(var i=0;i<list.length;i++){
+    var sz=_emailSize(list[i]);
+    // A single oversized attachment can't fit -> still send it alone (will error clearly)
+    if(cur.length>0 && (curBytes+sz>MAX_BYTES || cur.length>=MAX_COUNT)){
+      chunks.push(cur); cur=[]; curBytes=0;
+    }
+    cur.push(list[i]); curBytes+=sz;
+  }
+  if(cur.length) chunks.push(cur);
+  return chunks;
+}
+
 async function launchCampaign(approved){
   S.bulkSending=true;S.bulkProgress={total:approved.length,sent:0,failed:0};draw();
-  const emails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body,attachments:ed.attachment?[ed.attachment]:undefined}));
+  const allEmails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body,attachments:ed.attachment?[ed.attachment]:undefined}));
+  const approvedById={}; approved.forEach(function(ed){approvedById[ed.id]=ed;});
+
+  const chunks=_chunkEmails(allEmails);
+  let totalSent=0, totalFailed=0; const allMessageIds={}; let hadError=null;
+
   try{
-    const resp=await fetch('/.netlify/functions/send-bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({emails,fromEmail:S.sender.email,fromName:S.sender.name,scheduleAt:S.scheduleAt||null,campaignName:S.campaignName||'Campaign'})});
-    const data=await resp.json();
-    if(data.success){
-      S.bulkProgress={total:data.total,sent:data.sent,failed:data.failed};
-      approved.forEach(ed=>{S.sendStatus[ed.id]=data.messageIds&&data.messageIds[ed.id]?(S.scheduleAt?'scheduled':'sent'):'error';if(data.messageIds&&data.messageIds[ed.id])S.messageIds[ed.id]=data.messageIds[ed.id];});
-      try{await fetch('/.netlify/functions/email_history',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({records:approved.map(ed=>({campaignName:S.campaignName||'Campaign',name:getName(ed.lead),email:(ed.lead[S.colMap.email]||'').trim(),company:ed.lead[S.colMap.company]||'',title:ed.lead[S.colMap.title]||'',industry:ed.lead[S.colMap.industry]||'',subject:ed.subject,body:ed.body,status:S.scheduleAt?'scheduled':'sent',messageId:data.messageIds?data.messageIds[ed.id]||null:null,scheduledAt:S.scheduleAt||null}))})});}catch(e){}
-      alert(S.scheduleAt?'Done '+data.sent+' emails scheduled for '+new Date(S.scheduleAt).toLocaleString():'Done Campaign sent! '+data.sent+' sent . '+data.failed+' failed');
+    for(let ci=0; ci<chunks.length; ci++){
+      const emails=chunks[ci];
+      let resp, data;
+      try{
+        resp=await fetch('/.netlify/functions/send-bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({emails,fromEmail:S.sender.email,fromName:S.sender.name,scheduleAt:S.scheduleAt||null,campaignName:S.campaignName||'Campaign'})});
+      }catch(netErr){ hadError='Network error sending batch '+(ci+1)+': '+netErr.message; break; }
+
+      // Read as text first so a non-JSON error page (e.g. "Internal Error" when a
+      // payload is too large) gives a clear message instead of a JSON parse crash.
+      const raw=await resp.text();
+      try{ data=JSON.parse(raw); }
+      catch(parseErr){
+        if(resp.status===413 || /too large|payload/i.test(raw)){
+          hadError='Batch '+(ci+1)+' was too large to send. Try fewer or smaller attachments.';
+        } else {
+          hadError='Server error on batch '+(ci+1)+' (status '+resp.status+'). '+(raw||'').slice(0,120);
+        }
+        break;
+      }
+
+      if(data.success){
+        totalSent+=(data.sent||0); totalFailed+=(data.failed||0);
+        if(data.messageIds) Object.assign(allMessageIds,data.messageIds);
+        emails.forEach(function(em){
+          const ed=approvedById[em.id]; if(!ed) return;
+          S.sendStatus[ed.id]=data.messageIds&&data.messageIds[ed.id]?(S.scheduleAt?'scheduled':'sent'):'error';
+          if(data.messageIds&&data.messageIds[ed.id])S.messageIds[ed.id]=data.messageIds[ed.id];
+        });
+        S.bulkProgress={total:approved.length,sent:totalSent,failed:totalFailed};draw();
+      } else { hadError='Batch '+(ci+1)+' failed: '+(data.error||'Unknown error'); break; }
+    }
+
+    // Save history for everything that got a message id
+    try{await fetch('/.netlify/functions/email_history',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({records:approved.filter(ed=>allMessageIds[ed.id]).map(ed=>({campaignName:S.campaignName||'Campaign',name:getName(ed.lead),email:(ed.lead[S.colMap.email]||'').trim(),company:ed.lead[S.colMap.company]||'',title:ed.lead[S.colMap.title]||'',industry:ed.lead[S.colMap.industry]||'',subject:ed.subject,body:ed.body,status:S.scheduleAt?'scheduled':'sent',messageId:allMessageIds[ed.id]||null,scheduledAt:S.scheduleAt||null}))})});}catch(e){}
+
+    if(hadError && totalSent===0){
+      alert('Campaign failed: '+hadError);
+    } else if(hadError){
+      alert('Partly sent: '+totalSent+' delivered, then stopped. '+hadError);
+    } else {
+      alert(S.scheduleAt?'Done '+totalSent+' emails scheduled for '+new Date(S.scheduleAt).toLocaleString():'Done Campaign sent! '+totalSent+' sent . '+totalFailed+' failed');
       if(!S.scheduleAt)setTimeout(()=>checkTracking(),30000);
-    }else alert('Campaign failed: '+(data.error||'Unknown error'));
+    }
   }catch(e){alert('Error: '+e.message);}
   S.bulkSending=false;draw();
 }
