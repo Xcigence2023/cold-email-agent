@@ -877,7 +877,8 @@ async function validateEmails(){
     });
 
     if(!resp.ok) throw new Error('Validation service error: '+resp.status);
-    const data=await resp.json();
+    const vtxt=await resp.text();
+    const data = vtxt ? JSON.parse(vtxt) : { summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0}, results:[] };
     S.validationResults=data;
     S.validationDone=true;
     S.validationRunning=false;
@@ -1000,10 +1001,13 @@ function p4(){
 h('button',{cls:'btn btn-launch',onClick:async()=>{
       if(!approved.length){alert('No approved emails to send.');return;}
       const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails now?';
-      // Pre-flight validation before send
+      // Pre-flight validation before send (optional — never blocks the send)
       if(!S.validationDone){
         const runVal=confirm('Run deliverability check before sending? (Recommended - checks DNS, spam score, firewall risk)');
-        if(runVal){await validateEmails();return;}
+        if(runVal){
+          try{ await validateEmails(); }catch(ve){ console.warn('Validation skipped:',ve&&ve.message); }
+          return;
+        }
       }
       if(!confirm(label))return;
       await launchCampaign(approved);
