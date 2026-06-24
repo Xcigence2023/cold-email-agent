@@ -15,6 +15,16 @@
 
 const dns = require('dns').promises;
 
+// Wrap a DNS promise so it can never hang the function past `ms`.
+// A hung DNS lookup is the #1 cause of this function timing out and
+// returning an empty body (which the client sees as 'Unexpected end of JSON input').
+function withTimeout(promise, ms, onTimeoutValue){
+  return Promise.race([
+    promise,
+    new Promise(function(resolve){ setTimeout(function(){ resolve(onTimeoutValue); }, ms); })
+  ]);
+}
+
 const _rl = new Map();
 function _rate(id, max, win) {
   const n = Date.now(), r = _rl.get(id) || { c: 0, t: n + (win || 60000) };
@@ -179,7 +189,7 @@ exports.handler = async function(event) {
   let emails, subject, body, action;
   try {
     const parsed = JSON.parse(event.body || '{}');
-    emails  = Array.isArray(parsed.emails) ? parsed.emails.slice(0, 100) : [];
+    emails  = Array.isArray(parsed.emails) ? parsed.emails.slice(0, 50) : [];
     subject = parsed.subject || '';
     body    = parsed.body    || '';
     action  = parsed.action  || 'validate';
@@ -234,9 +244,14 @@ exports.handler = async function(event) {
       // 4. DNS / MX record check (with cache)
       if (!domainCache.has(domain)) {
         try {
-          const mxRecords = await dns.resolveMx(domain);
-          const hasMx = mxRecords && mxRecords.length > 0;
-          domainCache.set(domain, { hasMx: hasMx, mx: hasMx ? mxRecords[0].exchange : null });
+          const mxRecords = await withTimeout(dns.resolveMx(domain), 2500, null);
+          if (mxRecords === null) {
+            // Timed out -- treat as unverifiable, don't block.
+            domainCache.set(domain, { hasMx: false, mx: null, error: 'ETIMEOUT' });
+          } else {
+            const hasMx = mxRecords && mxRecords.length > 0;
+            domainCache.set(domain, { hasMx: hasMx, mx: hasMx ? mxRecords[0].exchange : null });
+          }
         } catch(e) {
           domainCache.set(domain, { hasMx: false, mx: null, error: e.code });
         }
@@ -258,12 +273,12 @@ exports.handler = async function(event) {
           result.status = 'warning';
           result.risk = 'medium';
           result.warnings.push('Could not verify mail server (DNS timeout)');
-          result.deliverabilityScore -= 15;
+          result.deliverabilityScore -= 10;
         }
       } else {
         // Check SPF record exists
         try {
-          const txtRecords = await dns.resolveTxt(domain);
+          const txtRecords = await withTimeout(dns.resolveTxt(domain), 2000, []);
           const spf = txtRecords.flat().find(function(t) { return t.startsWith('v=spf1'); });
           if (!spf) {
             result.warnings.push('No SPF record -- domain may be more likely to land in spam');
