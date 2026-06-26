@@ -146,7 +146,23 @@ textarea{resize:vertical;line-height:1.6}
 <script>
 var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
-var sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+var sbClient=null;
+try{
+  if(window.supabase&&window.supabase.createClient){
+    sbClient=window.supabase.createClient(SB_URL,SB_KEY);
+  }else{
+    throw new Error('Supabase SDK not loaded');
+  }
+}catch(e){
+  // Don't let a failed SDK load blank the whole page — show a clear message instead.
+  document.addEventListener('DOMContentLoaded',function(){
+    document.body.innerHTML='<div style="max-width:560px;margin:80px auto;font-family:system-ui,Arial;padding:32px;border:1px solid #ddd;border-radius:12px;text-align:center">'+
+      '<h2 style="margin:0 0 12px">Couldn\'t load Ares</h2>'+
+      '<p style="color:#555;line-height:1.5">The page failed to load a required library (Supabase). This is usually a temporary network or ad-blocker issue.</p>'+
+      '<p style="color:#555;line-height:1.5">Please <a href="" onclick="location.reload();return false;" style="color:#4F46E5;font-weight:600">refresh the page</a>. If it keeps happening, disable any ad-blocker for this site or try a different browser.</p>'+
+      '</div>';
+  });
+}
 var _session=null;
 
 var S={
@@ -219,6 +235,7 @@ function checkLeadIntake(){
 }
 
 async function init(){
+  if(!sbClient){ return; }  // SDK failed to load; the DOMContentLoaded handler already showed a message
   try{
     var r=await sbClient.auth.getSession();
     if(!r.data.session){window.location.href='/login.html';return;}
