@@ -37,6 +37,8 @@ exports.handler = async function(event) {
 
   const CLAUDE_KEY  = process.env.ANTHROPIC_API_KEY || '';
   const HF_TOKEN    = process.env.HF_TOKEN           || '';
+  const ELEVEN_KEY  = process.env.ELEVENLABS_API_KEY  || '';
+  const ELEVEN_VOICE= process.env.ELEVENLABS_VOICE_ID || 'ZF6FPAbjXT4488VcRRnw';
   const YT_OAUTH    = '';  // passed in payload from browser OAuth
 
   let action, payload;
@@ -112,116 +114,67 @@ exports.handler = async function(event) {
 
   // -- 3. GENERATE TTS -- HuggingFace (free with HF_TOKEN) --
   if (action === 'generate-tts') {
-    if (!HF_TOKEN) {
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'HF_TOKEN not set. Add it in Netlify env vars (free at huggingface.co/settings/tokens). Using canvas mode instead.', fallback: true }) };
+    // ElevenLabs text-to-speech (reliable; same provider as the voice agent).
+    if (!ELEVEN_KEY) {
+      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'ELEVENLABS_API_KEY not set. Add it in Netlify env vars (from elevenlabs.io). The same account that powers the voice agent works here.', fallback: true }) };
     }
 
-    const { text = '', voice = 'female' } = payload;
-    const cleanText = text.replace(/[^\w\s.,!?'-]/g, ' ').substring(0, 600);
+    const { text = '', voice = 'male' } = payload;
+    // Keep a sane length cap so generation is fast and within limits.
+    const cleanText = String(text).replace(/\s+/g, ' ').trim().substring(0, 1200);
+    if (!cleanText) {
+      return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'No text provided for voiceover.' }) };
+    }
 
     try {
-      const modelUrl = voice === 'female'
-        ? 'https://api-inference.huggingface.co/models/microsoft/speecht5_tts'
-        : 'https://api-inference.huggingface.co/models/facebook/mms-tts-eng';
-
-      const res = await fetch(modelUrl, {
+      const url = 'https://api.elevenlabs.io/v1/text-to-speech/' + encodeURIComponent(ELEVEN_VOICE) + '?output_format=mp3_44100_128';
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + HF_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputs: cleanText })
+        headers: {
+          'xi-api-key': ELEVEN_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg'
+        },
+        body: JSON.stringify({
+          text: cleanText,
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true }
+        })
       });
 
-      if (res.status === 503) {
-        const d = await res.json().catch(function() { return {}; });
-        const wait = d.estimated_time ? Math.ceil(d.estimated_time) : 20;
-        return { statusCode: 200, headers: HDR, body: JSON.stringify({ loading: true, message: 'TTS model loading, retry in ' + wait + 's', waitSeconds: wait }) };
-      }
-
       if (!res.ok) {
-        return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'TTS failed: ' + res.status, fallback: true }) };
+        let detail = '';
+        try { detail = (await res.text()).substring(0, 200); } catch(e) {}
+        return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'ElevenLabs TTS failed: ' + res.status + (detail ? ' - ' + detail : ''), fallback: true }) };
       }
 
       const buf = await res.arrayBuffer();
       const b64 = Buffer.from(buf).toString('base64');
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ audioBase64: b64, mimeType: 'audio/flac', source: 'huggingface-tts' }) };
+      return { statusCode: 200, headers: HDR, body: JSON.stringify({ audioBase64: b64, mimeType: 'audio/mpeg', source: 'elevenlabs' }) };
 
     } catch(e) {
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: e.message, fallback: true }) };
+      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'ElevenLabs error: ' + e.message, fallback: true }) };
     }
   }
 
-  // -- 4. CREATE VIDEO -- SadTalker via HuggingFace ---------
+  // -- 4. CREATE VIDEO -- assembled in the browser (reliable) -----
+  // The old SadTalker HuggingFace Space was unreliable (sleeps/rate-limits/403s).
+  // We now assemble a slideshow video client-side from the generated image(s) +
+  // ElevenLabs voiceover using Canvas + MediaRecorder. This endpoint just validates
+  // inputs and signals the client to render locally.
   if (action === 'create-video') {
-    if (!HF_TOKEN) {
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: 'HF_TOKEN not configured. Get a free token at huggingface.co (no credit card). Or use Canvas mode -- it works with zero accounts.', setupUrl: 'https://huggingface.co/settings/tokens' }) };
-    }
-
-    const { imageBase64, audioBase64, mimeType = 'audio/flac' } = payload;
-
+    const { imageBase64, audioBase64 } = payload;
     if (!imageBase64 || !audioBase64) {
-      return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'imageBase64 and audioBase64 required. Upload a portrait photo and ensure TTS generation succeeded first.' }) };
+      return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'Both an image and a voiceover are required. Generate the image and the ElevenLabs voiceover first.' }) };
     }
-
-    const HF_SPACE = 'https://vinthony-sadtalker.hf.space';
-
-    try {
-      // Upload portrait image
-      const imgBlob = Buffer.from(imageBase64, 'base64');
-      const imgFormData = new FormData();
-      imgFormData.append('files', new Blob([imgBlob], { type: 'image/jpeg' }), 'portrait.jpg');
-
-      const imgUp = await fetch(HF_SPACE + '/upload', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + HF_TOKEN },
-        body: imgFormData
-      });
-      if (!imgUp.ok) throw new Error('Image upload to HF failed: ' + imgUp.status);
-      const imgPaths = await imgUp.json();
-
-      // Upload audio
-      const audBlob = Buffer.from(audioBase64, 'base64');
-      const audFormData = new FormData();
-      audFormData.append('files', new Blob([audBlob], { type: mimeType }), 'audio.flac');
-
-      const audUp = await fetch(HF_SPACE + '/upload', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + HF_TOKEN },
-        body: audFormData
-      });
-      if (!audUp.ok) throw new Error('Audio upload to HF failed: ' + audUp.status);
-      const audPaths = await audUp.json();
-
-      // Run SadTalker
-      const pred = await fetch(HF_SPACE + '/run/predict', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + HF_TOKEN, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fn_index: 0,
-          data: [
-            { path: imgPaths[0], orig_name: 'portrait.jpg' },
-            { path: audPaths[0], orig_name: 'audio.flac' },
-            'crop', false, 'facevid2vid', 0.2, false, 0, 'full', 'DAIN_FI', null, true, 256
-          ]
-        })
-      });
-
-      if (!pred.ok) throw new Error('SadTalker predict failed: ' + pred.status);
-      const result = await pred.json();
-
-      const videoPath = result.data && result.data[0];
-      if (!videoPath) throw new Error('No video in SadTalker response');
-
-      const videoUrl = typeof videoPath === 'string'
-        ? (videoPath.startsWith('http') ? videoPath : HF_SPACE + '/file=' + videoPath)
-        : (videoPath.url || HF_SPACE + '/file=' + videoPath.path);
-
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ videoUrl: videoUrl, source: 'sadtalker-huggingface' }) };
-
-    } catch(e) {
-      return { statusCode: 200, headers: HDR, body: JSON.stringify({ error: e.message + '. SadTalker may be temporarily overloaded. Try Canvas mode -- it works instantly with zero accounts.', sadtalkerFailed: true }) };
-    }
+    // Tell the browser to assemble the video locally — no external video service.
+    return { statusCode: 200, headers: HDR, body: JSON.stringify({
+      assembleInBrowser: true,
+      mode: 'slideshow',
+      message: 'Image and voiceover ready. Rendering the slideshow video in your browser.'
+    }) };
   }
 
-  // -- 5. UPLOAD TO YOUTUBE ----------------------------------
   if (action === 'upload-youtube') {
     const { videoUrl, title, description, accessToken } = payload;
     if (!accessToken) return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'YouTube access token required. Connect YouTube in Step 1.' }) };
