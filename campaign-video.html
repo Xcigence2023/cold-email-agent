@@ -358,8 +358,7 @@ function renderStep0(){
   
   var modeRow=mk('div','g3');modeRow.style.marginBottom='14px';
   var modes=[
-    {k:'sadtalker',icon:'',label:'SadTalker (Talking Head)',desc:'Open-source AI lip-sync to your photo. Free HuggingFace account only.',badge:'FREE + HF ACCOUNT'},
-    {k:'canvas',icon:'',label:'Canvas Animated Video',desc:'Browser-native: image + script animation + voice. Zero accounts, always free.',badge:'100% FREE FOREVER'},
+    {k:'canvas',icon:'',label:'Animated Video + Voiceover',desc:'AI image + animated script with an ElevenLabs voiceover, rendered in your browser. Reliable.',badge:'RECOMMENDED'},
     {k:'script-only',icon:'',label:'Email Only (No Video)',desc:'Send the AI-written script and campaign image by email. Instant.',badge:'INSTANT'},
   ];
   modes.forEach(function(m){
@@ -373,31 +372,10 @@ function renderStep0(){
   });
   ac.appendChild(modeRow);
 
-  // Hedra options
+  // Voiceover note (ElevenLabs powers the voice; no photo upload needed for slideshow mode)
   var hedraDiv=mk('div',null);hedraDiv.id='hedra-opts';
-  hedraDiv.appendChild(mkLbl('Upload Portrait Photo (for SadTalker talking head)'));
-  var photoUploadRow=mk('div','flex');photoUploadRow.style.marginBottom='10px';
-  var photoFile=document.createElement('input');photoFile.type='file';photoFile.accept='image/*';photoFile.style.display='none';
-  photoFile.addEventListener('change',function(e){
-    if(!e.target.files[0])return;
-    var rd=new FileReader();
-    rd.onload=function(ev){S.avatarPhotoDataUrl=ev.target.result;S.avatarPhotoName=e.target.files[0].name;
-      var preview=document.getElementById('avatar-preview');
-      if(preview){preview.style.backgroundImage='url('+ev.target.result+')';preview.style.backgroundSize='cover';}
-    };rd.readAsDataURL(e.target.files[0]);
-  });
-  var photoBtn=mk('button','btn btn-sm');photoBtn.textContent='Upload Your Photo';
-  photoBtn.addEventListener('click',function(){photoFile.click();});
-  var photoPreview=mk('div',null);photoPreview.id='avatar-preview';
-  photoPreview.style.cssText='width:60px;height:60px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:inline-block;'+(S.avatarPhotoDataUrl?'background-image:url('+S.avatarPhotoDataUrl+');background-size:cover':'');
-  photoUploadRow.appendChild(photoPreview);photoUploadRow.appendChild(photoBtn);photoUploadRow.appendChild(mk('span',null));
-  photoUploadRow.children[2].style.cssText='font-size:11px;color:var(--text2)';
-  photoUploadRow.children[2].textContent=S.avatarPhotoName||'JPG or PNG, clear face photo works best';
-  hedraDiv.appendChild(photoUploadRow);
-
-  var htip=mk('div','tip');htip.innerHTML='Get your free HuggingFace token at <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--cyan)">huggingface.co</a> (free account, no credit card) then add <strong>HF_TOKEN</strong> to Netlify env vars. SadTalker is fully open-source.';
+  var htip=mk('div','tip');htip.innerHTML='Videos include an <strong>ElevenLabs voiceover</strong> (the same voice provider as the call agent). Ensure <strong>ELEVENLABS_API_KEY</strong> is set in Netlify env vars. If it is missing, a silent video is produced instead.';
   hedraDiv.appendChild(htip);
-  hedraDiv.appendChild(photoFile);
   ac.appendChild(hedraDiv);
 
   var vDiv=mk('div',null);vDiv.style.marginTop='12px';vDiv.appendChild(mkLbl('Voice'));
@@ -523,247 +501,34 @@ async function runGeneration(){
     var script0=S.leadResults[0].script.script||'';
     var lead0=S.leadResults[0].lead;
 
-    if(S.videoMode==='canvas'){
-      if(S.imageUrl){
-        addLog('spin','Generating canvas animated video (100% free)...');
-        try{
-          var blob=await generateCanvasVideo(S.imageUrl,script0,lead0.name||'');
-          S._videoBlob=blob;
-          S.videoUrl=URL.createObjectURL(blob);
-          addLog('ok','Canvas video ready');
-        }catch(e){addLog('err','Canvas video failed: '+e.message);}
-      }else{addLog('err','No campaign image -- check Pollinations.ai connectivity');}
-
-    }else if(S.videoMode==='sadtalker'){
-      var imgB64=S.avatarPhotoDataUrl?S.avatarPhotoDataUrl.split(',')[1]:null;
-      if(!imgB64){
-        addLog('err','No portrait photo uploaded. Switch to Canvas mode or upload a photo.');
-      }else{
-        addLog('spin','Generating voice audio via HuggingFace TTS...');
-        var ttsRetries=0;var ttsData=null;
-        while(ttsRetries<3){
-          var ttsResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,500),voice:'male'}})});
-          ttsData=await ttsResp.json();
-          if(ttsData.loading){addLog('info','TTS loading, waiting...');await delay((ttsData.waitSeconds||20)*1000);ttsRetries++;}
-          else break;
-        }
-        if(ttsData&&ttsData.audioBase64){
-          addLog('ok','Audio ready. Running SadTalker...');
-          try{
-            var stResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create-video',payload:{imageBase64:imgB64,audioBase64:ttsData.audioBase64,mimeType:ttsData.mimeType||'audio/flac'}})});
-            var stData=await stResp.json();
-            if(stData.videoUrl){S.videoUrl=stData.videoUrl;addLog('ok','Talking-head video ready!');}
-            else{addLog('err','SadTalker: '+(stData.error||'failed'));S.videoMode='canvas';}
-          }catch(e){addLog('err','SadTalker: '+e.message);S.videoMode='canvas';}
-        }else{
-          addLog('err','TTS failed: '+(ttsData?ttsData.error:'no response')+'. Add HF_TOKEN to Netlify env vars.');
-        }
-        // Canvas fallback if video still missing
-        if(!S.videoUrl&&S.imageUrl){
-          addLog('spin','Falling back to canvas video...');
-          try{var b2=await generateCanvasVideo(S.imageUrl,script0,lead0.name||'');S._videoBlob=b2;S.videoUrl=URL.createObjectURL(b2);addLog('ok','Canvas fallback ready');}
-          catch(e2){addLog('err','Canvas fallback: '+e2.message);}
-        }
-      }
+    // ---- Single reliable path: ElevenLabs voiceover + canvas slideshow ----
+    if(!S.imageUrl){
+      addLog('err','No campaign image yet. Generate the image first (check connectivity).');
     }else{
-      addLog('ok','Script-only: email will include script text and campaign image link');
-    }
-  }
-  addLog('ok','All assets generated');
-  await delay(800);
-  S.step=2;draw();
-}
-
-// STEP 2: PREVIEW & EDIT
-function renderStep2(){
-  var wrap=mk('div',null);
-
-  // Image preview
-  var ic=mk('div','card');ic.appendChild(mkTitle('Campaign Image'));
-  if(S.imageUrl){
-    var imgWrap=mk('div','img-preview');
-    var img=document.createElement('img');img.src=S.imageUrl;img.alt='Campaign image';img.onerror=function(){S.imageUrl=generateCanvasBrandImage();img.onerror=null;img.src=S.imageUrl;};
-    imgWrap.appendChild(img);ic.appendChild(imgWrap);
-    var dlBtn=mk('a','btn btn-sm');dlBtn.href=S.imageUrl;dlBtn.target='_blank';dlBtn.style.marginTop='8px';dlBtn.textContent='View Full Image';ic.appendChild(dlBtn);
-  }else{
-    var noImg=mk('div',null);noImg.style.cssText='padding:2rem;text-align:center;color:var(--text2)';
-    noImg.textContent='Image will be generated by Pollinations FLUX (free, no API key needed). Click Generate in Step 2.';
-    ic.appendChild(noImg);
-  }
-  wrap.appendChild(ic);
-
-  // Video preview
-  var vc=mk('div','card');vc.appendChild(mkTitle('AI Avatar Video'));
-  if(S.videoUrl){
-    var vidWrap=mk('div','vid-preview');
-    var vid=document.createElement('video');vid.src=S.videoUrl;vid.controls=true;vid.style.cssText='width:100%;height:100%';
-    vidWrap.appendChild(vid);vc.appendChild(vidWrap);
-    var vInfo=mk('p',null);vInfo.style.cssText='font-size:12px;color:var(--text2);margin-top:8px';vInfo.textContent='This is the preview video for your first lead. Each lead gets a uniquely personalised version.';
-    vc.appendChild(vInfo);
-  }else{
-    var noVid=mk('div','vid-preview');
-    var ov=mk('div','vid-overlay');
-    ov.innerHTML='<span title="Video renders in your browser via Canvas mode - no API key needed">No video yet</span>';
-    noVid.appendChild(ov);vc.appendChild(noVid);
-    var vTip=mk('div','warn');vTip.style.marginTop='8px';
-    vTip.innerHTML='<strong>Video modes:</strong> Canvas (default, 100% free, renders in browser) or SadTalker talking-head (add free HF_TOKEN from <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--gold)">huggingface.co</a> and upload a portrait photo in Step 1).';
-    vc.appendChild(vTip);
-  }
-  wrap.appendChild(vc);
-
-  // Scripts review
-  var sc=mk('div','card');sc.appendChild(mkTitle('Personalised Scripts ('+S.leadResults.length+')'));
-  S.leadResults.slice(0,3).forEach(function(r,i){
-    var sd=mk('div',null);sd.style.cssText='border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden';
-    var sh=mk('div',null);sh.style.cssText='padding:10px 14px;background:rgba(13,21,38,.5);border-bottom:1px solid var(--border);font-weight:700;font-size:13px';
-    sh.textContent=r.lead.name+' @ '+r.lead.company;
-    sd.appendChild(sh);
-    if(r.script){
-      var sb=mk('div',null);sb.style.cssText='padding:10px 14px';
-      var ta=document.createElement('textarea');ta.value=r.script.script||'';ta.style.cssText='font-size:12px;min-height:90px;background:rgba(7,12,24,.5);border-color:rgba(139,92,246,.2)';
-      ta.addEventListener('input',function(e){S.leadResults[i].script.script=e.target.value;});
-      sb.appendChild(ta);
-      if(r.script.callToAction){
-        var cta=mk('p',null);cta.style.cssText='font-size:11px;color:var(--purple);margin-top:4px';cta.textContent='CTA: '+r.script.callToAction;
-        sb.appendChild(cta);
-      }
-      sd.appendChild(sb);
-    }else{
-      var noScript=mk('p',null);noScript.style.cssText='padding:10px 14px;color:var(--red);font-size:12px';noScript.textContent='Script generation failed for this lead.';
-      sd.appendChild(noScript);
-    }
-    sc.appendChild(sd);
-  });
-  if(S.leadResults.length>3){var more=mk('p',null);more.style.cssText='font-size:12px;color:var(--text2);text-align:center;padding:8px';more.textContent='...and '+(S.leadResults.length-3)+' more scripts';sc.appendChild(more);}
-  wrap.appendChild(sc);
-
-  var nextBtn=mk('button','btn btn-launch');nextBtn.textContent='Distribute Campaign';
-  nextBtn.addEventListener('click',function(){S.step=3;draw();});
-  wrap.appendChild(nextBtn);
-  return wrap;
-}
-
-// STEP 3: DISTRIBUTE
-function renderStep3(){
-  var wrap=mk('div',null);
-
-  var dc=mk('div','card');dc.appendChild(mkTitle('Distribution Settings'));
-
-  // Channels summary
-  var chRow=mk('div',null);chRow.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px';
-  S.platforms.forEach(function(p){
-    var b=mk('span','badge');
-    b.style.cssText='background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--border2)';
-    b.textContent={email:'Email Campaign',youtube:'YouTube Upload',linkedin:'LinkedIn Post'}[p]||p;
-    chRow.appendChild(b);
-  });
-  dc.appendChild(chRow);
-
-  // Email subject customiser
-  if(S.platforms.indexOf('email')>=0){
-    var eDiv=mk('div',null);eDiv.style.marginBottom='12px';
-    eDiv.appendChild(mkLbl('Email Subject Template'));
-    var subjInp=document.createElement('input');subjInp.type='text';
-    subjInp.placeholder='e.g. Quick idea for {{company}} - would love 15 mins';
-    subjInp.value=S._emailSubject||'';
-    subjInp.addEventListener('input',function(e){S._emailSubject=e.target.value;});
-    var subjTip=mk('p',null);subjTip.style.cssText='font-size:11px;color:var(--text2);margin-top:4px';
-    subjTip.textContent='Use {{name}}, {{company}}, {{industry}} for personalisation';
-    eDiv.appendChild(subjInp);eDiv.appendChild(subjTip);dc.appendChild(eDiv);
-  }
-
-  // YouTube settings
-  if(S.platforms.indexOf('youtube')>=0){
-    var yDiv=mk('div',null);yDiv.style.marginBottom='12px';
-    yDiv.appendChild(mkLbl('YouTube Playlist / Category'));
-    var yInp=document.createElement('input');yInp.type='text';yInp.placeholder='e.g. Client Outreach Videos';yInp.value=S._ytPlaylist||'';
-    yInp.addEventListener('input',function(e){S._ytPlaylist=e.target.value;});
-    yDiv.appendChild(yInp);
-    var yTip=mk('div','tip');yTip.style.marginTop='6px';
-    yTip.textContent='Videos are uploaded as Unlisted - only shared with your specific lead via their personalised email link.';
-    yDiv.appendChild(yTip);dc.appendChild(yDiv);
-  }
-
-  wrap.appendChild(dc);
-
-  // Launch
-  var lc=mk('div','card');
-  var lh=mk('div','fb');lh.style.marginBottom='14px';
-  var lTitle=mk('p',null);lTitle.style.fontWeight='700';lTitle.textContent='Ready to launch to '+S.leads.length+' leads';
-  var lSub=mk('p',null);lSub.style.cssText='font-size:12px;color:var(--text2);margin-top:3px';
-  lSub.textContent=S.platforms.join(' + ').toUpperCase()+' campaign';
-  lh.appendChild(mk('div',null));lh.children[0].appendChild(lTitle);lh.children[0].appendChild(lSub);
-  lc.appendChild(lh);
-
-  var launchBtn=mk('button','btn btn-launch');launchBtn.textContent='Launch Campaign Now';
-  launchBtn.style.width='100%';
-  launchBtn.addEventListener('click',function(){S.step=4;draw();runDistribution();});
-  lc.appendChild(launchBtn);
-  wrap.appendChild(lc);
-
-  var backBtn=mk('button','btn');backBtn.style.marginTop='8px';backBtn.textContent='Edit Assets';
-  backBtn.addEventListener('click',function(){S.step=2;draw();});
-  wrap.appendChild(backBtn);
-  return wrap;
-}
-
-// STEP 4: RESULTS
-function renderStep4(){
-  var wrap=mk('div',null);
-  var rc=mk('div','card');
-  var rTitle=mk('h2',null);rTitle.style.cssText='font-size:18px;font-weight:800;margin-bottom:4px';
-  rTitle.textContent=S._distributing?'Distributing Campaign...':'Campaign Launched!';
-  rc.appendChild(rTitle);
-
-  if(S._distributing){
-    var sub=mk('p',null);sub.style.cssText='font-size:13px;color:var(--text2);margin-bottom:16px';
-    sub.textContent='Sending personalised videos to '+S.leads.length+' leads...';rc.appendChild(sub);
-    var pb=mk('div','pbar');var pf=mk('div','pfill');pf.style.width=(S._distProgress||0)+'%';pb.appendChild(pf);rc.appendChild(pb);
-  }
-
-  var logWrap=mk('div',null);logWrap.style.marginTop='14px';
-  S.log.forEach(function(entry){
-    var le=mk('div','log-entry log-'+entry.type);
-    le.textContent=(entry.type==='ok'?'OK  ':entry.type==='err'?'ERR ':entry.type==='spin'?'... ':'    ')+entry.msg;
-    logWrap.appendChild(le);
-  });
-  rc.appendChild(logWrap);
-
-  if(!S._distributing&&S.leadResults.length){
-    var summary=mk('div',null);summary.style.marginTop='14px';
-    var sent=S.leadResults.filter(function(r){return r.emailSent;}).length;
-    var uploaded=S.leadResults.filter(function(r){return r.youtubeUrl;}).length;
-    summary.innerHTML='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px">'+
-      '<div class="stat" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2)"><div class="stat-val" style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:800;color:var(--green)">'+sent+'</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Emails Sent</div></div>'+
-      '<div class="stat" style="background:rgba(255,0,0,.06);border-color:rgba(255,0,0,.15)"><div class="stat-val" style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:800;color:#ff4444">'+uploaded+'</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">YT Videos</div></div>'+
-      '<div class="stat"><div class="stat-val" style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:800;color:var(--blue)">'+S.leads.length+'</div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Total Leads</div></div>'+
-      '</div>';
-    rc.appendChild(summary);
-
-    var newBtn=mk('button','btn btn-primary');newBtn.style.marginTop='14px';
-    newBtn.textContent='Start New Campaign';newBtn.addEventListener('click',function(){S={step:0,campaigns:'',industry:'',tone:'professional',goal:'',senderName:'',senderEmail:'',leads:[],generatedImage:null,imageUrl:'',videoScript:null,selectedAvatar:AVATARS[0].url,selectedVoice:'en-US-GuyNeural',videoId:null,videoUrl:null,youtubeUrl:null,platforms:['email'],ytAccessToken:null,log:[],leadResults:[]};draw();});
-    rc.appendChild(newBtn);
-  }
-  wrap.appendChild(rc);
-  return wrap;
-}
-
-async function runDistribution(){
-  S._distributing=true;S._distProgress=0;S.log=[];S.leadResults.forEach(function(r){r.emailSent=false;r.youtubeUrl=null;});
-
-  for(var i=0;i<S.leadResults.length;i++){
-    var r=S.leadResults[i];S._distProgress=Math.round((i/S.leadResults.length)*100);
-
-    // Upload to YouTube if enabled and video exists
-    if(S.platforms.indexOf('youtube')>=0&&S.videoUrl&&S.ytAccessToken){
-      addLog('spin','Uploading video for '+r.lead.name+' to YouTube...');
+      // 1) Generate the voiceover with ElevenLabs (reliable; same provider as the voice agent)
+      var voB64=null, voMime='audio/mpeg';
+      addLog('spin','Generating voiceover with ElevenLabs...');
       try{
-        var ytResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'upload-youtube',payload:{videoUrl:S.videoUrl,title:'Video for '+r.lead.name+' | '+S.campaignName,description:r.script?r.script.script:'',accessToken:S.ytAccessToken}})});
-        var ytData=await ytResp.json();
-        if(ytData.youtubeUrl){r.youtubeUrl=ytData.youtubeUrl;addLog('ok','Uploaded: '+ytData.shareUrl);}
-        else addLog('err','YouTube: '+(ytData.error||'failed'));
-      }catch(e){addLog('err','YouTube error: '+e.message);}
+        var voResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,1200),voice:'male'}})});
+        var voData=await voResp.json();
+        if(voData&&voData.audioBase64){
+          voB64=voData.audioBase64; voMime=voData.mimeType||'audio/mpeg';
+          addLog('ok','Voiceover ready');
+        }else{
+          addLog('info','Voiceover unavailable ('+((voData&&voData.error)||'no audio')+'). Building a silent video instead.');
+        }
+      }catch(e){ addLog('info','Voiceover error: '+e.message+'. Building a silent video instead.'); }
+
+      // 2) Assemble the slideshow video in the browser (with audio if we got it)
+      addLog('spin','Rendering video'+(voB64?' with voiceover':'')+'...');
+      try{
+        var blob=await generateCanvasVideo(S.imageUrl,script0,lead0.name||'',voB64,voMime);
+        S._videoBlob=blob;
+        S.videoUrl=URL.createObjectURL(blob);
+        addLog('ok','Video ready'+(voB64?' (with ElevenLabs voiceover)':' (silent)'));
+      }catch(e){ addLog('err','Video rendering failed: '+e.message); }
     }
+
 
     // Send email
     if(S.platforms.indexOf('email')>=0&&r.lead.email){
@@ -874,55 +639,98 @@ function loadImageWithFallback(urls, onSuccess, onAllFailed){
   tryNext();
 }
 
-function generateCanvasVideo(imageUrl, script, recipientName){
+function generateCanvasVideo(imageUrl, script, recipientName, audioBase64, audioMime){
   return new Promise(function(resolve, reject){
     var canvas=document.createElement('canvas');
     canvas.width=1280;canvas.height=720;
     var ctx=canvas.getContext('2d');
     var img=new Image();img.crossOrigin='anonymous';
+
     img.onload=function(){
-      var stream=canvas.captureStream(25);
-      var chunks=[];
-      var mr=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});
-      mr.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
-      mr.onstop=function(){resolve(new Blob(chunks,{type:'video/webm'}));};
-      mr.start();
-      var startTime=Date.now();
-      var duration=Math.min((script||'').split(' ').length/2.5,55)*1000;
-      var lines=wrapText(ctx,script||'',1100,24);
-      var lineIdx=0;var charIdx=0;var lastChar=Date.now();
-      function frame(){
-        var elapsed=Date.now()-startTime;
-        var progress=Math.min(elapsed/duration,1);
-        // Ken Burns: slow pan
-        var scale=1+progress*0.08;
-        var ox=(canvas.width*(scale-1))/2;
-        var oy=(canvas.height*(scale-1))/2;
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(img,-ox,-oy,canvas.width*scale,canvas.height*scale);
-        // Dark overlay
-        ctx.fillStyle='rgba(7,12,24,0.62)';
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-        // Name banner
-        ctx.fillStyle='rgba(59,130,246,0.9)';
-        ctx.fillRect(0,600,canvas.width,120);
-        ctx.fillStyle='#fff';ctx.font='bold 26px Outfit,Arial';ctx.textAlign='left';
-        ctx.fillText('Personalised for '+( recipientName||'You'),40,648);
-        ctx.font='16px Outfit,Arial';ctx.fillStyle='rgba(255,255,255,.7)';
-        ctx.fillText('Velorah Video Campaign',40,676);
-        // Script text (typewriter)
-        if(Date.now()-lastChar>60){charIdx++;lastChar=Date.now();}
-        ctx.fillStyle='#e8f0fe';ctx.font='22px Outfit,Arial';ctx.textAlign='center';
-        var visibleScript=script.substring(0,charIdx);
-        var visLines=wrapText(ctx,visibleScript,1100,22);
-        var startY=200;
-        visLines.slice(-8).forEach(function(l,i){ctx.fillText(l,640,startY+i*34);});
-        // Progress bar
-        ctx.fillStyle='rgba(59,130,246,.4)';ctx.fillRect(0,710,canvas.width,10);
-        ctx.fillStyle='var(--blue)';ctx.fillRect(0,710,canvas.width*progress,10);
-        if(elapsed<duration)requestAnimationFrame(frame);else{mr.stop();}
+      // ---- Set up audio (ElevenLabs voiceover) if provided ----
+      var audioEl=null, audioCtx=null, audioDuration=0, combinedStream=null;
+      var canvasStream=canvas.captureStream(25);
+
+      function startRecording(){
+        var tracks=[].concat(canvasStream.getVideoTracks());
+        var audioStreamDest=null;
+        if(audioEl){
+          try{
+            audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+            var srcNode=audioCtx.createMediaElementSource(audioEl);
+            audioStreamDest=audioCtx.createMediaStreamDestination();
+            srcNode.connect(audioStreamDest);
+            srcNode.connect(audioCtx.destination); // so it's audible while recording too (optional)
+            tracks=tracks.concat(audioStreamDest.stream.getAudioTracks());
+          }catch(e){ /* if audio routing fails, fall back to silent video */ }
+        }
+        combinedStream=new MediaStream(tracks);
+
+        var chunks=[];
+        var mime='video/webm;codecs=vp9,opus';
+        if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
+        var mr=new MediaRecorder(combinedStream,{mimeType:mime});
+        mr.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data);};
+        mr.onstop=function(){
+          try{ if(audioCtx) audioCtx.close(); }catch(e){}
+          resolve(new Blob(chunks,{type:'video/webm'}));
+        };
+        mr.start();
+
+        var startTime=Date.now();
+        // Duration: match the audio if we have it, else estimate from script length.
+        var estMs=Math.min((script||'').split(' ').length/2.5,55)*1000;
+        var duration=audioDuration>0?(audioDuration*1000+400):estMs;
+
+        if(audioEl){ try{ audioEl.currentTime=0; audioEl.play(); }catch(e){} }
+
+        var lastChar=Date.now();var charIdx=0;
+        var totalChars=(script||'').length;
+        function frame(){
+          var elapsed=Date.now()-startTime;
+          var progress=Math.min(elapsed/duration,1);
+          var scale=1+progress*0.08;
+          var ox=(canvas.width*(scale-1))/2;
+          var oy=(canvas.height*(scale-1))/2;
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,-ox,-oy,canvas.width*scale,canvas.height*scale);
+          ctx.fillStyle='rgba(7,12,24,0.62)';
+          ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.fillStyle='rgba(79,70,229,0.92)';
+          ctx.fillRect(0,600,canvas.width,120);
+          ctx.fillStyle='#fff';ctx.font='bold 26px Outfit,Arial';ctx.textAlign='left';
+          ctx.fillText('Personalised for '+(recipientName||'You'),40,648);
+          ctx.font='16px Outfit,Arial';ctx.fillStyle='rgba(255,255,255,.7)';
+          ctx.fillText('Velorah Video Campaign',40,676);
+          // Reveal script text in sync with overall progress (so it tracks the voiceover).
+          var targetChars=Math.floor(totalChars*progress);
+          if(charIdx<targetChars){charIdx=targetChars;}
+          ctx.fillStyle='#e8f0fe';ctx.font='22px Outfit,Arial';ctx.textAlign='center';
+          var visibleScript=(script||'').substring(0,charIdx);
+          var visLines=wrapText(ctx,visibleScript,1100,22);
+          var startY=200;
+          visLines.slice(-8).forEach(function(l,i){ctx.fillText(l,640,startY+i*34);});
+          ctx.fillStyle='rgba(79,70,229,.35)';ctx.fillRect(0,710,canvas.width,10);
+          ctx.fillStyle='#4F46E5';ctx.fillRect(0,710,canvas.width*progress,10);
+          if(elapsed<duration)requestAnimationFrame(frame);else{ try{ if(audioEl) audioEl.pause(); }catch(e){} mr.stop(); }
+        }
+        requestAnimationFrame(frame);
       }
-      requestAnimationFrame(frame);
+
+      if(audioBase64){
+        audioEl=document.createElement('audio');
+        audioEl.src='data:'+(audioMime||'audio/mpeg')+';base64,'+audioBase64;
+        audioEl.crossOrigin='anonymous';
+        audioEl.onloadedmetadata=function(){
+          audioDuration=isFinite(audioEl.duration)?audioEl.duration:0;
+          startRecording();
+        };
+        audioEl.onerror=function(){ audioEl=null; startRecording(); }; // fall back to silent
+        // Safety: if metadata never fires, start anyway after 1.5s
+        setTimeout(function(){ if(!combinedStream){ startRecording(); } },1500);
+      }else{
+        startRecording();
+      }
     };
     img.onerror=function(){reject(new Error('Could not load image'));};
     img.src=imageUrl;
