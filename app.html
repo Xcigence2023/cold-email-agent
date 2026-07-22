@@ -7,6 +7,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Velorah — AI Cold Email Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/feature-config.js"></script>
+<script src="/features-ui.js">/* FEATURE GATING */
+.vf-locked{opacity:.5!important;cursor:not-allowed!important}
+.vf-badge{display:inline-flex;align-items:center;gap:.3em;margin-left:.4em;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle}
+.vf-badge-locked{background:rgba(139,92,246,.2)!important;color:#a78bfa!important}
+.vf-badge-addon{background:rgba(245,158,11,.2)!important;color:#fbbf24!important}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -215,13 +221,13 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html" class="active">Campaigns</a>
-      <a href="/campaign-video.html">Ares</a>
+    <a href="/campaign-video.html" class="qa-row" data-feature="ai_video">🛡 Launch Ares Video Campaign</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
-      <a href="/social-listen.html">Athena One</a>
-      <a href="/visitors.html">Argus Watch</a>
+     <a href="/social-listen.html" class="qa-row" data-feature="social_listening">📡 Monitor Discussions (Athena One)</a>
+     <a href="/visitors.html" class="agent-card" data-feature="visitor_intel" style="text-decoration:none;color:var(--text)">
       <a href="/crm-settings.html">CRM</a>
-      <a href="/call-center.html">Call Center</a>
+      <a href="/call-center.html" data-feature="call_center" data-locked="hide">Call Center</a>
     <a href="/history.html">History</a>
     </nav>
   </div>
@@ -989,6 +995,7 @@ function p4(){
 
   launcher.appendChild(h('div',{cls:'flex',style:{marginTop:'16px'}},
     h('button',{cls:'btn',style:{background:'linear-gradient(135deg,#ef4444,#f59e0b)',border:'none',color:'#fff',fontWeight:'700',padding:'10px 18px',borderRadius:'var(--r)',cursor:'pointer'},onClick:()=>{
+   if(window.VelorahGate && !VelorahGate.guard('ai_video')) return;
     const ap=S.emails.filter(e=>e.approved&&!e.error);
     if(!ap.length){alert('No approved emails.');return;}
     const hdrs='First Name,Last Name,Email,Company,Job Title\n';
@@ -1268,7 +1275,14 @@ async function initAuth(){
   try{
     const{data:{session}}=await sbClient.auth.getSession();
     if(!session){window.location.href='/login.html';return;}
-    _session=session;
+   _session=session;
+    // Load the user's feature access map, then apply UI gating
+    try{
+      if(window.VelorahGate){
+        await VelorahGate.load(session.access_token);
+        VelorahGate.applyDom();
+      }
+    }catch(e){ console.warn('Feature gate:', e.message); }
     // nav always visible
     document.getElementById('user-email').textContent=session.user.email;
     loadDashboardStats();
