@@ -58,7 +58,6 @@ textarea{resize:vertical;line-height:1.6}
 .warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);line-height:1.5}
 .pbar{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;margin:8px 0}
 .pfill{height:100%;border-radius:3px;transition:width .5s;background:linear-gradient(90deg,var(--red),var(--gold))}
-/* STEPS */
 .steps{display:flex;align-items:center;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--rl)}
 .si{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);white-space:nowrap}
 .si.active{color:var(--purple)}
@@ -67,20 +66,14 @@ textarea{resize:vertical;line-height:1.6}
 .si.active .sn{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 10px rgba(239,68,68,.5)}
 .si.done .sn{background:var(--green);border-color:var(--green);color:#fff}
 .sdiv{flex:1;height:1px;background:var(--border);margin:0 8px;min-width:20px}
-/* VIDEO PREVIEW */
 .vid-preview{width:100%;aspect-ratio:16/9;background:var(--bg3);border-radius:var(--r);overflow:hidden;position:relative;border:1px solid var(--border)}
 .vid-preview video{width:100%;height:100%;object-fit:cover}
 .vid-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(7,12,24,.7);font-size:40px}
-/* IMG PREVIEW */
 .img-preview{width:100%;aspect-ratio:16/9;background:var(--bg3);border-radius:var(--r);overflow:hidden;border:1px solid var(--border);position:relative}
 .img-preview img{width:100%;height:100%;object-fit:cover}
-/* AVATAR GRID */
-.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
-.avatar-card{cursor:pointer;border-radius:var(--r);overflow:hidden;border:2px solid var(--border);transition:all .2s;position:relative}
-.avatar-card.selected{border-color:var(--purple);box-shadow:0 0 12px rgba(139,92,246,.4)}
-.avatar-card img{width:100%;aspect-ratio:1;object-fit:cover}
-.avatar-card p{font-size:10px;text-align:center;padding:4px;color:var(--text2);background:var(--bg3)}
-/* PLATFORM BADGES */
+.engine-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
+.engine-card:hover{border-color:var(--border2)}
+.engine-card.active{border-color:var(--purple);background:rgba(139,92,246,.08);box-shadow:0 0 14px rgba(139,92,246,.2)}
 .plat-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s;margin:3px}
 .pb-yt{background:rgba(255,0,0,.1);color:#ff4444;border-color:rgba(255,0,0,.2)}
 .pb-yt.active{background:rgba(255,0,0,.2);border-color:rgba(255,0,0,.5)}
@@ -88,12 +81,15 @@ textarea{resize:vertical;line-height:1.6}
 .pb-li.active{background:rgba(0,119,181,.2);border-color:rgba(0,119,181,.5)}
 .pb-em{background:rgba(59,130,246,.1);color:var(--blue);border-color:var(--border2)}
 .pb-em.active{background:rgba(59,130,246,.2);border-color:var(--blue)}
-/* LOG */
 .log-entry{font-size:12px;padding:6px 10px;border-radius:6px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace}
 .log-ok{background:rgba(16,185,129,.08);color:var(--green);border:1px solid rgba(16,185,129,.15)}
 .log-err{background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.15)}
 .log-info{background:rgba(59,130,246,.06);color:var(--text2);border:1px solid var(--border)}
 .log-spin{background:rgba(139,92,246,.06);color:var(--purple);border:1px solid rgba(139,92,246,.15)}
+.vf-locked{opacity:.5!important;cursor:not-allowed!important}
+.vf-badge{display:inline-flex;align-items:center;gap:.3em;margin-left:.4em;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle}
+.vf-badge-locked{background:rgba(139,92,246,.2)!important;color:#a78bfa!important}
+.vf-badge-addon{background:rgba(245,158,11,.2)!important;color:#fbbf24!important}
 </style>
 </head>
 <body>
@@ -109,9 +105,9 @@ textarea{resize:vertical;line-height:1.6}
       <a href="/campaign-video.html" class="active">Ares</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
-      <a href="/social-listen.html">Athena One</a>
-      <a href="/visitors.html">Argus Watch</a>
-      <a href="/call-center.html">Call Center</a>
+      <a href="/social-listen.html" data-feature="social_listening" data-locked="hide">Athena One</a>
+      <a href="/visitors.html" data-feature="visitor_intel" data-locked="hide">Argus Watch</a>
+      <a href="/call-center.html" data-feature="call_center" data-locked="hide">Call Center</a>
       <a href="/history.html">History</a>
     </nav>
   </div>
@@ -120,29 +116,24 @@ textarea{resize:vertical;line-height:1.6}
     <button class="btn btn-sm" onclick="signOut()">Sign out</button>
   </div>
 </div>
-
 <div class="page">
-  <!-- Hero -->
   <div class="card" style="background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(245,158,11,.05));border-color:rgba(239,68,68,.25);margin-bottom:1.5rem">
     <div class="fb">
       <div>
         <h1 style="font-size:22px;font-weight:800;margin-bottom:6px;background:linear-gradient(135deg,#ef4444,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Ares</h1>
         <p style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;letter-spacing:.06em">VIDEO CAMPAIGN ENGINE by Velorah</p>
-        <p style="font-size:13px;color:var(--text2)">AI generates personalised videos and images for each lead using 100% free open-source tools — distributes across YouTube, email and social automatically</p>
+        <p style="font-size:13px;color:var(--text2)">AI generates a personalised video and image for your leads, then distributes via email and YouTube</p>
       </div>
       <div class="flex">
         <span class="badge" style="background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)">BETA</span>
       </div>
     </div>
   </div>
-
-  <!-- Step bar -->
   <div class="steps" id="step-bar"></div>
-
-  <!-- Main content -->
   <div id="root"></div>
 </div>
-
+<script src="/feature-config.js"></script>
+<script src="/features-ui.js"></script>
 <script>
 var SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
@@ -154,7 +145,6 @@ try{
     throw new Error('Supabase SDK not loaded');
   }
 }catch(e){
-  // Don't let a failed SDK load blank the whole page — show a clear message instead.
   document.addEventListener('DOMContentLoaded',function(){
     document.body.innerHTML='<div style="max-width:560px;margin:80px auto;font-family:system-ui,Arial;padding:32px;border:1px solid #ddd;border-radius:12px;text-align:center">'+
       '<h2 style="margin:0 0 12px">Couldn\'t load Ares</h2>'+
@@ -164,93 +154,98 @@ try{
   });
 }
 var _session=null;
-
 var S={
   step:0,
-  // Campaign info
   campaignName:'',industry:'',tone:'professional',goal:'',senderName:'',senderEmail:'',
-  // Leads
   leads:[],
-  // Assets
   generatedImage:null,imageUrl:'',
   videoScript:null,selectedAvatar:'',
   selectedVoice:'en-US-GuyNeural',
-  // Video results
   videoId:null,videoUrl:null,youtubeUrl:null,
-  // Platforms
   platforms:['email'],
   ytAccessToken:null,
-  // Log
   log:[],
-  // Per-lead results
   leadResults:[],
   videoMode:'canvas',
   imageStyle:'photorealistic',
-  avatarPhotoDataUrl:null,
-  avatarPhotoName:null,
+  _emailSubject:'',
+  _rawLeads:'',
+  _distributing:false,
+  _distProgress:0,
   _videoBlob:null
 };
-
-// Avatar photos are user-uploaded
-
 var VOICES=[
   {id:'en-US-GuyNeural',label:'Professional Male (US)'},
   {id:'en-US-JennyNeural',label:'Professional Female (US)'},
   {id:'en-GB-RyanNeural',label:'British Male'},
   {id:'en-GB-SoniaNeural',label:'British Female'},
-  {id:'en-AU-NatashaNeural',label:'Australian Female'},
+  {id:'en-AU-NatashaNeural',label:'Australian Female'}
 ];
 
+/* Headers for calls to the video_agent function.
+   The Authorization token is REQUIRED for gated actions (generate-tts,
+   create-video, upload-youtube) so the backend can check the ai_video feature. */
+function vaHeaders(){
+  var h={'Content-Type':'application/json'};
+  if(_session&&_session.access_token) h['Authorization']='Bearer '+_session.access_token;
+  return h;
+}
 
-// -- WORKFLOW INTAKE - accept leads from Koios Intel, Athena One, Argus Watch, LinkedIn --
+function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
+function mkTitle(t){var el=mk('div','card-title');el.textContent=t;return el;}
+function mkLbl(t){var el=mk('label','lbl');el.textContent=t;return el;}
+function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function addLog(type,msg){S.log.push({type:type,msg:msg});if(S.step===1||S.step===3)draw();}
+
 function checkLeadIntake(){
   var csv = sessionStorage.getItem('velorah_leads_csv');
-  var count = sessionStorage.getItem('velorah_leads_count');
   var source = sessionStorage.getItem('velorah_source') || 'direct';
   if(!csv) return;
   sessionStorage.removeItem('velorah_leads_csv');
   sessionStorage.removeItem('velorah_leads_count');
   sessionStorage.removeItem('velorah_source');
-
-  // Parse the CSV
   var lines = csv.split('\n').filter(function(l){return l.trim();});
-  if(lines[0] && lines[0].toLowerCase().includes('email')) lines.shift();
+  if(lines[0] && lines[0].toLowerCase().indexOf('email')>=0) lines.shift();
   S.leads = lines.map(function(l){
     var p = l.split(',').map(function(v){return v.trim().replace(/^"|"$/g,'');});
-    return {name:(p[0]||'')+' '+(p[1]||''), firstName:p[0]||'', lastName:p[1]||'',
+    return {name:((p[0]||'')+' '+(p[1]||'')).trim(), firstName:p[0]||'', lastName:p[1]||'',
             email:p[2]||'', company:p[3]||'', title:p[4]||'', industry:p[5]||S.industry||''};
   }).filter(function(l){return l.email;});
-
   S._rawLeads = csv;
   S.step = 0;
-
-  // Show intake banner
   var banner = document.createElement('div');
   banner.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ef4444,#f59e0b);color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(239,68,68,.4)';
-  var sourceLabel = {koios:'Koios Intel', athena:'Athena One', argus:'Argus Watch', linkedin:'LinkedIn Agent', app:'Campaign Agent'}[source] || source;
-  banner.textContent = S.leads.length + ' leads received from ' + sourceLabel + ' - Ares is ready to launch';
+  var labels={koios:'Koios Intel', athena:'Athena One', argus:'Argus Watch', linkedin:'LinkedIn Agent', app:'Campaign Agent'};
+  banner.textContent = S.leads.length + ' leads received from ' + (labels[source]||source) + ' - Ares is ready to launch';
   document.body.appendChild(banner);
   setTimeout(function(){banner.remove();}, 5000);
   draw();
 }
 
 async function init(){
-  if(!sbClient){ return; }  // SDK failed to load; the DOMContentLoaded handler already showed a message
+  if(!sbClient){ return; }
   try{
     var r=await sbClient.auth.getSession();
     if(!r.data.session){window.location.href='/login.html';return;}
     _session=r.data.session;
     document.getElementById('user-email').textContent=r.data.session.user.email;
-    S.senderName=r.data.session.user.user_metadata&&r.data.session.user.user_metadata.full_name||'';
-    checkLeadIntake();
+    S.senderName=(r.data.session.user.user_metadata&&r.data.session.user.user_metadata.full_name)||'';
     S.senderEmail=r.data.session.user.email||'';
-  }catch(e){}
+    try{
+      if(window.VelorahGate){
+        await VelorahGate.load(_session.access_token);
+        VelorahGate.applyDom();
+      }
+    }catch(ge){ console.warn('Feature gate:', ge.message); }
+    checkLeadIntake();
+  }catch(e){ console.warn('Auth:', e.message); }
   draw();
 }
 
 function draw(){
   renderSteps();
   var root=document.getElementById('root');
+  if(!root)return;
   root.innerHTML='';
   var steps=[renderStep0,renderStep1,renderStep2,renderStep3,renderStep4];
   if(steps[S.step]) root.appendChild(steps[S.step]());
@@ -258,32 +253,31 @@ function draw(){
 
 function renderSteps(){
   var names=['Configure','Generate Assets','Preview & Edit','Distribute','Results'];
-  var bar=document.getElementById('step-bar');bar.innerHTML='';
+  var bar=document.getElementById('step-bar');
+  if(!bar)return;
+  bar.innerHTML='';
   names.forEach(function(n,i){
     var cls='si'+(i===S.step?' active':i<S.step?' done':'');
     var si=mk('div',cls);
     var num=mk('div','sn');num.textContent=i<S.step?'OK':String(i+1);
     var lbl=mk('span',null);lbl.textContent=n;
     si.appendChild(num);si.appendChild(lbl);
-    if(i<S.step)si.style.cursor='pointer';
-    if(i<S.step)si.addEventListener('click',function(){S.step=i;draw();});
+    if(i<S.step){si.style.cursor='pointer';si.addEventListener('click',function(){S.step=i;draw();});}
     bar.appendChild(si);
-    if(i<names.length-1){var div=mk('div','sdiv');bar.appendChild(div);}
+    if(i<names.length-1)bar.appendChild(mk('div','sdiv'));
   });
 }
 
-// STEP 0: CONFIGURE
+// ============ STEP 0: CONFIGURE ============
 function renderStep0(){
   var wrap=mk('div',null);
-
-  // Campaign basics
   var bc=mk('div','card');bc.appendChild(mkTitle('Campaign Details'));
   var g1=mk('div','g2');g1.style.marginBottom='12px';
   [
     {k:'campaignName',l:'Campaign Name',p:'e.g. Q3 CISO Outreach'},
     {k:'senderName',l:'Your Name',p:'Alex Rivera'},
     {k:'senderEmail',l:'Your Email',p:'alex@company.com'},
-    {k:'industry',l:'Target Industry',p:'e.g. Healthcare, Finance, SaaS'},
+    {k:'industry',l:'Target Industry',p:'e.g. Healthcare, Finance, SaaS'}
   ].forEach(function(f){
     var d=mk('div',null);d.appendChild(mkLbl(f.l));
     var inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S[f.k]||'';
@@ -291,7 +285,6 @@ function renderStep0(){
     d.appendChild(inp);g1.appendChild(d);
   });
   bc.appendChild(g1);
-
   var g2row=mk('div','g2');g2row.style.marginBottom='12px';
   var toneDiv=mk('div',null);toneDiv.appendChild(mkLbl('Email Tone'));
   var toneSel=document.createElement('select');
@@ -307,12 +300,13 @@ function renderStep0(){
   bc.appendChild(g2row);
   wrap.appendChild(bc);
 
-  // Leads input
   var lc=mk('div','card');lc.appendChild(mkTitle('Leads'));
   var lTip=mk('div','tip');lTip.style.marginBottom='12px';
   lTip.textContent='Upload a CSV or paste leads below (one per line: Name, Company, Email, Title, Industry)';
   lc.appendChild(lTip);
-  var ta=document.createElement('textarea');ta.placeholder='John Smith, Acme Health, john@acme.com, CISO, Healthcare\nSarah Chen, FinTech Inc, sarah@fintech.com, CTO, Finance';ta.style.minHeight='120px';
+  var ta=document.createElement('textarea');
+  ta.placeholder='John Smith, Acme Health, john@acme.com, CISO, Healthcare';
+  ta.style.minHeight='120px';
   ta.value=S._rawLeads||'';
   ta.addEventListener('input',function(e){S._rawLeads=e.target.value;});
   lc.appendChild(ta);
@@ -323,13 +317,11 @@ function renderStep0(){
   lc.appendChild(uploadBtn);lc.appendChild(fi);
   wrap.appendChild(lc);
 
-  // Platforms
   var pc=mk('div','card');pc.appendChild(mkTitle('Distribution Channels'));
   var platRow=mk('div',null);platRow.style.marginBottom='12px';
-  var plats=[{k:'email',cls:'pb-em',icon:'Email',label:'Email Campaign'},
-             {k:'youtube',cls:'pb-yt',icon:'YT',label:'YouTube (Unlisted)'},
-             {k:'linkedin',cls:'pb-li',icon:'in',label:'LinkedIn Video'}];
-  plats.forEach(function(p){
+  [{k:'email',cls:'pb-em',icon:'Email',label:'Email Campaign'},
+   {k:'youtube',cls:'pb-yt',icon:'YT',label:'YouTube (Unlisted)'},
+   {k:'linkedin',cls:'pb-li',icon:'in',label:'LinkedIn Video'}].forEach(function(p){
     var btn=mk('span','plat-badge '+p.cls+(S.platforms.indexOf(p.k)>=0?' active':''));
     btn.innerHTML='<span style="font-weight:800">'+p.icon+'</span> '+p.label;
     btn.addEventListener('click',function(){
@@ -340,11 +332,9 @@ function renderStep0(){
     platRow.appendChild(btn);
   });
   pc.appendChild(platRow);
-
-  // YouTube connect
   var ytDiv=mk('div',null);ytDiv.id='yt-connect';
   var ytTip=mk('div','tip');
-  ytTip.innerHTML='<strong style="color:var(--text)">YouTube:</strong> Click "Connect YouTube" to authorise Velorah to upload videos to your channel. Videos are set to <strong>Unlisted</strong> by default (only people with the link can view).';
+  ytTip.innerHTML='<strong style="color:var(--text)">YouTube:</strong> Connect to authorise uploads to your channel. Videos are <strong>Unlisted</strong> by default.';
   ytDiv.appendChild(ytTip);
   var ytBtn=mk('button','btn btn-sm btn-yt');ytBtn.style.marginTop='8px';
   ytBtn.textContent=S.ytAccessToken?'YouTube Connected':'Connect YouTube Channel';
@@ -353,39 +343,32 @@ function renderStep0(){
   pc.appendChild(ytDiv);
   wrap.appendChild(pc);
 
-  // Presenter & Video Mode
   var ac=mk('div','card');ac.appendChild(mkTitle('AI Video Mode'));
-  
-  var modeRow=mk('div','g3');modeRow.style.marginBottom='14px';
-  var modes=[
-    {k:'canvas',icon:'',label:'Animated Video + Voiceover',desc:'AI image + animated script with an ElevenLabs voiceover, rendered in your browser. Reliable.',badge:'RECOMMENDED'},
-    {k:'script-only',icon:'',label:'Email Only (No Video)',desc:'Send the AI-written script and campaign image by email. Instant.',badge:'INSTANT'},
-  ];
-  modes.forEach(function(m){
+  var modeRow=mk('div','g2');modeRow.style.marginBottom='14px';
+  [{k:'canvas',label:'Animated Video + Voiceover',desc:'AI image + animated script with an ElevenLabs voiceover, rendered in your browser.',badge:'RECOMMENDED'},
+   {k:'script-only',label:'Email Only (No Video)',desc:'Send the AI-written script and campaign image by email.',badge:'INSTANT'}].forEach(function(m){
     var mc=mk('div','engine-card'+(S.videoMode===m.k?' active':''));
-    mc.innerHTML='<div style="font-size:22px;margin-bottom:6px">'+m.icon+'</div>'+
-      '<div style="font-weight:700;font-size:13px;margin-bottom:3px;color:'+(S.videoMode===m.k?'var(--purple)':'var(--text)')+'">'+m.label+'</div>'+
+    mc.innerHTML='<div style="font-weight:700;font-size:13px;margin-bottom:3px;color:'+(S.videoMode===m.k?'var(--purple)':'var(--text)')+'">'+m.label+'</div>'+
       '<div style="font-size:11px;color:var(--text2);margin-bottom:6px">'+m.desc+'</div>'+
       '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.25)">'+m.badge+'</span>';
-    mc.addEventListener('click',function(){S.videoMode=m.k;document.querySelectorAll('.engine-card').forEach(function(c){c.classList.remove('active');});mc.classList.add('active');});
+    mc.addEventListener('click',function(){
+      S.videoMode=m.k;
+      var cards=document.querySelectorAll('.engine-card');
+      for(var i=0;i<cards.length;i++)cards[i].classList.remove('active');
+      mc.classList.add('active');
+    });
     modeRow.appendChild(mc);
   });
   ac.appendChild(modeRow);
-
-  // Voiceover note (ElevenLabs powers the voice; no photo upload needed for slideshow mode)
-  var hedraDiv=mk('div',null);hedraDiv.id='hedra-opts';
-  var htip=mk('div','tip');htip.innerHTML='Videos include an <strong>ElevenLabs voiceover</strong> (the same voice provider as the call agent). Ensure <strong>ELEVENLABS_API_KEY</strong> is set in Netlify env vars. If it is missing, a silent video is produced instead.';
-  hedraDiv.appendChild(htip);
-  ac.appendChild(hedraDiv);
-
+  var htip=mk('div','tip');
+  htip.innerHTML='Videos include an <strong>ElevenLabs voiceover</strong>. Ensure <strong>ELEVENLABS_API_KEY</strong> is set in Netlify env vars. If missing, a silent video is produced instead.';
+  ac.appendChild(htip);
   var vDiv=mk('div',null);vDiv.style.marginTop='12px';vDiv.appendChild(mkLbl('Voice'));
   var vSel=document.createElement('select');
   VOICES.forEach(function(v){var o=document.createElement('option');o.value=v.id;o.textContent=v.label;if(S.selectedVoice===v.id)o.selected=true;vSel.appendChild(o);});
   vSel.addEventListener('change',function(e){S.selectedVoice=e.target.value;});
   vDiv.appendChild(vSel);ac.appendChild(vDiv);
-
-  // Image style
-  var isDiv=mk('div',null);isDiv.style.marginTop='12px';isDiv.appendChild(mkLbl('Campaign Image Style (Pollinations AI - Free)'));
+  var isDiv=mk('div',null);isDiv.style.marginTop='12px';isDiv.appendChild(mkLbl('Campaign Image Style'));
   var isSel=document.createElement('select');
   [['photorealistic','Photorealistic'],['cinematic','Cinematic'],['minimal','Minimal / Clean'],['tech','Tech / Futuristic'],['corporate','Corporate']].forEach(function(o){
     var opt=document.createElement('option');opt.value=o[0];opt.textContent=o[1];if(S.imageStyle===o[0])opt.selected=true;isSel.appendChild(opt);
@@ -399,6 +382,7 @@ function renderStep0(){
   nextBtn.addEventListener('click',function(){
     if(!S.campaignName){alert('Enter a campaign name.');return;}
     if(!S._rawLeads&&!S.leads.length){alert('Add at least one lead.');return;}
+    if(window.VelorahGate && !VelorahGate.guard('ai_video')) return;
     parseLeads();
     S.step=1;draw();runGeneration();
   });
@@ -414,26 +398,24 @@ function readCSV(file,ta){
 
 function parseLeads(){
   var lines=(S._rawLeads||'').split('\n').filter(function(l){return l.trim();});
-  // Skip header if it looks like one
-  if(lines[0]&&lines[0].toLowerCase().includes('email'))lines.shift();
+  if(lines[0]&&lines[0].toLowerCase().indexOf('email')>=0)lines.shift();
   S.leads=lines.map(function(l){
     var parts=l.split(',').map(function(p){return p.trim().replace(/^"|"$/g,'');});
     return{name:parts[0]||'',company:parts[1]||'',email:parts[2]||'',title:parts[3]||'',industry:parts[4]||S.industry||''};
   }).filter(function(l){return l.name||l.email;});
 }
 
-// STEP 1: GENERATE ASSETS
+// ============ STEP 1: GENERATE ASSETS ============
 function renderStep1(){
   var wrap=mk('div',null);
   var card=mk('div','card');card.style.textAlign='center';card.style.padding='3rem 2rem';
-  var icon=mk('div',null);icon.style.cssText='font-size:48px;margin-bottom:16px';icon.textContent='';
-  var title=mk('h2',null);title.style.cssText='font-size:18px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--text),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent';
+  var title=mk('h2',null);
+  title.style.cssText='font-size:18px;font-weight:800;margin-bottom:8px;color:var(--text)';
   title.textContent='AI is generating your campaign assets';
   var sub=mk('p',null);sub.style.cssText='font-size:13px;color:var(--text2);margin-bottom:20px';
   sub.textContent='Creating personalised scripts, images and video for '+S.leads.length+' leads';
-  card.appendChild(icon);card.appendChild(title);card.appendChild(sub);
-
-  var logWrap=mk('div',null);logWrap.id='gen-log';logWrap.style.cssText='max-width:560px;margin:0 auto;text-align:left';
+  card.appendChild(title);card.appendChild(sub);
+  var logWrap=mk('div',null);logWrap.style.cssText='max-width:560px;margin:0 auto;text-align:left';
   S.log.forEach(function(entry){
     var le=mk('div','log-entry log-'+entry.type);
     le.textContent=(entry.type==='ok'?'OK  ':entry.type==='err'?'ERR ':entry.type==='spin'?'... ':'    ')+entry.msg;
@@ -444,16 +426,17 @@ function renderStep1(){
   return wrap;
 }
 
-function addLog(type,msg){S.log.push({type,msg});if(S.step===1||S.step===3)draw();}
-
 async function runGeneration(){
   S.log=[];
   addLog('info','Campaign: '+S.campaignName+' | Leads: '+S.leads.length);
 
-  // 1. Generate campaign image
+  // 1. Campaign image
   addLog('spin','Generating campaign image...');
   try{
-    var imgResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'headers:vaHeaders()'},body:JSON.stringify({action:'generate-image',payload:{industry:S.industry,company:S.leads[0]?S.leads[0].company:'',tone:S.tone,campaignGoal:S.goal}})});
+    var imgResp=await fetch('/.netlify/functions/video_agent',{
+      method:'POST',headers:vaHeaders(),
+      body:JSON.stringify({action:'generate-image',payload:{industry:S.industry,company:S.leads[0]?S.leads[0].company:'',tone:S.tone,campaignGoal:S.goal,style:S.imageStyle}})
+    });
     var imgData=await imgResp.json();
     if(imgData.imageUrl){
       var chain=[imgData.imageUrl].concat(imgData.fallbacks||['canvas']);
@@ -461,7 +444,7 @@ async function runGeneration(){
         loadImageWithFallback(chain,
           function(finalUrl,src){
             S.imageUrl=finalUrl;
-            addLog('ok',src==='canvas'?'Campaign image created with built-in designer (free image service unavailable)':'Campaign image generated');
+            addLog('ok',src==='canvas'?'Campaign image created with built-in designer':'Campaign image generated');
             resolve();
           },
           function(){
@@ -470,7 +453,7 @@ async function runGeneration(){
             resolve();
           });
       });
-    } else {
+    }else{
       S.imageUrl=generateCanvasBrandImage();
       addLog('ok','Campaign image created with built-in designer');
     }
@@ -479,47 +462,54 @@ async function runGeneration(){
     addLog('ok','Campaign image created with built-in designer');
   }
 
-  // 2. Generate video script for first lead (template)
+  // 2. Personalised scripts
   addLog('spin','Generating personalised video scripts...');
   S.leadResults=[];
   for(var i=0;i<S.leads.length;i++){
     var lead=S.leads[i];
     try{
-      var scriptResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'headers:vaHeaders()'},body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:'Velorah'}})});
+      var scriptResp=await fetch('/.netlify/functions/video_agent',{
+        method:'POST',headers:vaHeaders(),
+        body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:'Velorah'}})
+      });
       var scriptData=await scriptResp.json();
-      S.leadResults.push({lead:lead,script:scriptData,videoId:null,videoUrl:null,youtubeUrl:null,emailSent:false});
+      S.leadResults.push({lead:lead,script:scriptData,videoUrl:null,youtubeUrl:null,emailSent:false});
       addLog('ok','Script: '+lead.name+' @ '+lead.company);
     }catch(e){
-      S.leadResults.push({lead:lead,script:null,videoId:null,videoUrl:null,youtubeUrl:null,emailSent:false});
+      S.leadResults.push({lead:lead,script:null,videoUrl:null,youtubeUrl:null,emailSent:false});
       addLog('err','Script failed for '+lead.name);
     }
     await delay(1500);
   }
 
-  // 3. Generate video based on selected mode
-  if(S.leadResults.length&&S.leadResults[0].script){
+  // 3. Voiceover + video (skipped in script-only mode)
+  if(S.videoMode!=='script-only' && S.leadResults.length && S.leadResults[0].script){
     var script0=S.leadResults[0].script.script||'';
     var lead0=S.leadResults[0].lead;
-
-    // ---- Single reliable path: ElevenLabs voiceover + canvas slideshow ----
     if(!S.imageUrl){
-      addLog('err','No campaign image yet. Generate the image first (check connectivity).');
+      addLog('err','No campaign image available; skipping video.');
     }else{
-      // 1) Generate the voiceover with ElevenLabs (reliable; same provider as the voice agent)
       var voB64=null, voMime='audio/mpeg';
       addLog('spin','Generating voiceover with ElevenLabs...');
       try{
-        var voResp=await fetch('/.netlify/functions/video_agent',{method:'POST',headers:{'headers:vaHeaders()'},body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,1200),voice:'male'}})});
-        var voData=await voResp.json();
-        if(voData&&voData.audioBase64){
-          voB64=voData.audioBase64; voMime=voData.mimeType||'audio/mpeg';
-          addLog('ok','Voiceover ready');
+        var voResp=await fetch('/.netlify/functions/video_agent',{
+          method:'POST',headers:vaHeaders(),
+          body:JSON.stringify({action:'generate-tts',payload:{text:script0.substring(0,1200),voice:'male'}})
+        });
+        if(voResp.status===403){
+          var gErr=await voResp.json();
+          addLog('err',gErr.error||'AI video requires a Pro plan.');
         }else{
-          addLog('info','Voiceover unavailable ('+((voData&&voData.error)||'no audio')+'). Building a silent video instead.');
+          var voData=await voResp.json();
+          if(voData&&voData.audioBase64){
+            voB64=voData.audioBase64; voMime=voData.mimeType||'audio/mpeg';
+            addLog('ok','Voiceover ready');
+          }else{
+            addLog('info','Voiceover unavailable ('+((voData&&voData.error)||'no audio')+'). Building a silent video instead.');
+          }
         }
       }catch(e){ addLog('info','Voiceover error: '+e.message+'. Building a silent video instead.'); }
 
-      // 2) Assemble the slideshow video in the browser (with audio if we got it)
       addLog('spin','Rendering video'+(voB64?' with voiceover':'')+'...');
       try{
         var blob=await generateCanvasVideo(S.imageUrl,script0,lead0.name||'',voB64,voMime);
@@ -528,82 +518,42 @@ async function runGeneration(){
         addLog('ok','Video ready'+(voB64?' (with ElevenLabs voiceover)':' (silent)'));
       }catch(e){ addLog('err','Video rendering failed: '+e.message); }
     }
-
-
-    // Send email
-    }
-  S.step=2;draw();
-}
-      // Build email body with video link if available
-      var emailBody=r.script?r.script.script:'Hi '+r.lead.name+',\n\n'+S.goal;
-      if(r.youtubeUrl){
-        emailBody+='\n\nI recorded a short personalised video for you:\n'+r.youtubeUrl;
-      }else if(S.imageUrl){
-        emailBody+='\n\n[View campaign materials: '+S.imageUrl+']';
-      }
-
-      try{
-        var eResp=await fetch('/.netlify/functions/send',{method:'POST',headers:{'headers:vaHeaders()'},body:JSON.stringify({to:r.lead.email,subject:subj,body:emailBody,fromEmail:S.senderEmail,fromName:S.senderName})});
-        var eData=await eResp.json();
-        if(eData.success){r.emailSent=true;addLog('ok','Sent to '+r.lead.email);}
-        else addLog('err','Email failed: '+(eData.error||'unknown'));
-      }catch(e){addLog('err','Email error: '+e.message);}
-    }
-
-    draw();
-    await delay(1500);
   }
-  S._distributing=false;S._distProgress=100;
-  addLog('ok','Campaign complete. '+S.leadResults.filter(function(r){return r.emailSent;}).length+' emails sent.');
-  draw();
+  S.step=2;draw();
 }
 
 function connectYouTube(){
-  // OAuth 2.0 flow for YouTube
-  var CLIENT_ID='YOUR_GOOGLE_CLIENT_ID'; // Set in Google Console
+  var CLIENT_ID='YOUR_GOOGLE_CLIENT_ID';
   var REDIRECT=window.location.origin+'/campaign-video.html';
   var scope='https://www.googleapis.com/auth/youtube.upload';
   var url='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(CLIENT_ID)+'&redirect_uri='+encodeURIComponent(REDIRECT)+'&response_type=token&scope='+encodeURIComponent(scope);
   window.location.href=url;
 }
-
-// Handle OAuth redirect token
 (function(){
   var hash=window.location.hash;
-  if(hash&&hash.includes('access_token')){
+  if(hash&&hash.indexOf('access_token')>=0){
     var params=new URLSearchParams(hash.replace('#',''));
     var token=params.get('access_token');
-    if(token){S.ytAccessToken=token;window.history.replaceState(null,'',window.location.pathname);alert('YouTube connected!');}
+    if(token){S.ytAccessToken=token;window.history.replaceState(null,'',window.location.pathname);}
   }
 })();
 
-function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
-function mkTitle(t){var el=mk('div','card-title');el.textContent=t;return el;}
-function mkLbl(t){var el=mk('label','lbl');el.textContent=t;return el;}
-function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
-
-// -- CANVAS VIDEO GENERATOR (100% free, browser-native) --------------
-// Creates an animated MP4 from image + text using Canvas + MediaRecorder
-// -- CANVAS BRAND IMAGE (zero-API fallback when Pollinations is unavailable) --
+// ============ CANVAS BRAND IMAGE (zero-API fallback) ============
 function generateCanvasBrandImage(){
   var cnv=document.createElement('canvas');cnv.width=1792;cnv.height=1024;
   var ctx=cnv.getContext('2d');
-  // Midnight gradient background
   var grad=ctx.createLinearGradient(0,0,1792,1024);
   grad.addColorStop(0,'#0d1526');grad.addColorStop(0.5,'#111e35');grad.addColorStop(1,'#070c18');
   ctx.fillStyle=grad;ctx.fillRect(0,0,1792,1024);
-  // Glow accents
   var g1=ctx.createRadialGradient(300,200,0,300,200,600);
   g1.addColorStop(0,'rgba(59,130,246,.25)');g1.addColorStop(1,'rgba(59,130,246,0)');
   ctx.fillStyle=g1;ctx.fillRect(0,0,1792,1024);
   var g2=ctx.createRadialGradient(1500,850,0,1500,850,520);
   g2.addColorStop(0,'rgba(139,92,246,.2)');g2.addColorStop(1,'rgba(139,92,246,0)');
   ctx.fillStyle=g2;ctx.fillRect(0,0,1792,1024);
-  // Grid lines
   ctx.strokeStyle='rgba(59,130,246,.08)';ctx.lineWidth=1;
   for(var x=0;x<1792;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,1024);ctx.stroke();}
   for(var y=0;y<1024;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1792,y);ctx.stroke();}
-  // Campaign text
   ctx.textAlign='center';
   ctx.fillStyle='#06b6d4';ctx.font='700 34px Outfit,Arial,sans-serif';
   ctx.fillText((S.industry||'B2B').toUpperCase()+' CAMPAIGN',896,420);
@@ -613,14 +563,12 @@ function generateCanvasBrandImage(){
   ctx.fillText(goal,896,540);
   ctx.fillStyle='#7b91b4';ctx.font='400 30px Outfit,Arial,sans-serif';
   ctx.fillText('A personal message for you from '+(S.senderName||'our team'),896,620);
-  // Bottom brand strip
   ctx.fillStyle='rgba(59,130,246,.12)';ctx.fillRect(0,944,1792,80);
   ctx.fillStyle='#3b82f6';ctx.font='700 26px Outfit,Arial,sans-serif';
   ctx.fillText('VELORAH',896,996);
   return cnv.toDataURL('image/jpeg',0.92);
 }
 
-// -- IMAGE LOAD WITH FALLBACK CHAIN --
 function loadImageWithFallback(urls, onSuccess, onAllFailed){
   var queue=urls.slice();
   function tryNext(){
@@ -643,27 +591,23 @@ function generateCanvasVideo(imageUrl, script, recipientName, audioBase64, audio
     canvas.width=1280;canvas.height=720;
     var ctx=canvas.getContext('2d');
     var img=new Image();img.crossOrigin='anonymous';
-
     img.onload=function(){
-      // ---- Set up audio (ElevenLabs voiceover) if provided ----
-      var audioEl=null, audioCtx=null, audioDuration=0, combinedStream=null;
+      var audioEl=null, audioCtx=null, audioDuration=0, started=false;
       var canvasStream=canvas.captureStream(25);
-
       function startRecording(){
+        if(started)return; started=true;
         var tracks=[].concat(canvasStream.getVideoTracks());
-        var audioStreamDest=null;
         if(audioEl){
           try{
             audioCtx=new (window.AudioContext||window.webkitAudioContext)();
             var srcNode=audioCtx.createMediaElementSource(audioEl);
-            audioStreamDest=audioCtx.createMediaStreamDestination();
-            srcNode.connect(audioStreamDest);
-            srcNode.connect(audioCtx.destination); // so it's audible while recording too (optional)
-            tracks=tracks.concat(audioStreamDest.stream.getAudioTracks());
-          }catch(e){ /* if audio routing fails, fall back to silent video */ }
+            var dest=audioCtx.createMediaStreamDestination();
+            srcNode.connect(dest);
+            srcNode.connect(audioCtx.destination);
+            tracks=tracks.concat(dest.stream.getAudioTracks());
+          }catch(e){}
         }
-        combinedStream=new MediaStream(tracks);
-
+        var combinedStream=new MediaStream(tracks);
         var chunks=[];
         var mime='video/webm;codecs=vp9,opus';
         if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
@@ -674,15 +618,11 @@ function generateCanvasVideo(imageUrl, script, recipientName, audioBase64, audio
           resolve(new Blob(chunks,{type:'video/webm'}));
         };
         mr.start();
-
         var startTime=Date.now();
-        // Duration: match the audio if we have it, else estimate from script length.
         var estMs=Math.min((script||'').split(' ').length/2.5,55)*1000;
         var duration=audioDuration>0?(audioDuration*1000+400):estMs;
-
         if(audioEl){ try{ audioEl.currentTime=0; audioEl.play(); }catch(e){} }
-
-        var lastChar=Date.now();var charIdx=0;
+        var charIdx=0;
         var totalChars=(script||'').length;
         function frame(){
           var elapsed=Date.now()-startTime;
@@ -700,21 +640,19 @@ function generateCanvasVideo(imageUrl, script, recipientName, audioBase64, audio
           ctx.fillText('Personalised for '+(recipientName||'You'),40,648);
           ctx.font='16px Outfit,Arial';ctx.fillStyle='rgba(255,255,255,.7)';
           ctx.fillText('Velorah Video Campaign',40,676);
-          // Reveal script text in sync with overall progress (so it tracks the voiceover).
           var targetChars=Math.floor(totalChars*progress);
           if(charIdx<targetChars){charIdx=targetChars;}
           ctx.fillStyle='#e8f0fe';ctx.font='22px Outfit,Arial';ctx.textAlign='center';
           var visibleScript=(script||'').substring(0,charIdx);
           var visLines=wrapText(ctx,visibleScript,1100,22);
-          var startY=200;
-          visLines.slice(-8).forEach(function(l,i){ctx.fillText(l,640,startY+i*34);});
+          visLines.slice(-8).forEach(function(l,i){ctx.fillText(l,640,200+i*34);});
           ctx.fillStyle='rgba(79,70,229,.35)';ctx.fillRect(0,710,canvas.width,10);
           ctx.fillStyle='#4F46E5';ctx.fillRect(0,710,canvas.width*progress,10);
-          if(elapsed<duration)requestAnimationFrame(frame);else{ try{ if(audioEl) audioEl.pause(); }catch(e){} mr.stop(); }
+          if(elapsed<duration)requestAnimationFrame(frame);
+          else{ try{ if(audioEl) audioEl.pause(); }catch(e){} mr.stop(); }
         }
         requestAnimationFrame(frame);
       }
-
       if(audioBase64){
         audioEl=document.createElement('audio');
         audioEl.src='data:'+(audioMime||'audio/mpeg')+';base64,'+audioBase64;
@@ -723,9 +661,8 @@ function generateCanvasVideo(imageUrl, script, recipientName, audioBase64, audio
           audioDuration=isFinite(audioEl.duration)?audioEl.duration:0;
           startRecording();
         };
-        audioEl.onerror=function(){ audioEl=null; startRecording(); }; // fall back to silent
-        // Safety: if metadata never fires, start anyway after 1.5s
-        setTimeout(function(){ if(!combinedStream){ startRecording(); } },1500);
+        audioEl.onerror=function(){ audioEl=null; startRecording(); };
+        setTimeout(function(){ startRecording(); },2000);
       }else{
         startRecording();
       }
@@ -746,12 +683,6 @@ function wrapText(ctx,text,maxW,fontSize){
   return lines;
 }
 
-async function blobToBase64(blob){
-  return new Promise(function(res){var rd=new FileReader();rd.onload=function(){res(rd.result.split(',')[1]);};rd.readAsDataURL(blob);});
-}
-
-
-// Called by other pages to pre-load leads into Ares
 function sendToAres(leads, source){
   var hdrs = 'First Name,Last Name,Email,Company,Job Title,Industry\n';
   var rows = leads.map(function(l){
@@ -762,20 +693,8 @@ function sendToAres(leads, source){
   sessionStorage.setItem('velorah_source', source || 'direct');
   window.location.href = '/campaign-video.html';
 }
-/* =============================================================
-   Ares (campaign-video.html) — REPLACEMENT / ADDITIONAL CODE
-   Paste this block into the <script> section, just BEFORE the
-   line:  async function signOut(){...}
-   It adds: vaHeaders(), renderStep2/3/4, runDistribution()
-   ============================================================= */
 
-function vaHeaders(){
-  var h={'headers:vaHeaders()'};
-  if(_session&&_session.access_token) h['Authorization']='Bearer '+_session.access_token;
-  return h;
-}
-
-// STEP 2: PREVIEW & EDIT
+// ============ STEP 2: PREVIEW & EDIT ============
 function renderStep2(){
   var wrap=mk('div',null);
   var vc=mk('div','card');vc.appendChild(mkTitle('Video Preview'));
@@ -790,16 +709,19 @@ function renderStep2(){
     });
     vc.appendChild(dl);
   }else{
-    var noV=mk('div','warn');noV.textContent='No video was produced. You can still send the campaign image and script by email.';
+    var noV=mk('div','warn');
+    noV.textContent='No video was produced. You can still send the campaign image and script by email.';
     vc.appendChild(noV);
   }
   wrap.appendChild(vc);
+
   if(S.imageUrl){
     var ic=mk('div','card');ic.appendChild(mkTitle('Campaign Image'));
     var ip=mk('div','img-preview');
     var im=document.createElement('img');im.src=S.imageUrl;ip.appendChild(im);
     ic.appendChild(ip);wrap.appendChild(ic);
   }
+
   var sc=mk('div','card');sc.appendChild(mkTitle('Message'));
   var subDiv=mk('div',null);subDiv.style.marginBottom='12px';
   subDiv.appendChild(mkLbl('Email subject (use {{name}}, {{company}}, {{industry}})'));
@@ -816,6 +738,7 @@ function renderStep2(){
   });
   scrDiv.appendChild(scrTa);sc.appendChild(scrDiv);
   wrap.appendChild(sc);
+
   var lc=mk('div','card');lc.appendChild(mkTitle('Leads ('+S.leadResults.length+')'));
   S.leadResults.forEach(function(r){
     var row=mk('div',null);
@@ -828,13 +751,14 @@ function renderStep2(){
     row.appendChild(left);row.appendChild(right);lc.appendChild(row);
   });
   wrap.appendChild(lc);
+
   var next=mk('button','btn btn-launch');next.textContent='Continue to distribution';
   next.addEventListener('click',function(){S.step=3;draw();});
   wrap.appendChild(next);
   return wrap;
 }
 
-// STEP 3: DISTRIBUTE
+// ============ STEP 3: DISTRIBUTE ============
 function renderStep3(){
   var wrap=mk('div',null);
   var dc=mk('div','card');dc.appendChild(mkTitle('Distribute Campaign'));
@@ -866,7 +790,7 @@ function renderStep3(){
   return wrap;
 }
 
-// STEP 4: RESULTS
+// ============ STEP 4: RESULTS ============
 function renderStep4(){
   var wrap=mk('div',null);
   var sent=S.leadResults.filter(function(r){return r.emailSent;}).length;
@@ -901,7 +825,7 @@ function renderStep4(){
   return wrap;
 }
 
-// DISTRIBUTION
+// ============ DISTRIBUTION ============
 async function runDistribution(){
   S._distributing=true;S._distProgress=0;S.step=3;draw();
   for(var i=0;i<S.leadResults.length;i++){
@@ -924,11 +848,15 @@ async function runDistribution(){
         .replace('{{name}}',r.lead.name||'')
         .replace('{{company}}',r.lead.company||'')
         .replace('{{industry}}',r.lead.industry||'');
-      var emailBody=r.script?r.script.script:'Hi '+r.lead.name+',\n\n'+S.goal;
+      var emailBody=(r.script&&r.script.script)?r.script.script:('Hi '+(r.lead.name||'there')+',\n\n'+S.goal);
       if(r.youtubeUrl){emailBody+='\n\nI recorded a short personalised video for you:\n'+r.youtubeUrl;}
       else if(S.imageUrl&&S.imageUrl.indexOf('http')===0){emailBody+='\n\n[View campaign materials: '+S.imageUrl+']';}
       try{
-        var eResp=await fetch('/.netlify/functions/send',{method:'POST',headers:{'headers:vaHeaders()'},body:JSON.stringify({to:r.lead.email,subject:subj,body:emailBody,fromEmail:S.senderEmail,fromName:S.senderName})});
+        var eResp=await fetch('/.netlify/functions/send',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({to:r.lead.email,subject:subj,body:emailBody,fromEmail:S.senderEmail,fromName:S.senderName})
+        });
         var eData=await eResp.json();
         if(eData.success){r.emailSent=true;addLog('ok','Sent to '+r.lead.email);}
         else addLog('err','Email failed: '+(eData.error||'unknown'));
@@ -942,7 +870,8 @@ async function runDistribution(){
   addLog('ok','Campaign complete. '+S.leadResults.filter(function(r){return r.emailSent;}).length+' emails sent.');
   S.step=4;draw();
 }
-async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+
+async function signOut(){ if(sbClient){await sbClient.auth.signOut();} window.location.href='/login.html'; }
 init();
 </script>
 </body>
