@@ -1,4 +1,5 @@
-// email-history.js — uses native fetch only, no npm dependencies
+// email_history.js — uses native fetch only, no npm dependencies
+
 // Rate limiter
 const _rl=new Map();
 function _rate(id,max,win){const n=Date.now();const r=_rl.get(id)||{c:0,t:n+(win||60000)};if(n>r.t){r.c=0;r.t=n+(win||60000);}r.c++;_rl.set(id,r);return r.c<=(max||60);}
@@ -11,24 +12,25 @@ exports.handler = async function(event) {
     'Content-Type': 'application/json',
     'X-Content-Type-Options': 'nosniff'
   };
-
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
-
-  const _rlip = token.substring(0,20)||'anon';
-  if(!_rate(_rlip, 120, 60000)) return {statusCode:429, headers, body:JSON.stringify({error:'Too many requests. Please slow down.'})};
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY;
-
   if (!SUPABASE_URL || !SERVICE_KEY) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Missing Supabase config' }) };
   }
 
-  // Verify user from JWT
+  // NOTE: `token` must be declared BEFORE the rate limiter reads it.
+  // (Previously the rate-limit line ran first and referenced `token` in its
+  // temporal dead zone, crashing every request with a ReferenceError.)
   const authHeader = event.headers.authorization || event.headers.Authorization || '';
-  const token = authHeader.replace('Bearer ', '');
+  const token = authHeader.replace('Bearer ', '').trim();
   if (!token) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
 
+  const _rlip = token.substring(0, 20) || 'anon';
+  if (!_rate(_rlip, 120, 60000)) return { statusCode: 429, headers, body: JSON.stringify({ error: 'Too many requests. Please slow down.' }) };
+
+  // Verify user from JWT
   const uResp = await fetch((SUPABASE_URL) + '/auth/v1/user', {
     headers: { 'Authorization': 'Bearer ' + (token), 'apikey': SERVICE_KEY }
   });
@@ -52,7 +54,6 @@ exports.handler = async function(event) {
       + '&order=sent_at.desc'
       + '&limit=' + (limit) + '&offset=' + (offset)
       + '&select=id,campaign_name,recipient_name,recipient_email,company,title,industry,subject,status,tracking_status,sent_at,scheduled_at,opened_at,clicked_at,message_id,open_count';
-
     if (status)   url += '&status=eq.' + (status);
     if (tracking) url += '&tracking_status=eq.' + (tracking);
     if (search) {
@@ -66,7 +67,6 @@ exports.handler = async function(event) {
         'Prefer': 'count=exact'
       }
     });
-
     const data = await resp.json();
     const range = resp.headers.get('content-range') || '';
     const total = parseInt(range.split('/')[1] || '0');
@@ -83,7 +83,6 @@ exports.handler = async function(event) {
     let records;
     try { ({ records } = JSON.parse(event.body || '{}')); }
     catch(e) { return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) }; }
-
     if (!records || !records.length) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'No records provided' }) };
     }
@@ -116,7 +115,6 @@ exports.handler = async function(event) {
       },
       body: JSON.stringify(rows)
     });
-
     if (!saveResp.ok) {
       const err = await saveResp.text();
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Save failed: ' + err }) };
