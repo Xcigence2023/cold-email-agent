@@ -4,7 +4,6 @@
  * - Keys response cached 10 min per user
  * - All inputs sanitized
  */
-
 const authCache = new Map();
 const keysCache = new Map();
 
@@ -35,18 +34,20 @@ exports.handler = async function(event) {
     'Content-Type': 'application/json',
     'X-Content-Type-Options': 'nosniff'
   };
-
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
-
-  const _rlip = token.substring(0,20)||'anon';
-  if(!_rate(_rlip, 60, 60000)) return {statusCode:429, headers, body:JSON.stringify({error:'Too many requests. Please slow down.'})};
 
   const SB = process.env.SUPABASE_URL;
   const SK = process.env.SUPABASE_SERVICE_KEY;
   if (!SB || !SK) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error' }) };
 
+  // NOTE: `token` must be declared BEFORE the rate limiter uses it.
+  // (Previously the rate-limit line ran first and referenced `token` in its
+  // temporal dead zone, which crashed every request with a ReferenceError.)
   const token = (event.headers.authorization || '').replace('Bearer ', '').trim();
   if (!token) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+
+  const _rlip = token.substring(0, 20) || 'anon';
+  if (!_rate(_rlip, 60, 60000)) return { statusCode: 429, headers, body: JSON.stringify({ error: 'Too many requests. Please slow down.' }) };
 
   const user = await getUser(token, SB, SK);
   if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Invalid session' }) };
@@ -106,7 +107,6 @@ exports.handler = async function(event) {
       headers: { 'Authorization': `Bearer ${SK}`, 'apikey': SK }
     });
     const existing = await chk.json();
-
     const method = existing?.length > 0 ? 'PATCH' : 'POST';
     const url = existing?.length > 0
       ? `${SB}/rest/v1/user_api_keys?user_id=eq.${user.id}`
@@ -117,7 +117,6 @@ exports.handler = async function(event) {
       headers: { 'Authorization': `Bearer ${SK}`, 'apikey': SK, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(payload)
     });
-
     if (!saveRes.ok) {
       const e = await saveRes.text();
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Save failed', detail: e.substring(0, 100) }) };
