@@ -12,13 +12,25 @@
  *      a plan is activated/changed/cancelled, and on signup.
  *   2. An HTTP handler an admin can call to manually re-assign or grant overrides.
  *
- * ENV: SUPABASE_URL, SUPABASE_SERVICE_KEY
+ * SECURITY: the HTTP handler is ADMIN-ONLY. The caller must present a valid
+ * Supabase JWT whose email appears in the ADMIN_EMAILS env var. It fails CLOSED:
+ * if ADMIN_EMAILS is unset/empty, or the token is missing/invalid, every request
+ * is rejected. The exported functions below are NOT guarded, because they are
+ * called server-side by trusted code (e.g. stripe-webhook.js) that never takes
+ * a user's word for who they are.
+ *
+ * ENV:
+ *   SUPABASE_URL          (required)
+ *   SUPABASE_SERVICE_KEY  (required)
+ *   ADMIN_EMAILS          (required for the HTTP handler) comma-separated list,
+ *                         e.g. "you@velorahflow.io,ops@velorahflow.io"
  */
 
 const CFG = require('./feature-config.js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const ADMIN_EMAILS = process.env.ADMIN_EMAILS || '';
 
 const HDR = {
   'Content-Type': 'application/json',
@@ -38,6 +50,67 @@ function sb(path, opts = {}) {
     },
   });
 }
+
+// ============================================================
+// ADMIN AUTHORISATION
+// ============================================================
+
+/** Parse ADMIN_EMAILS into a normalised Set. Empty set = nobody is an admin. */
+function adminEmailSet() {
+  return new Set(
+    ADMIN_EMAILS.split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+/**
+ * Verify the caller is an admin.
+ * Returns { ok:true, email, userId } or { ok:false, status, error }.
+ * Fails closed on every error path.
+ */
+async function requireAdmin(authHeader) {
+  const admins = adminEmailSet();
+  if (admins.size === 0) {
+    // No admins configured -> refuse everything rather than allow everything.
+    return { ok: false, status: 503, error: 'Admin access is not configured.' };
+  }
+
+  if (!authHeader || !/^Bearer\s+.+/i.test(authHeader)) {
+    return { ok: false, status: 401, error: 'Authentication required.' };
+  }
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+  // Reject the service key being used as a bearer token from the outside.
+  if (SERVICE_KEY && token === SERVICE_KEY) {
+    return { ok: false, status: 401, error: 'Invalid credentials.' };
+  }
+
+  let user;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SERVICE_KEY },
+    });
+    if (!res.ok) return { ok: false, status: 401, error: 'Invalid or expired session.' };
+    user = await res.json();
+  } catch (_) {
+    return { ok: false, status: 401, error: 'Could not verify session.' };
+  }
+
+  const email = (user && user.email ? String(user.email) : '').trim().toLowerCase();
+  if (!email || !user.id) {
+    return { ok: false, status: 401, error: 'Invalid session.' };
+  }
+  if (!admins.has(email)) {
+    // Deliberately vague: don't reveal who is or isn't an admin.
+    return { ok: false, status: 403, error: 'Not authorised.' };
+  }
+  return { ok: true, email, userId: user.id };
+}
+
+// ============================================================
+// CORE LOGIC (server-side; called inline by trusted code)
+// ============================================================
 
 /**
  * Record that a customer has been (re)assigned the feature set for `newPlan`.
@@ -80,7 +153,11 @@ async function assignForPlan(userId, newPlan, source = 'stripe_webhook', oldPlan
  * (reverting to plan default).
  */
 async function setOverride(userId, featureKey, enabled, reason = null, by = 'admin') {
+  if (!userId) return { ok: false, error: 'missing userId' };
   if (!CFG.FEATURES[featureKey]) return { ok: false, error: 'unknown feature' };
+  if (!(enabled === true || enabled === false || enabled === null)) {
+    return { ok: false, error: 'enabled must be true, false, or null' };
+  }
 
   if (enabled === null) {
     await sb(`feature_overrides?user_id=eq.${userId}&feature_key=eq.${featureKey}`, { method: 'DELETE' });
@@ -97,7 +174,10 @@ async function setOverride(userId, featureKey, enabled, reason = null, by = 'adm
   return { ok: res.ok, override: row };
 }
 
-// ---- HTTP handler (admin actions). Protect this with an admin check in prod. ----
+// ============================================================
+// HTTP HANDLER — ADMIN ONLY
+// ============================================================
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: HDR, body: '' };
   if (event.httpMethod !== 'POST')
@@ -105,13 +185,17 @@ exports.handler = async (event) => {
   if (!SUPABASE_URL || !SERVICE_KEY)
     return { statusCode: 500, headers: HDR, body: JSON.stringify({ error: 'Server not configured' }) };
 
-  let body = {};
-  try { body = JSON.parse(event.body || '{}'); } catch (_) {}
+  // ---- ADMIN GATE: nothing below runs unless the caller is a verified admin ----
+  const auth = event.headers.authorization || event.headers.Authorization;
+  const gate = await requireAdmin(auth);
+  if (!gate.ok) {
+    return { statusCode: gate.status, headers: HDR, body: JSON.stringify({ error: gate.error }) };
+  }
 
-  // NOTE: In production, verify the caller is an admin here (e.g. check a role
-  // on their profile via the JWT) before allowing overrides. Left as a clear
-  // TODO so it isn't silently insecure.
-  // const adminOk = await isAdmin(event.headers.authorization); if(!adminOk) return 403...
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch (_) {
+    return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'Invalid JSON' }) };
+  }
 
   const { action } = body;
 
@@ -121,12 +205,23 @@ exports.handler = async (event) => {
   }
 
   if (action === 'set_override') {
-    const r = await setOverride(body.userId, body.feature, body.enabled, body.reason, body.by || 'admin');
+    // Record WHO made the change, from the verified token — not from the request body.
+    const r = await setOverride(
+      body.userId,
+      body.feature,
+      body.enabled === undefined ? null : body.enabled,
+      body.reason,
+      gate.email
+    );
     return { statusCode: r.ok ? 200 : 400, headers: HDR, body: JSON.stringify(r) };
   }
 
   return { statusCode: 400, headers: HDR, body: JSON.stringify({ error: 'Unknown action' }) };
 };
 
+// Exported for trusted server-side callers (e.g. stripe-webhook.js).
+// These are intentionally NOT admin-gated: the caller is our own backend code,
+// not a user request.
 exports.assignForPlan = assignForPlan;
 exports.setOverride = setOverride;
+exports.requireAdmin = requireAdmin;
