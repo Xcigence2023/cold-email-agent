@@ -11,6 +11,8 @@
 (function(){
   'use strict';
 
+  var _imported=false;
+
   /* ---------- RFC4180 CSV parser (handles newlines inside quoted fields) ---------- */
   function parseCSVStrict(text){
     var rows=[], row=[], cur='', q=false, i=0;
@@ -107,6 +109,7 @@
     window.S.validationResults={summary:null,results:[]};
     if(!window.S.campaignName) window.S.campaignName='Imported '+new Date().toLocaleDateString();
 
+    _imported=true;
     window.S.step=3; window.S.activeIdx=0;
     if(typeof window.draw==='function') window.draw();
 
@@ -171,6 +174,61 @@
     window.readFile=wrapped;
   }
 
+
+  /* ---------- Sender guard ----------
+     Importing skips the Configure step, where sender name/email are set.
+     launchCampaign() sends fromEmail/fromName from S.sender, so if those are
+     empty the send fails. Show an inline form on Review/Send until filled. */
+  function buildSenderForm(){
+    var box=document.createElement('div');
+    box.id='vr-sender-box';
+    box.style.cssText='border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.08);'+
+      'border-radius:12px;padding:14px 16px;margin-bottom:12px';
+    var t=document.createElement('div');
+    t.style.cssText='font-weight:700;font-size:13px;color:#f59e0b;margin-bottom:8px';
+    t.textContent='Sender details needed before you can send';
+    box.appendChild(t);
+
+    var note=document.createElement('div');
+    note.style.cssText='font-size:12px;color:#7b91b4;margin-bottom:10px;line-height:1.5';
+    note.textContent='Imported campaigns skip the setup step, so we still need the name and address these emails are sent from.';
+    box.appendChild(note);
+
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;gap:8px;flex-wrap:wrap;align-items:center';
+
+    function mkInput(ph,val,w){
+      var i=document.createElement('input'); i.type='text'; i.placeholder=ph; i.value=val||'';
+      i.style.cssText='flex:1;min-width:'+w+';font-size:13px;padding:8px 10px;border:1px solid rgba(59,130,246,.3);'+
+        'border-radius:8px;background:rgba(13,21,38,.85);color:#e8f0fe;font-family:inherit';
+      return i;
+    }
+    var nameI=mkInput('Your name (e.g. Yomi Olalere)', (window.S.sender&&window.S.sender.name)||'','160px');
+    var mailI=mkInput('Sender email (e.g. you@company.com)', (window.S.sender&&window.S.sender.email)||'','200px');
+
+    var save=document.createElement('button');
+    save.textContent='Save';
+    save.style.cssText='cursor:pointer;font-size:13px;font-weight:700;padding:9px 18px;border:none;'+
+      'border-radius:8px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-family:inherit';
+    save.addEventListener('click',function(){
+      var nm=nameI.value.trim(), em=mailI.value.trim();
+      if(!EMAIL_RX.test(em)){ toast('Enter a valid sender email address.', true); return; }
+      if(!nm){ toast('Enter the name these emails are sent from.', true); return; }
+      window.S.sender.name=nm; window.S.sender.email=em;
+      try{ if(typeof window.saveUserKeys==='function') window.saveUserKeys(); }catch(e){}
+      toast('Sender saved — you can send now.', false);
+      if(typeof window.draw==='function') window.draw();
+    });
+
+    row.appendChild(nameI); row.appendChild(mailI); row.appendChild(save);
+    box.appendChild(row);
+    return box;
+  }
+
+  function senderMissing(){
+    return !(window.S && window.S.sender && window.S.sender.email && EMAIL_RX.test(window.S.sender.email));
+  }
+
   /* ---------- The visible panel (also proves this file loaded) ---------- */
   function buildPanel(){
     var wrap=document.createElement('div');
@@ -218,11 +276,20 @@
     if(!window.S) return;
     var root=document.getElementById('root');
     if(!root) return;
-    if(window.S.step!==0){ var old=document.getElementById('vr-resume-panel'); if(old) old.remove(); return; }
-    if(document.getElementById('vr-resume-panel')) return;
-    // the step content is the 2nd child (after the step bar)
     var target=root.children.length>1 ? root.children[1] : root;
-    if(target && target.insertBefore) target.insertBefore(buildPanel(), target.firstChild);
+
+    // Resume panel: only on the Upload step
+    var existing=document.getElementById('vr-resume-panel');
+    if(window.S.step===0){
+      if(!existing && target && target.insertBefore) target.insertBefore(buildPanel(), target.firstChild);
+    }else if(existing){ existing.remove(); }
+
+    // Sender guard: on Review/Send, only for imported campaigns missing a sender
+    var sbox=document.getElementById('vr-sender-box');
+    var needSender = _imported && (window.S.step===3 || window.S.step===4) && senderMissing();
+    if(needSender){
+      if(!sbox && target && target.insertBefore) target.insertBefore(buildSenderForm(), target.firstChild);
+    }else if(sbox){ sbox.remove(); }
   }
 
   // Re-mount after every redraw
