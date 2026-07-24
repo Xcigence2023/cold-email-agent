@@ -181,7 +181,7 @@ async function uploadList(user, payload, ip) {
 // ============================================================
 async function downloadList(user, payload) {
   let q = `phone_numbers?user_id=eq.${user.id}&select=phone_e164,first_name,last_name,email,company,title,consent_call,consent_sms,consent_record,do_not_call,dnc_reason,created_at&order=created_at.desc&limit=20000`;
-  if (payload.listId) q += `&list_id=eq.${payload.listId}`;
+  if (payload.listId) q += `&list_id=eq.${encodeURIComponent(payload.listId)}`;
   if (payload.excludeDnc) q += `&do_not_call=eq.false`;
 
   const r = await sb(q);
