@@ -7,13 +7,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Velorah — AI Cold Email Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/resume-campaign.js"></script>
-  <script src="/feature-config.js"></script>
-<script src="/features-ui.js">/* FEATURE GATING */
-.vf-locked{opacity:.5!important;cursor:not-allowed!important}
-.vf-badge{display:inline-flex;align-items:center;gap:.3em;margin-left:.4em;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle}
-.vf-badge-locked{background:rgba(139,92,246,.2)!important;color:#a78bfa!important}
-.vf-badge-addon{background:rgba(245,158,11,.2)!important;color:#fbbf24!important}</script>
+<script src="/feature-config.js"></script>
+<script src="/features-ui.js"></script>
+<script src="/resume-campaign.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -34,8 +30,6 @@
   --glow:0 0 20px rgba(59,130,246,.25);
 }
 body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh;overflow-x:hidden}
-
-/* BACKGROUND */
 body::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse 80% 50% at 20% 0%,rgba(59,130,246,.08) 0%,transparent 60%),
   radial-gradient(ellipse 60% 40% at 80% 100%,rgba(6,182,212,.06) 0%,transparent 60%);
@@ -44,8 +38,6 @@ body::after{content:'';position:fixed;inset:0;background-image:
   linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),
   linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);
   background-size:60px 60px;pointer-events:none;z-index:0}
-
-/* TOPBAR */
 .topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:var(--glow)}
@@ -57,21 +49,17 @@ body::after{content:'';position:fixed;inset:0;background-image:
 .topbar-right{display:flex;align-items:center;gap:10px}
 .user-info{display:flex;align-items:center;gap:8px}
 .user-email{font-size:11px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
-.plan-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-dim);color:var(--blue);border:1px solid var(--blue-dim)}
+.plan-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
 .usage-wrap{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
 .usage-bar{width:64px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
 .usage-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .4s}
 .btn-sm{cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text2);font-family:'Outfit',sans-serif;transition:all .2s}
 .btn-sm:hover{border-color:var(--border2);color:var(--text);background:var(--glass2)}
-
-/* PAGE LAYOUT */
 .page{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem}
 .hero{padding:1.5rem;border-radius:var(--rx);background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(6,182,212,.05));border:1px solid var(--border);margin-bottom:1.5rem;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-50%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,.1),transparent 70%);pointer-events:none}
 .hero h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
 .hero p{font-size:13px;color:var(--text2)}
-
-/* STEP BAR */
 .step-bar{display:flex;align-items:center;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--rl)}
 .si{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);letter-spacing:.02em;white-space:nowrap}
 .si.active{color:var(--blue)}
@@ -81,14 +69,10 @@ body::after{content:'';position:fixed;inset:0;background-image:
 .si.done .sn{background:var(--green);border-color:var(--green);color:#fff}
 .sdiv{flex:1;height:1px;background:linear-gradient(90deg,var(--border),var(--border));margin:0 8px;min-width:20px}
 .si.done+.sdiv{background:linear-gradient(90deg,var(--green),var(--border))}
-
-/* CARDS */
 .card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;position:relative;overflow:hidden;transition:border-color .2s}
 .card:hover{border-color:var(--border2)}
 .card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
 .card-title::before{content:'';width:3px;height:16px;background:linear-gradient(var(--blue),var(--cyan));border-radius:2px}
-
-/* FORMS */
 .lbl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
 input,select,textarea{width:100%;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:rgba(13,21,38,.8);color:var(--text);font-family:'Outfit',sans-serif;transition:all .2s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow),0 0 12px var(--blue-glow)}
@@ -100,8 +84,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media(max-width:640px){.g2,.g4{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}}
 .field{display:flex;flex-direction:column;gap:0}
-
-/* BUTTONS */
 .btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;letter-spacing:.01em}
 .btn:hover{border-color:var(--border2);background:var(--glass2)}
 .btn:active{transform:scale(.97)}
@@ -114,8 +96,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .btn-danger{background:var(--red-dim);border-color:var(--red);color:var(--red)}
 .btn-outline{background:transparent;border-color:var(--border2);color:var(--blue)}
 .btn-outline:hover{background:var(--blue-dim)}
-
-/* MISC */
 .flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em}
@@ -126,21 +106,11 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width .4s}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
-
-/* STAT CARDS */
-.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;text-align:center;transition:all .2s;cursor:default}
-.stat-card:hover{border-color:var(--border2);background:var(--glass2);transform:translateY(-2px);box-shadow:var(--glow)}
-.stat-val{font-size:28px;font-weight:800;line-height:1;margin-bottom:4px;font-family:'IBM Plex Mono',monospace}
-.stat-lbl{font-size:11px;color:var(--text2);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
-
-/* DROP ZONE */
 .drop-zone{border:2px dashed var(--border);border-radius:var(--rx);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass);position:relative;overflow:hidden}
 .drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(59,130,246,.05),transparent 70%);pointer-events:none;opacity:0;transition:opacity .3s}
 .drop-zone:hover,.drop-zone.over{border-color:var(--blue);background:rgba(59,130,246,.05);box-shadow:inset 0 0 40px rgba(59,130,246,.08)}
 .drop-zone:hover::before,.drop-zone.over::before{opacity:1}
 .drop-icon{font-size:42px;margin-bottom:14px;display:block;filter:drop-shadow(0 0 10px rgba(59,130,246,.4))}
-
-/* EMAIL REVIEW PANEL */
 .email-panel{display:grid;grid-template-columns:260px 1fr;gap:1rem;align-items:start}
 @media(max-width:720px){.email-panel{grid-template-columns:1fr}}
 .lead-list{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
@@ -154,8 +124,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .la{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
 .lr.active .la{background:var(--blue-dim);color:var(--blue);border-color:var(--blue)}
 .email-detail{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;display:flex;flex-direction:column;gap:14px}
-
-/* ANGLE CARDS */
 .angle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .angle-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
 .angle-card:hover{border-color:var(--border2);background:var(--glass2)}
@@ -163,8 +131,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .angle-emoji{font-size:18px;margin-bottom:4px}
 .angle-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
 .angle-desc{font-size:11px;color:var(--text2);line-height:1.4}
-
-/* TOGGLE */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
 .toggle-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
 .toggle{width:44px;height:24px;border-radius:12px;cursor:pointer;position:relative;display:flex;align-items:center;padding:2px;transition:background .25s;border:1px solid var(--border)}
@@ -173,20 +139,12 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .toggle-knob{width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 2px 4px rgba(0,0,0,.3)}
 .toggle.on .toggle-knob{transform:translateX(20px)}
 .toggle-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-
-/* SEND ROW */
 .srow{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--glass);gap:8px;margin-bottom:6px;transition:all .2s}
 .srow:hover{border-color:var(--border2)}
-
-/* SCHEDULE */
 .schedule-card{border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;background:var(--glass);margin-bottom:12px}
-
-/* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .page>*{animation:fadeUp .35s ease both}
 .card{animation:fadeUp .35s ease both}
-
-/* AGENT CARDS */
 .agent-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;transition:all .25s;position:relative;overflow:hidden}
 .agent-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
 .ac-icon{font-size:26px;margin-bottom:8px}
@@ -195,24 +153,21 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
 .ac-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
 .ac-action{font-size:12px;font-weight:700;transition:letter-spacing .2s}
 .agent-card:hover .ac-action{letter-spacing:.03em}
-/* STAT CARDS */
-.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;transition:all .2s}
+.stat-card:hover{border-color:var(--border2);background:var(--glass2);transform:translateY(-2px);box-shadow:var(--glow)}
 .stat-val{font-size:24px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:3px}
 .stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
-/* QUICK ACTIONS */
 .qa-row{display:block;padding:8px 12px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(13,21,38,.4);color:var(--text);text-decoration:none;transition:all .15s;margin-bottom:4px}
-.qa-row:hover{border-color:var(--border2);background:var(--glass2,rgba(59,130,246,.06));transform:translateX(3px)}
-/* PLAN PILL & USAGE */
-.plan-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-dim,#1e3a6e);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
-.usage-wrap{display:flex;align-items:center;gap:6px}
-.usage-bar{width:60px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.usage-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .4s}
+.qa-row:hover{border-color:var(--border2);background:var(--glass2);transform:translateX(3px)}
+.vf-locked{opacity:.5!important;cursor:not-allowed!important}
+.vf-badge{display:inline-flex;align-items:center;gap:.3em;margin-left:.4em;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle}
+.vf-badge-locked{background:rgba(139,92,246,.2)!important;color:#a78bfa!important}
+.vf-badge-addon{background:rgba(245,158,11,.2)!important;color:#fbbf24!important}
 @media(max-width:700px){#agent-cards{grid-template-columns:1fr 1fr!important}#stats-row{grid-template-columns:repeat(3,1fr)!important}}
 @media(max-width:450px){#agent-cards{grid-template-columns:1fr!important}#stats-row{grid-template-columns:1fr 1fr!important}}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="flex" style="gap:0">
     <div class="brand">
@@ -222,14 +177,14 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
     <nav class="nav">
       <a href="/dashboard.html">Dashboard</a>
       <a href="/app.html" class="active">Campaigns</a>
-    <a href="/campaign-video.html" class="qa-row" data-feature="ai_video">🛡 Launch Ares Video Campaign</a>
+      <a href="/campaign-video.html" data-feature="ai_video" data-locked="hide">Ares</a>
       <a href="/linkedin.html">LinkedIn</a>
       <a href="/find-leads.html">Koios Intel</a>
-     <a href="/social-listen.html" class="qa-row" data-feature="social_listening">📡 Monitor Discussions (Athena One)</a>
-     <a href="/visitors.html" class="agent-card" data-feature="visitor_intel" style="text-decoration:none;color:var(--text)">
+      <a href="/social-listen.html" data-feature="social_listening" data-locked="hide">Athena One</a>
+      <a href="/visitors.html" data-feature="visitor_intel" data-locked="hide">Argus Watch</a>
       <a href="/crm-settings.html">CRM</a>
       <a href="/call-center.html" data-feature="call_center" data-locked="hide">Call Center</a>
-    <a href="/history.html">History</a>
+      <a href="/history.html">History</a>
     </nav>
   </div>
   <div class="topbar-right" id="topbar-right">
@@ -242,10 +197,7 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
     <button class="btn-sm" onclick="signOut()">Sign out</button>
   </div>
 </div>
-
 <div class="page">
-
-  <!-- DASHBOARD HEADER -->
   <div class="hero" id="dashboard-section">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem">
       <div>
@@ -254,16 +206,11 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
         <p style="font-size:13px;color:var(--text2)">All your outreach tools in one place</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <span id="plan-chip" class="plan-pill">Free</span>
         <div class="usage-wrap">
-          <span id="usage-text" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text2)">0/50</span>
-          <div class="usage-bar"><div class="usage-fill" id="usage-fill" style="width:0%"></div></div>
           <span style="font-size:10px;color:var(--text3)">leads</span>
         </div>
       </div>
     </div>
-
-    <!-- LIVE STATS ROW -->
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem" id="stats-row">
       <div class="stat-card"><div class="stat-val" style="color:var(--blue)" id="d-sent">-</div><div class="stat-lbl">Emails Sent</div></div>
       <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="d-opened">-</div><div class="stat-lbl">Opened</div><div style="font-size:10px;color:var(--text2);margin-top:2px" id="d-openrate"></div></div>
@@ -271,8 +218,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
       <div class="stat-card"><div class="stat-val" style="color:var(--purple)" id="d-campaigns">-</div><div class="stat-lbl">Campaigns</div></div>
       <div class="stat-card"><div class="stat-val" style="color:var(--gold)" id="d-leads">0</div><div class="stat-lbl">Leads Found</div></div>
     </div>
-
-    <!-- AGENT CARDS -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem" id="agent-cards">
       <div class="agent-card" onclick="startNewCampaign()" style="cursor:pointer">
         <div class="ac-icon">🚀</div>
@@ -280,7 +225,7 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
         <div class="ac-desc">Upload leads, AI writes personalized emails, bulk send</div>
         <div class="ac-action" style="color:var(--blue)">New Campaign →</div>
       </div>
-      <a href="/campaign-video.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+      <a href="/campaign-video.html" class="agent-card" data-feature="ai_video" style="text-decoration:none;color:var(--text)">
         <div class="ac-icon">🛡</div>
         <div class="ac-badge" style="background:rgba(239,68,68,.15);color:#ef4444">ARES</div>
         <div class="ac-title">Video Campaign</div>
@@ -300,14 +245,14 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
         <div class="ac-desc">Search 275M+ verified B2B contacts by title, industry, company size</div>
         <div class="ac-action" style="color:var(--purple)">Find Contacts →</div>
       </a>
-      <a href="/social-listen.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+      <a href="/social-listen.html" class="agent-card" data-feature="social_listening" style="text-decoration:none;color:var(--text)">
         <div class="ac-icon">📡</div>
         <div class="ac-badge" style="background:rgba(6,182,212,.15);color:var(--cyan)">ATHENA</div>
         <div class="ac-title">Athena One</div>
         <div class="ac-desc">Find people on Reddit, HN, forums actively looking for your product</div>
         <div class="ac-action" style="color:var(--cyan)">Monitor Discussions →</div>
       </a>
-      <a href="/visitors.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+      <a href="/visitors.html" class="agent-card" data-feature="visitor_intel" style="text-decoration:none;color:var(--text)">
         <div class="ac-icon">👁</div>
         <div class="ac-badge" style="background:rgba(16,185,129,.15);color:var(--green)">ARGUS</div>
         <div class="ac-title">Argus Watch</div>
@@ -315,8 +260,6 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
         <div class="ac-action" style="color:var(--green)">View Visitors →</div>
       </a>
     </div>
-
-    <!-- RECENT ACTIVITY -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="card" style="padding:1rem">
         <div style="font-weight:700;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:6px">📋 Recent Activity</div>
@@ -329,33 +272,28 @@ textarea{resize:vertical;line-height:1.6;min-height:160px}
         <div style="font-weight:700;font-size:13px;margin-bottom:10px">⚡ Quick Actions</div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <div class="qa-row" onclick="startNewCampaign()">🚀 New Email Campaign</div>
-          <a href="/campaign-video.html" class="qa-row">🛡 Launch Ares Video Campaign</a>
+          <a href="/campaign-video.html" class="qa-row" data-feature="ai_video">🛡 Launch Ares Video Campaign</a>
           <a href="/find-leads.html" class="qa-row">🧠 Search Leads (Koios Intel)</a>
-          <a href="/social-listen.html" class="qa-row">📡 Monitor Discussions (Athena One)</a>
+          <a href="/social-listen.html" class="qa-row" data-feature="social_listening">📡 Monitor Discussions (Athena One)</a>
           <a href="/linkedin.html" class="qa-row">💼 LinkedIn Outreach</a>
           <a href="/history.html" class="qa-row">📊 Email Analytics</a>
         </div>
       </div>
     </div>
-
-    <!-- DIVIDER before campaign agent -->
-    <div style="display:flex;align-items:center;gap:12px;margin:1.5rem 0 0.5rem" id="campaign-divider" style="display:none">
+    <div style="display:none;align-items:center;gap:12px;margin:1.5rem 0 0.5rem" id="campaign-divider">
       <div style="flex:1;height:1px;background:var(--border)"></div>
       <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Email Campaign Agent</span>
       <div style="flex:1;height:1px;background:var(--border)"></div>
     </div>
   </div>
-
   <div id="root"></div>
 </div>
-
 <script>
 const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
 const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
 let _session=null;
 const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 const S={
   step:0,leads:[],headers:[],
   colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''},
@@ -368,9 +306,8 @@ const S={
   dragOver:false,emailAngle:'pain',researchMode:false,
   attachments:[],scheduleAt:null,campaignName:'',
   bulkSending:false,bulkProgress:{total:0,sent:0,failed:0},
-  draftId:null,crmSource:null
+  draftId:null,crmSource:null,_duplicates:{},_rawLeads:''
 };
-
 function parseCSV(text){
   const lines=text.split(/\r?\n/).filter(l=>l.trim());
   if(!lines.length)return{headers:[],rows:[]};
@@ -379,16 +316,13 @@ function parseCSV(text){
   const rows=lines.slice(1).filter(l=>l.trim()).map(l=>{const v=pr(l);const o={};headers.forEach((h,i)=>o[h]=v[i]||'');return o;});
   return{headers,rows};
 }
-
 function autoMap(headers){
   const map={email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''};
   const v={email:['email','e-mail','mail'],fullName:['full name','fullname','name','contact name'],firstName:['first name','firstname','first'],lastName:['last name','lastname','surname'],company:['company','organization','org','account'],title:['title','job title','position','role'],industry:['industry','sector','vertical'],companySize:['company size','size','employees','headcount'],revenue:['revenue','annual revenue','arr']};
   headers.forEach(h=>{const hl=h.toLowerCase().trim();Object.entries(v).forEach(([k,vs])=>{if(!map[k]&&vs.some(vv=>hl===vv||hl.includes(vv)))map[k]=h;});});
   return map;
 }
-
 function getName(lead){return(lead[S.colMap.fullName]||((lead[S.colMap.firstName]||'')+' '+(lead[S.colMap.lastName]||'')).trim()||lead[S.colMap.email]||'Unknown').trim();}
-
 function getSystem(angle,sz,rev){
   const angles={
     pain:'EMAIL ANGLE: PAIN-FOCUSED. Open by naming their most pressing business risk.',
@@ -401,7 +335,6 @@ function getSystem(angle,sz,rev){
   const sizeCtx=sz?'\n\nCOMPANY SIZE: '+sz+' employees'+(rev?' | Revenue: '+rev:'')+'.\nAdjust all stats, stakes, and language to match this exact scale. Do not apply SMB language to enterprises.':'';
   return 'You are an elite B2B sales copywriter. Every email you write lands in the inbox and gets read.\n\n'+(angles[angle]||angles.pain)+'\n\nPRODUCT: Velorah - AI-Powered Cold Email & Cybersecurity Risk Assessment Platform\nFEATURES: Automated risk scores, 12+ compliance frameworks (SOC 2, HIPAA, GDPR, PCI DSS, ISO 27001, NIST, CCPA, FedRAMP, DORA, PIPEDA), AI remediation roadmaps, 60-70% cost reduction vs manual audits.\n\nFRAMEWORK SELECTION (never default to SOC 2 unless explicitly tech/SaaS):\nHealthcare: HIPAA, HITECH | Finance: PCI DSS, SOX, DORA | Gov: FedRAMP, FISMA | Retail: PCI DSS, CCPA | Tech/SaaS: SOC 2, ISO 27001\n\nSTRICT RULES:\n- Subject: under 50 chars, no spam triggers, outcome or question format\n- Body: exactly 3 short paragraphs - hook, value, CTA\n- Conversational peer-to-peer tone, NOT corporate\n- ONE specific stat or number\n- Soft CTA: offer 15-min call or quick question\n- Last line: If this is not relevant, just reply and I will remove you.\n- Under 170 words total\n- NEVER start with I hope, My name is, or any preamble\n\nRespond ONLY with valid JSON, no markdown: {"subject":"...","body":"..."}'+(sizeCtx||'');
 }
-
 async function callAI(lead){
   const name=getName(lead);
   const company=lead[S.colMap.company]||'your company';
@@ -420,13 +353,6 @@ async function callAI(lead){
   if(js<0||je<0)throw new Error('Could not parse AI response');
   return JSON.parse(out.substring(js,je+1));
 }
-
-async function sendEmail(to,subject,body){
-  const resp=await fetch('/.netlify/functions/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,subject,body,fromEmail:S.sender.email,fromName:S.sender.name,attachments:S.attachments})});
-  const data=await resp.json();
-  return{success:data.success===true,messageId:data.messageId||null};
-}
-
 function h(tag,attrs,...kids){
   const el=document.createElement(tag);
   if(attrs)Object.entries(attrs).forEach(([k,v])=>{
@@ -439,7 +365,6 @@ function h(tag,attrs,...kids){
   kids.flat().forEach(c=>{if(c!=null&&c!==false)el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
   return el;
 }
-
 function draw(){
   const root=document.getElementById('root');if(!root)return;
   root.innerHTML='';
@@ -447,32 +372,27 @@ function draw(){
   const steps=[p0,p1,p2,p3,p4];
   if(steps[S.step])root.appendChild(steps[S.step]());
 }
-
 function stepBar(){
   const names=['Upload Leads','Configure','Generate','Review & Edit','Send Campaign'];
   const bar=h('div',{cls:'step-bar'});
   names.forEach((s,i)=>{
     const cls='si'+(i===S.step?' active':i<S.step?' done':'');
     const si=h('div',{cls},h('div',{cls:'sn'},i<S.step?'OK':String(i+1)),h('span',null,s));
-    if(i<S.step)si.style.cursor='pointer';
-    if(i<S.step)si.addEventListener('click',()=>{S.step=i;draw();});
+    if(i<S.step){si.style.cursor='pointer';si.addEventListener('click',()=>{S.step=i;draw();});}
     bar.appendChild(si);
     if(i<names.length-1)bar.appendChild(h('div',{cls:'sdiv'}));
   });
   return bar;
 }
-
 // STEP 0: UPLOAD
 function p0(){
   const wrap=h('div',null);
-  // Draft saved indicator
-  const draftInd=h('div',{style:{display:'none',alignItems:'center',gap:6,fontSize:12,color:'var(--green)',padding:'6px 12px',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.2)',borderRadius:8,marginBottom:12}});
+  const draftInd=h('div',{style:{display:'none',alignItems:'center',gap:'6px',fontSize:'12px',color:'var(--green)',padding:'6px 12px',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.2)',borderRadius:'8px',marginBottom:'12px'}});
   draftInd.id='draft-saved-indicator';
   draftInd.textContent='Draft saved';
   if(S.draftId) draftInd.style.display='flex';
   wrap.appendChild(draftInd);
-  // CRM import button
-  const crmImportBtn=h('a',{href:'/crm-settings.html',style:{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',borderRadius:8,border:'1px solid var(--border2)',background:'rgba(59,130,246,.06)',color:'var(--blue)',fontSize:13,fontWeight:700,textDecoration:'none',marginBottom:12,cursor:'pointer'}});
+  const crmImportBtn=h('a',{href:'/crm-settings.html',style:{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',borderRadius:'8px',border:'1px solid var(--border2)',background:'rgba(59,130,246,.06)',color:'var(--blue)',fontSize:'13px',fontWeight:'700',textDecoration:'none',marginBottom:'12px',cursor:'pointer'}});
   crmImportBtn.innerHTML='<span style="font-size:16px">&#x1F517;</span> Import from CRM &nbsp;<span style="font-size:11px;color:var(--text3);font-weight:400">(HubSpot, Salesforce, Pipedrive, Zoho, GHL and more)</span>';
   wrap.appendChild(crmImportBtn);
   let fi;
@@ -508,7 +428,6 @@ function p0(){
       h('span',{cls:'badge',style:{background:'rgba(16,185,129,.15)',color:'var(--green)',border:'1px solid rgba(16,185,129,.3)'}},S.leads.length+' leads')
     ));
     if(sample)pv.appendChild(h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},sample+(S.leads.length>3?'  ...and '+(S.leads.length-3)+' more':'')));
-    // Duplicate detection button
     const dupRow=h('div',{style:{marginTop:'10px'}});
     const dupBtn=h('button',{cls:'btn',style:{fontSize:'12px'},onClick:async function(){
       if(!_session){return;}
@@ -533,7 +452,6 @@ function p0(){
     const dupResultBox=h('div',{id:'dup-result-box',style:{display:'none'}});
     dupRow.appendChild(dupBtn);dupRow.appendChild(dupResultBox);
     pv.appendChild(dupRow);
-
     pv.appendChild(h('div',{style:{textAlign:'right',marginTop:'10px'}},
       h('button',{cls:'btn btn-primary',onClick:()=>{S.step=1;draw();}},'Map Columns & Configure ->')
     ));
@@ -541,15 +459,11 @@ function p0(){
   }
   return wrap;
 }
-
 function readFile(f){const rd=new FileReader();rd.onload=e=>{const{headers,rows}=parseCSV(e.target.result);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);draw();scheduleDraftSave();};rd.readAsText(f);}
 function dlSample(){const csv='First Name,Last Name,Email,Company,Job Title,Industry,Company Size\nJohn,Smith,john@acme.com,Acme Financial,CISO,Financial Services,2500\nSarah,Chen,sarah@health.io,HealthTech Inc,Chief Compliance Officer,Healthcare,800\nMike,Johnson,mike@retail.com,RetailCo,VP of IT,Retail,150';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='sample_leads.csv';a.click();}
-
 // STEP 1: CONFIGURE
 function p1(){
   const wrap=h('div',null);
-
-  // Column Mapping
   const mc=h('div',{cls:'card',style:{marginBottom:'12px'}},h('div',{cls:'card-title'},'Map Your CSV Columns'));
   const g=h('div',{cls:'g2'});
   [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'},{k:'companySize',l:'Company Size'},{k:'revenue',l:'Revenue'}].forEach(f=>{
@@ -560,8 +474,6 @@ function p1(){
     d.appendChild(s);g.appendChild(d);
   });
   mc.appendChild(g);wrap.appendChild(mc);
-
-  // Sender Info
   const sc=h('div',{cls:'card',style:{marginBottom:'12px'}},h('div',{cls:'card-title'},'Your Sender Details'));
   const sg=h('div',{cls:'g2'});
   [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@company.com'},{k:'title',l:'Your Job Title',p:'Account Executive'},{k:'company',l:'Your Company',p:'Velorah'}].forEach(f=>{
@@ -571,8 +483,6 @@ function p1(){
     d.appendChild(inp);sg.appendChild(d);
   });
   sc.appendChild(sg);
-
-  // Attachments
   const attDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Attachments (up to 5 files)'));
   if(S.attachments.length){
     const al=h('div',{style:{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'8px'}});
@@ -586,25 +496,23 @@ function p1(){
   }
   if(S.attachments.length<5){
     const ab=h('button',{cls:'btn btn-outline',style:{fontSize:'12px'},onClick:()=>{
-      const fi=document.createElement('input');fi.type='file';fi.multiple=true;fi.style.display='none';
-      fi.addEventListener('change',async e=>{
+      const fi2=document.createElement('input');fi2.type='file';fi2.multiple=true;fi2.style.display='none';
+      fi2.addEventListener('change',async e=>{
         const files=Array.from(e.target.files).slice(0,5-S.attachments.length);
         for(const file of files){const b64=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=ev=>res(ev.target.result.split(',')[1]);rd.onerror=rej;rd.readAsDataURL(file);});S.attachments.push({name:file.name,type:file.type,base64:b64});}
         draw();
       });
-      document.body.appendChild(fi);fi.click();document.body.removeChild(fi);
+      document.body.appendChild(fi2);fi2.click();document.body.removeChild(fi2);
     }},'+ Add Attachment'+(S.attachments.length?' ('+S.attachments.length+'/5)':''));
     attDiv.appendChild(ab);
   }
   sc.appendChild(attDiv);
   wrap.appendChild(sc);
-
-  // Email Angle
   const ac=h('div',{cls:'card',style:{marginBottom:'12px'}});
   ac.appendChild(h('div',{cls:'card-title'},'Email Angle & Tone'));
   ac.appendChild(h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'12px'}},'Choose the messaging strategy. Each produces completely different email copy.'));
   const ag=h('div',{cls:'angle-grid'});
-  [{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific operational risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with breach costs and financial impact'},{v:'risk',e:'Warning',n:'Risk-Focused',d:'Highlight fines, shutdowns, executive liability'},{v:'proof',e:'🏆',n:'Social Proof',d:'Reference results from similar companies'},{v:'question',e:'?',n:'Question-Based',d:'Open with a sharp thought-provoking question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Start with a surprising industry data point'}].forEach(a=>{
+  [{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific operational risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with breach costs and financial impact'},{v:'risk',e:'⚠',n:'Risk-Focused',d:'Highlight fines, shutdowns, executive liability'},{v:'proof',e:'🏆',n:'Social Proof',d:'Reference results from similar companies'},{v:'question',e:'?',n:'Question-Based',d:'Open with a sharp thought-provoking question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Start with a surprising industry data point'}].forEach(a=>{
     const active=S.emailAngle===a.v;
     ag.appendChild(h('div',{cls:'angle-card'+(active?' active':''),onClick:()=>{S.emailAngle=a.v;draw();}},
       h('div',{cls:'angle-emoji'},a.e),
@@ -613,8 +521,6 @@ function p1(){
     ));
   });
   ac.appendChild(ag);wrap.appendChild(ac);
-
-  // Research Mode
   const rc=h('div',{cls:'card',style:{marginBottom:'12px'}});
   const rrow=h('div',{cls:'toggle-row'});
   rrow.appendChild(h('div',null,
@@ -628,7 +534,6 @@ function p1(){
   rrow.appendChild(togWrap);rc.appendChild(rrow);
   if(S.researchMode){const w=h('div',{cls:'warn'});w.innerHTML='<strong>Note:</strong> Research mode takes 15-30 seconds per lead. Best for high-value prospects.';rc.appendChild(w);}
   wrap.appendChild(rc);
-
   const canGo=S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
   wrap.appendChild(h('div',{cls:'fb'},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'<- Back'),
@@ -638,70 +543,38 @@ function p1(){
       saveUserKeys();draw();runGenerate();
     }},'Generate '+S.leads.length+' Emails ->')
   ));
-  
-  // -- SENDER PREFERENCES CARD (new) --
   const spCard=h('div',{cls:'card',style:{marginTop:'14px'}},
     h('div',{cls:'card-title'},'Sender Preferences'),
     h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},'AI uses these to match your voice, tone and goals when writing every email'),
     h('div',{cls:'g2',style:{marginBottom:'12px'}},
-      h('div',null,
-        h('label',{cls:'lbl'},'Your Name'),
-        h('input',{type:'text',value:S.sender.name||'',placeholder:'Alex Rivera',oninput:e=>{S.sender.name=e.target.value;}})
-      ),
-      h('div',null,
-        h('label',{cls:'lbl'},'Your Role / Title'),
-        h('input',{type:'text',value:S.sender.title||'',placeholder:'Head of Sales',oninput:e=>{S.sender.title=e.target.value;}})
-      )
-    ),
-    h('div',{cls:'g2',style:{marginBottom:'12px'}},
-      h('div',null,
-        h('label',{cls:'lbl'},'Value Proposition'),
-        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'We reduce security incidents by 60% in 90 days',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;}})
-      ),
-      h('div',null,
-        h('label',{cls:'lbl'},'Social Proof (1 line)'),
-        h('input',{type:'text',value:S.senderPrefs.socialProof||'',placeholder:'Trusted by 200+ B2B companies including Acme Corp',oninput:e=>{S.senderPrefs.socialProof=e.target.value;}})
-      )
+      h('div',null,h('label',{cls:'lbl'},'Value Proposition'),
+        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'We reduce security incidents by 60% in 90 days',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;}})),
+      h('div',null,h('label',{cls:'lbl'},'Social Proof (1 line)'),
+        h('input',{type:'text',value:S.senderPrefs.socialProof||'',placeholder:'Trusted by 200+ B2B companies',oninput:e=>{S.senderPrefs.socialProof=e.target.value;}}))
     ),
     h('div',{cls:'g3',style:{marginBottom:'12px'}},
-      h('div',null,
-        h('label',{cls:'lbl'},'Tone'),
-        h('select',{value:S.senderPrefs.tone||'professional',onchange:e=>{S.senderPrefs.tone=e.target.value;}},
-          ...[['professional','Professional'],['friendly','Warm & Friendly'],['direct','Direct & Bold'],['casual','Casual Peer'],['formal','Formal & Executive']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.tone===o[0])op.selected=true;return op;})
-        )
-      ),
-      h('div',null,
-        h('label',{cls:'lbl'},'Email Length'),
-        h('select',{value:S.senderPrefs.emailLength,onchange:e=>{S.senderPrefs.emailLength=e.target.value;}},
-          ...[['very short (under 60 words)','Very Short (< 60 words)'],['short (under 100 words)','Short (< 100 words)'],['medium (100-150 words)','Medium (100-150)'],['long (150-200 words)','Long (150-200)']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.emailLength===o[0])op.selected=true;return op;})
-        )
-      ),
-      h('div',null,
-        h('label',{cls:'lbl'},'CTA Style'),
-        h('select',{value:S.senderPrefs.ctaStyle,onchange:e=>{S.senderPrefs.ctaStyle=e.target.value;}},
-          ...[['book a 15-min call','Book a 15-min call'],['reply to this email','Reply to this email'],['visit our website','Visit our website'],['watch a demo video','Watch a demo video'],['would this be relevant?','Soft relevance question']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.ctaStyle===o[0])op.selected=true;return op;})
-        )
-      )
+      h('div',null,h('label',{cls:'lbl'},'Tone'),
+        h('select',{onchange:e=>{S.senderPrefs.tone=e.target.value;}},
+          ...[['professional','Professional'],['friendly','Warm & Friendly'],['direct','Direct & Bold'],['casual','Casual Peer'],['formal','Formal & Executive']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.tone===o[0])op.selected=true;return op;}))),
+      h('div',null,h('label',{cls:'lbl'},'Email Length'),
+        h('select',{onchange:e=>{S.senderPrefs.emailLength=e.target.value;}},
+          ...[['very short (under 60 words)','Very Short (< 60 words)'],['short (under 100 words)','Short (< 100 words)'],['medium (100-150 words)','Medium (100-150)'],['long (150-200 words)','Long (150-200)']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.emailLength===o[0])op.selected=true;return op;}))),
+      h('div',null,h('label',{cls:'lbl'},'CTA Style'),
+        h('select',{onchange:e=>{S.senderPrefs.ctaStyle=e.target.value;}},
+          ...[['book a 15-min call','Book a 15-min call'],['reply to this email','Reply to this email'],['visit our website','Visit our website'],['watch a demo video','Watch a demo video'],['would this be relevant?','Soft relevance question']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.ctaStyle===o[0])op.selected=true;return op;})))
     ),
     h('div',{cls:'g2'},
-      h('div',null,
-        h('label',{cls:'lbl'},'Opening Hook Angle'),
-        h('input',{type:'text',value:S.senderPrefs.hook||'',placeholder:'Industry insight / mutual connection / recent company news',oninput:e=>{S.senderPrefs.hook=e.target.value;}})
-      ),
-      h('div',null,
-        h('label',{cls:'lbl'},'Phrases to NEVER Use'),
-        h('input',{type:'text',value:S.senderPrefs.avoidPhrases||'',placeholder:'leverage, synergy, game-changer, reach out',oninput:e=>{S.senderPrefs.avoidPhrases=e.target.value;}})
-      )
+      h('div',null,h('label',{cls:'lbl'},'Opening Hook Angle'),
+        h('input',{type:'text',value:S.senderPrefs.hook||'',placeholder:'Industry insight / recent company news',oninput:e=>{S.senderPrefs.hook=e.target.value;}})),
+      h('div',null,h('label',{cls:'lbl'},'Phrases to NEVER Use'),
+        h('input',{type:'text',value:S.senderPrefs.avoidPhrases||'',placeholder:'leverage, synergy, game-changer',oninput:e=>{S.senderPrefs.avoidPhrases=e.target.value;}}))
     )
   );
   wrap.appendChild(spCard);
-
   return wrap;
 }
-
 // STEP 2: GENERATING
 function p2(){
-  const pct=S.leads.length>0?Math.round(S.genProgress/S.leads.length*100):0;
   const latest=S.emails.length>0?S.emails[S.emails.length-1]:null;
   const card=h('div',{cls:'card',style:{textAlign:'center',padding:'3.5rem 2rem'}});
   const pct2=Math.round(S.genProgress/(S.leads.length||1)*100);
@@ -723,7 +596,6 @@ function p2(){
   }
   return card;
 }
-
 async function runGenerate(){
   for(let i=0;i<S.leads.length;i++){
     try{
@@ -738,7 +610,6 @@ async function runGenerate(){
   }
   S.step=3;S.activeIdx=0;draw();
 }
-
 // STEP 3: REVIEW
 function p3(){
   const wrap=h('div',null);
@@ -757,8 +628,6 @@ function p3(){
     const nm=getName(e.lead).substring(0,20);
     const co=(e.lead[S.colMap.company]||'').substring(0,18);
     const ini=(nm.split(' ').map(w=>w[0]).join('').toUpperCase()||'?').substring(0,2);
-    const email2=(e.lead[S.colMap.email]||'').toLowerCase().trim();
-    const isDup=S._duplicates&&S._duplicates[email2];
     lb.appendChild(h('div',{cls:'lr'+(i===S.activeIdx?' active':''),onClick:()=>{S.activeIdx=i;draw();}},
       h('div',{cls:'la'},ini),
       h('div',{style:{flex:'1',minWidth:'0'}},
@@ -775,22 +644,23 @@ function p3(){
   const det=h('div',{cls:'email-detail'});
   if(ae){
     const nm=getName(ae.lead);const co=ae.lead[S.colMap.company]||'';const ttl=ae.lead[S.colMap.title]||'';const ind=ae.lead[S.colMap.industry]||'';const em=ae.lead[S.colMap.email]||'';
-    det.appendChild(h('div',{cls:'fb'},
+    const hdr=h('div',{cls:'fb'},
       h('div',null,
-        h('p',{style:{fontWeight:'700',fontSize:'15px'}}),h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'3px'}},[ttl,co].filter(Boolean).join(' . '))
+        h('p',{style:{fontWeight:'700',fontSize:'15px'}},nm),
+        h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'3px'}},[ttl,co].filter(Boolean).join(' . '))
       ),
       h('div',{cls:'flex'},
         ind?h('span',{cls:'badge',style:{background:'var(--bg3)',color:'var(--text2)',border:'1px solid var(--border)'}},ind):null,
         em?h('span',{cls:'badge',style:{background:'var(--blue-dim)',color:'var(--blue)',border:'1px solid rgba(59,130,246,.3)'}},em):null
       )
-    ));
-    det.children[0].children[0].textContent=nm;
+    );
+    det.appendChild(hdr);
     if(ae.error){det.appendChild(h('div',{style:{background:'var(--red-dim)',border:'1px solid var(--red)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--red)'}},ae.body));}
     const ae_email=(ae.lead[S.colMap.email]||'').toLowerCase().trim();
     const ae_dup=S._duplicates&&S._duplicates[ae_email];
     if(ae_dup){
       const dupWarn=h('div',{style:{background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.3)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--gold)',marginBottom:'4px'}});
-      dupWarn.innerHTML='<strong>Duplicate Warning</strong> - This email was already sent in campaign "<strong>'+ae_dup.campaignName+'</strong>" on '+new Date(ae_dup.sentAt).toLocaleDateString()+'. Status: '+ae_dup.tracking+'. Consider excluding this lead.';
+      dupWarn.innerHTML='<strong>Duplicate Warning</strong> - This email was already sent in campaign "<strong>'+ae_dup.campaignName+'</strong>". Consider excluding this lead.';
       det.appendChild(dupWarn);
     }
     const sWrap=h('div',{cls:'field'});
@@ -804,14 +674,14 @@ function p3(){
       this.disabled=true;this.textContent='Rewriting...';
       try{
         const sz=lead[S.colMap.companySize]||'';const rev=lead[S.colMap.revenue]||'';
-        const nm=getName(lead);const co=lead[S.colMap.company]||'';const ttl2=lead[S.colMap.title]||'';const ind2=lead[S.colMap.industry]||'';
-        const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite ONLY the email body following this subject:\nSUBJECT: "'+subj+'"\n\nTo: '+nm+', '+ttl2+' at '+co+' ('+ind2+')\nFrom: '+S.sender.name+', '+S.sender.company+'\n\nJSON only: {"body":"..."}';
-        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:co,industry:ind2,researchMode:false})});
+        const nm2=getName(lead);const co2=lead[S.colMap.company]||'';const ttl2=lead[S.colMap.title]||'';const ind2=lead[S.colMap.industry]||'';
+        const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite ONLY the email body following this subject:\nSUBJECT: "'+subj+'"\n\nTo: '+nm2+', '+ttl2+' at '+co2+' ('+ind2+')\nFrom: '+S.sender.name+', '+S.sender.company+'\n\nJSON only: {"body":"..."}';
+        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:co2,industry:ind2,researchMode:false})});
         const txt=await resp.text();const data=JSON.parse(txt);
         let out=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
         out=out.replace(/json/g,'').trim();
         const js=out.indexOf('{');const je=out.lastIndexOf('}');
-        if(js>=0&&je>js){const p=JSON.parse(out.substring(js,je+1));S.emails[idx].body=p.body||out;S.emails[idx].subject=subj;S.emails[idx].approved=true;S.emails[idx].error=false;draw();}
+        if(js>=0&&je>js){const pp=JSON.parse(out.substring(js,je+1));S.emails[idx].body=pp.body||out;S.emails[idx].subject=subj;S.emails[idx].approved=true;S.emails[idx].error=false;draw();}
         else alert('Could not parse response. Try again.');
       }catch(e){alert('Rewrite failed: '+e.message);}
       this.disabled=false;this.textContent='Rewrite Body';
@@ -820,8 +690,6 @@ function p3(){
     const bodyWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Email Body - Edit directly or use Rewrite Body above'));
     const ta=document.createElement('textarea');ta.value=ae.body;ta.addEventListener('input',e=>S.emails[S.activeIdx].body=e.target.value);
     bodyWrap.appendChild(ta);det.appendChild(bodyWrap);
-
-    // Per-recipient attachment: a file that goes ONLY to this lead.
     const attWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Personalized attachment for this recipient (optional)'));
     if(ae.attachment){
       attWrap.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'12px',color:'var(--text2)',marginBottom:'6px'}},
@@ -852,63 +720,38 @@ function p3(){
           try{const{subject,body}=await callAI(ae.lead);S.emails[S.activeIdx].subject=subject;S.emails[S.activeIdx].body=body;S.emails[S.activeIdx].approved=true;S.emails[S.activeIdx].error=false;}
           catch(e){alert('Failed: '+e.message);}
           draw();
-        }},'Regenerate Regenerate')
+        }},'Regenerate')
       ),
       h('button',{cls:'btn btn-primary',onClick:()=>{S.step=4;draw();}},'Proceed to Send ->')
     ));
   }
   panel.appendChild(det);wrap.appendChild(panel);return wrap;
 }
-
 // STEP 4: SEND
-// -- PRE-SEND EMAIL VALIDATION ---------------------------------
 async function validateEmails(){
   const approved=S.emails.filter(e=>e.approved&&!e.error);
-  if(!approved.length){alert('Approve at least one email first (toggle Include on each email).');return;}
-
-  S.validationDone=false;
-  S.validationRunning=true;
+  if(!approved.length){alert('Approve at least one email first.');return;}
+  S.validationDone=false;S.validationRunning=true;
   S.validationResults={summary:null,results:[]};
   draw();
-
   try{
     const emails=approved.map(e=>e.lead[S.colMap.email]).filter(Boolean);
     const firstEmail=approved[0];
-    const subject=firstEmail?firstEmail.subject:'';
-    const body=firstEmail?firstEmail.body:'';
-
     const resp=await fetch('/.netlify/functions/email-validate',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({emails,subject,body,action:'full'})
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({emails,subject:firstEmail?firstEmail.subject:'',body:firstEmail?firstEmail.body:'',action:'full'})
     });
-
     if(!resp.ok) throw new Error('Validation service error: '+resp.status);
     const vtxt=await resp.text();
-    const data = vtxt ? JSON.parse(vtxt) : { summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0}, results:[] };
-    S.validationResults=data;
-    S.validationDone=true;
-    S.validationRunning=false;
-    draw();
+    S.validationResults = vtxt ? JSON.parse(vtxt) : { summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0}, results:[] };
+    S.validationDone=true;S.validationRunning=false;draw();
   }catch(e){
     console.warn('Email validation error:',e.message);
-    S.validationDone=true;
-    S.validationRunning=false;
+    S.validationDone=true;S.validationRunning=false;
     S.validationResults={summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0},results:[],error:e.message};
     draw();
   }
 }
-
-function getValidationBadge(email){
-  if(!S.validationDone||!S.validationResults.results) return '';
-  const r=S.validationResults.results.find(function(x){return x.email.toLowerCase()===email.toLowerCase();});
-  if(!r) return '';
-  if(r.status==='invalid') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(239,68,68,.2);color:var(--red);font-weight:700">INVALID</span>';
-  if(r.risk==='high'||r.risk==='critical') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.15);color:var(--gold);font-weight:700">HIGH RISK</span>';
-  if(r.status==='warning') return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(245,158,11,.1);color:var(--gold)">WARN</span>';
-  return ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,.1);color:var(--green)">OK</span>';
-}
-
 function p4(){
   const wrap=h('div',null);
   const approved=S.emails.filter(e=>e.approved&&!e.error);
@@ -920,40 +763,22 @@ function p4(){
     const card=h('div',{cls:'stat-card'});card.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';sg4.appendChild(card);
   });
   wrap.appendChild(sg4);
-
-  // -- DELIVERABILITY VALIDATION SECTION --
   if(S.validationRunning){
     const vRun=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.3)',background:'rgba(59,130,246,.05)',marginBottom:'14px',textAlign:'center',padding:'18px'}});
-    vRun.innerHTML='<p style="font-weight:700;font-size:13px;color:var(--blue)">Running deliverability checks...</p><p style="font-size:12px;color:var(--text2);margin-top:4px">Checking DNS records, spam score, and firewall risk for each recipient</p>';
+    vRun.innerHTML='<p style="font-weight:700;font-size:13px;color:var(--blue)">Running deliverability checks...</p><p style="font-size:12px;color:var(--text2);margin-top:4px">Checking DNS records, spam score, and firewall risk</p>';
     wrap.appendChild(vRun);
   } else if(S.validationDone&&S.validationResults&&S.validationResults.summary){
     const vs=S.validationResults.summary;
-    const ca=S.validationResults.contentAnalysis;
     const scoreColor=vs.avgDelivScore>=80?'var(--green)':vs.avgDelivScore>=50?'var(--gold)':'var(--red)';
-    const contentColor=ca&&(ca.rating==='excellent'||ca.rating==='good')?'var(--green)':ca&&ca.rating==='fair'?'var(--gold)':'var(--red)';
     const vPanel=h('div',{cls:'card',style:{borderColor:vs.highRisk>0?'rgba(245,158,11,.4)':'rgba(16,185,129,.3)',background:vs.highRisk>0?'rgba(245,158,11,.05)':'rgba(16,185,129,.04)',marginBottom:'14px'}});
     var vHtml='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px">'+
       '<div style="font-weight:700;font-size:14px">Pre-send Deliverability Report</div>'+
       '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
-        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+'">'+vs.avgDelivScore+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
-        (ca?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+contentColor+'">'+(100-ca.score)+'</div><div style="font-size:10px;color:var(--text2)">CONTENT</div></div>':'')+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+'">'+(vs.avgDelivScore||0)+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
         '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
         (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold)">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
         (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
       '</div></div>';
-    if(ca&&ca.issues&&ca.issues.length>0){
-      vHtml+='<div style="margin-top:8px;padding:10px 12px;background:rgba(245,158,11,.08);border-radius:8px;border-left:3px solid var(--gold)">'+
-        '<p style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--gold)">Content Issues</p>'+
-        ca.issues.slice(0,4).map(function(i){return '<p style="font-size:12px;color:var(--text2);margin-bottom:2px">'+i+'</p>';}).join('')+
-        '</div>';
-    }
-    if(vs.highRisk>0){
-      const risky=(S.validationResults.results||[]).filter(function(r){return r.risk==='high'||r.risk==='critical'||r.status==='invalid';});
-      vHtml+='<div style="margin-top:8px;padding:10px 12px;background:rgba(239,68,68,.06);border-radius:8px;border-left:3px solid var(--red)">'+
-        '<p style="font-size:12px;font-weight:700;margin-bottom:4px;color:var(--red)">'+risky.length+' High-Risk Recipients</p>'+
-        risky.slice(0,5).map(function(r){return '<p style="font-size:12px;color:var(--text2);margin-bottom:2px"><strong>'+r.email+'</strong>: '+(r.warnings&&r.warnings[0]||r.risk)+'</p>';}).join('')+
-        '</div>';
-    }
     vHtml+='<button class="btn" style="margin-top:10px;font-size:12px" onclick="validateEmails()">Re-run Check</button>';
     vPanel.innerHTML=vHtml;
     wrap.appendChild(vPanel);
@@ -961,57 +786,50 @@ function p4(){
     const vPrompt=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.35)',background:'rgba(59,130,246,.06)',marginBottom:'14px',cursor:'pointer'},onClick:validateEmails});
     vPrompt.innerHTML='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
       '<div style="flex:1;min-width:200px"><p style="font-weight:700;font-size:14px;margin-bottom:3px;color:var(--blue)">Run Deliverability Check</p>'+
-      '<p style="font-size:12px;color:var(--text2)">Validates DNS records, detects corporate firewalls, scores spam risk, and flags invalid addresses before any email is sent.</p></div>'+
+      '<p style="font-size:12px;color:var(--text2)">Validates DNS records, detects corporate firewalls, scores spam risk before any email is sent.</p></div>'+
       '<button class="btn btn-primary" style="white-space:nowrap" onclick="event.stopPropagation();validateEmails()">Run Check Now</button>'+
       '</div>';
     wrap.appendChild(vPrompt);
   }
-
-
   if(S.bulkSending){
     const pct=S.bulkProgress.total>0?Math.round((S.bulkProgress.sent+S.bulkProgress.failed)/S.bulkProgress.total*100):0;
     const card=h('div',{cls:'card',style:{textAlign:'center',padding:'3rem'}});
-    card.innerHTML='<div style="font-size:40px;margin-bottom:14px;filter:drop-shadow(0 0 20px rgba(59,130,246,.5))">🚀</div><h2 style="font-size:18px;font-weight:800;margin-bottom:6px">Sending campaign...</h2><p style="color:var(--text2);font-size:13px;margin-bottom:20px">'+S.bulkProgress.sent+' sent . '+S.bulkProgress.failed+' failed . '+S.bulkProgress.total+' total</p><div style="max-width:400px;margin:0 auto"><div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct+'%"></div></div></div>';
+    card.innerHTML='<div style="font-size:40px;margin-bottom:14px">🚀</div><h2 style="font-size:18px;font-weight:800;margin-bottom:6px">Sending campaign...</h2><p style="color:var(--text2);font-size:13px;margin-bottom:20px">'+S.bulkProgress.sent+' sent . '+S.bulkProgress.failed+' failed . '+S.bulkProgress.total+' total</p><div style="max-width:400px;margin:0 auto"><div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct+'%"></div></div></div>';
     wrap.appendChild(card);return wrap;
   }
-
   const launcher=h('div',{cls:'schedule-card'});
   const nameDiv=h('div',{style:{marginBottom:'14px'}},h('label',{cls:'lbl'},'Campaign Name'));
-  const nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='e.g. Q2 CISO Outreach - June 2026';nameInp.value=S.campaignName||'';nameInp.addEventListener('input',e=>S.campaignName=e.target.value);
+  const nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='e.g. Q2 CISO Outreach';nameInp.value=S.campaignName||'';nameInp.addEventListener('input',e=>S.campaignName=e.target.value);
   nameDiv.appendChild(nameInp);launcher.appendChild(nameDiv);
-
   const schedRow=h('div',{cls:'toggle-row',style:{borderTop:'1px solid var(--border)',paddingTop:'14px'}});
-  schedRow.appendChild(h('div',null,h('p',{style:{fontWeight:'700',marginBottom:'2px'}},'Scheduled Schedule Delivery'),h('p',{style:{fontSize:'12px',color:'var(--text2)'}},'Send now or schedule up to 72 hours ahead via SendGrid')));
+  schedRow.appendChild(h('div',null,h('p',{style:{fontWeight:'700',marginBottom:'2px'}},'Schedule Delivery'),h('p',{style:{fontSize:'12px',color:'var(--text2)'}},'Send now or schedule up to 72 hours ahead via SendGrid')));
   const togWrap=h('div',{cls:'toggle-wrap'});
   const tog=h('div',{cls:'toggle '+(S.scheduleAt?'on':'off'),onClick:()=>{if(S.scheduleAt){S.scheduleAt=null;}else{const d=new Date();d.setHours(d.getHours()+1);S.scheduleAt=d.toISOString().slice(0,16);}draw();}},h('div',{cls:'toggle-knob'}));
   togWrap.appendChild(tog);togWrap.appendChild(h('span',{cls:'toggle-label',style:{color:S.scheduleAt?'var(--cyan)':'var(--text3)'}},S.scheduleAt?'SCHEDULED':'SEND NOW'));
   schedRow.appendChild(togWrap);launcher.appendChild(schedRow);
-
   if(S.scheduleAt){
     const dtDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Schedule Date & Time'));
     const dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.value=S.scheduleAt;
     const min=new Date();min.setMinutes(min.getMinutes()+5);dtInp.min=min.toISOString().slice(0,16);
     dtInp.addEventListener('change',e=>S.scheduleAt=e.target.value);dtDiv.appendChild(dtInp);launcher.appendChild(dtDiv);
   }
-
   launcher.appendChild(h('div',{cls:'flex',style:{marginTop:'16px'}},
     h('button',{cls:'btn',style:{background:'linear-gradient(135deg,#ef4444,#f59e0b)',border:'none',color:'#fff',fontWeight:'700',padding:'10px 18px',borderRadius:'var(--r)',cursor:'pointer'},onClick:()=>{
-   if(window.VelorahGate && !VelorahGate.guard('ai_video')) return;
-    const ap=S.emails.filter(e=>e.approved&&!e.error);
-    if(!ap.length){alert('No approved emails.');return;}
-    const hdrs='First Name,Last Name,Email,Company,Job Title\n';
-    const rows=ap.map(e=>[getName(e.lead).split(' ')[0]||'',getName(e.lead).split(' ').slice(1).join(' ')||'',e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
-    sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
-    sessionStorage.setItem('velorah_leads_count',ap.length);
-    sessionStorage.setItem('velorah_source','app');
-    window.location.href='/campaign-video.html';
-  }},'Launch with Ares'),
-h('button',{cls:'btn btn-launch',onClick:async()=>{
+      if(window.VelorahGate && !VelorahGate.guard('ai_video')) return;
+      const ap=S.emails.filter(e=>e.approved&&!e.error);
+      if(!ap.length){alert('No approved emails.');return;}
+      const hdrs='First Name,Last Name,Email,Company,Job Title\n';
+      const rows=ap.map(e=>[getName(e.lead).split(' ')[0]||'',getName(e.lead).split(' ').slice(1).join(' ')||'',e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+      sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+      sessionStorage.setItem('velorah_leads_count',ap.length);
+      sessionStorage.setItem('velorah_source','app');
+      window.location.href='/campaign-video.html';
+    }},'Launch with Ares'),
+    h('button',{cls:'btn btn-launch',onClick:async()=>{
       if(!approved.length){alert('No approved emails to send.');return;}
       const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails now?';
-      // Pre-flight validation before send (optional — never blocks the send)
       if(!S.validationDone){
-        const runVal=confirm('Run deliverability check before sending? (Recommended - checks DNS, spam score, firewall risk)');
+        const runVal=confirm('Run deliverability check before sending? (Recommended)');
         if(runVal){
           try{ await validateEmails(); }catch(ve){ console.warn('Validation skipped:',ve&&ve.message); }
           return;
@@ -1019,25 +837,21 @@ h('button',{cls:'btn btn-launch',onClick:async()=>{
       }
       if(!confirm(label))return;
       await launchCampaign(approved);
-    }},S.scheduleAt?'Scheduled Schedule Campaign ('+approved.length+')':'🚀 Launch Campaign ('+approved.length+')'),
-    h('button',{cls:'btn',onClick:doExport},'v Export CSV'),
+    }},S.scheduleAt?'Schedule Campaign ('+approved.length+')':'🚀 Launch Campaign ('+approved.length+')'),
+    h('button',{cls:'btn',onClick:doExport},'Export CSV'),
     h('button',{cls:'btn',onClick:()=>checkTracking()},'🔄 Tracking'),
     h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'<- Edit')
   ));
   wrap.appendChild(launcher);
-
   if(!approved.length){
     wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem',marginTop:'12px'}},h('div',{style:{fontSize:'32px',marginBottom:'10px'}},'📭'),h('p',{style:{fontWeight:'700',marginBottom:'8px'}},'No approved emails'),h('button',{cls:'btn btn-primary',style:{marginTop:'12px'},onClick:()=>{S.step=3;draw();}},'<- Back to Review')));
     return wrap;
   }
-
-  // Color legend
   const legend=h('div',{cls:'flex',style:{marginBottom:'10px',marginTop:'4px'}});
-  [['🟢','Opened','rgba(16,185,129,.2)','var(--green)'],['🔵','Clicked','rgba(59,130,246,.2)','var(--blue)'],['🟡','Delivered','rgba(245,158,11,.15)','var(--gold)'],['🔴','Bounced/Failed','rgba(239,68,68,.15)','var(--red)'],['Pending','Pending','var(--bg3)','var(--text3)']].forEach(([e,l,bg,c])=>{
+  [['🟢','Opened','rgba(16,185,129,.2)','var(--green)'],['🔵','Clicked','rgba(59,130,246,.2)','var(--blue)'],['🟡','Delivered','rgba(245,158,11,.15)','var(--gold)'],['🔴','Bounced/Failed','rgba(239,68,68,.15)','var(--red)'],['·','Pending','var(--bg3)','var(--text3)']].forEach(([e,l,bg,c])=>{
     legend.appendChild(h('span',{style:{padding:'2px 8px',borderRadius:'6px',background:bg,color:c,fontSize:'11px',fontWeight:'700',border:'1px solid '+c+'33'}},e+' '+l));
   });
   wrap.appendChild(legend);
-
   approved.forEach(ed=>{
     const id=ed.id;const st=S.sendStatus[id];const tr=S.trackingStatus[id];
     const toEmail=(ed.lead[S.colMap.email]||'').trim();
@@ -1052,53 +866,42 @@ h('button',{cls:'btn btn-launch',onClick:async()=>{
     row.appendChild(h('div',{style:{flex:'1',minWidth:'0'}},h('p',{style:{fontWeight:'700',fontSize:'13px'}},nm+(co?' . ':'')+co),h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},ed.subject)));
     row.appendChild(h('span',{style:{fontSize:'11px',color:'var(--text2)',flexShrink:'0',maxWidth:'160px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
     const badge=h('div',{style:{flexShrink:'0',fontSize:'11px',fontWeight:'700',padding:'3px 8px',borderRadius:'6px'}});
-    if(tr==='opened'){badge.style.cssText='background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3)';badge.textContent='🟢 Opened';}
-    else if(tr==='clicked'){badge.style.cssText='background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)';badge.textContent='🔵 Clicked';}
-    else if(tr==='delivered'){badge.style.cssText='background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)';badge.textContent='🟡 Delivered';}
-    else if(tr==='bounced'){badge.style.cssText='background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.3)';badge.textContent='🔴 Bounced';}
+    if(tr==='opened'){badge.style.cssText='background:rgba(16,185,129,.15);color:var(--green)';badge.textContent='🟢 Opened';}
+    else if(tr==='clicked'){badge.style.cssText='background:rgba(59,130,246,.15);color:var(--blue)';badge.textContent='🔵 Clicked';}
+    else if(tr==='delivered'){badge.style.cssText='background:rgba(245,158,11,.15);color:var(--gold)';badge.textContent='🟡 Delivered';}
+    else if(tr==='bounced'){badge.style.cssText='background:var(--red-dim);color:var(--red)';badge.textContent='🔴 Bounced';}
     else if(st==='sent'){badge.style.cssText='background:rgba(245,158,11,.1);color:var(--gold)';badge.textContent='🟡 Sent';}
-    else if(st==='scheduled'){badge.style.cssText='background:rgba(139,92,246,.15);color:var(--purple)';badge.textContent='Scheduled Scheduled';}
+    else if(st==='scheduled'){badge.style.cssText='background:rgba(139,92,246,.15);color:var(--purple)';badge.textContent='Scheduled';}
     else if(st==='sending'){badge.appendChild(h('span',{cls:'spin'}));}
     else if(st==='error'){badge.style.cssText='background:var(--red-dim);color:var(--red)';badge.textContent='🔴 Failed';}
-    else{badge.style.cssText='background:var(--bg3);color:var(--text3)';badge.textContent='Pending Pending';}
+    else{badge.style.cssText='background:var(--bg3);color:var(--text3)';badge.textContent='Pending';}
     row.appendChild(badge);wrap.appendChild(row);
   });
   return wrap;
 }
-
-// Estimate the byte size of an email (incl. base64 attachment) to keep each
-// request under Netlify's ~6MB function payload limit.
 function _emailSize(e){
   var n = (e.subject||'').length + (e.body||'').length + (e.to||'').length + 50;
   if(e.attachments){ e.attachments.forEach(function(a){ n += (a.base64||'').length + (a.name||'').length; }); }
   return n;
 }
-// Split emails into chunks that each stay safely under the size limit AND under
-// a max count. Attachments make payloads big, so size is the real constraint.
 function _chunkEmails(list){
-  var MAX_BYTES = 4.5 * 1024 * 1024; // stay well under Netlify's ~6MB
-  var MAX_COUNT = 100;               // also cap count per request
+  var MAX_BYTES = 4.5 * 1024 * 1024;
+  var MAX_COUNT = 100;
   var chunks=[], cur=[], curBytes=0;
   for(var i=0;i<list.length;i++){
     var sz=_emailSize(list[i]);
-    // A single oversized attachment can't fit -> still send it alone (will error clearly)
-    if(cur.length>0 && (curBytes+sz>MAX_BYTES || cur.length>=MAX_COUNT)){
-      chunks.push(cur); cur=[]; curBytes=0;
-    }
+    if(cur.length>0 && (curBytes+sz>MAX_BYTES || cur.length>=MAX_COUNT)){ chunks.push(cur); cur=[]; curBytes=0; }
     cur.push(list[i]); curBytes+=sz;
   }
   if(cur.length) chunks.push(cur);
   return chunks;
 }
-
 async function launchCampaign(approved){
   S.bulkSending=true;S.bulkProgress={total:approved.length,sent:0,failed:0};draw();
   const allEmails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body,attachments:ed.attachment?[ed.attachment]:undefined}));
   const approvedById={}; approved.forEach(function(ed){approvedById[ed.id]=ed;});
-
   const chunks=_chunkEmails(allEmails);
   let totalSent=0, totalFailed=0; const allMessageIds={}; let hadError=null;
-
   try{
     for(let ci=0; ci<chunks.length; ci++){
       const emails=chunks[ci];
@@ -1106,20 +909,13 @@ async function launchCampaign(approved){
       try{
         resp=await fetch('/.netlify/functions/send-bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({emails,fromEmail:S.sender.email,fromName:S.sender.name,scheduleAt:S.scheduleAt||null,campaignName:S.campaignName||'Campaign'})});
       }catch(netErr){ hadError='Network error sending batch '+(ci+1)+': '+netErr.message; break; }
-
-      // Read as text first so a non-JSON error page (e.g. "Internal Error" when a
-      // payload is too large) gives a clear message instead of a JSON parse crash.
       const raw=await resp.text();
       try{ data=JSON.parse(raw); }
       catch(parseErr){
-        if(resp.status===413 || /too large|payload/i.test(raw)){
-          hadError='Batch '+(ci+1)+' was too large to send. Try fewer or smaller attachments.';
-        } else {
-          hadError='Server error on batch '+(ci+1)+' (status '+resp.status+'). '+(raw||'').slice(0,120);
-        }
+        if(resp.status===413 || /too large|payload/i.test(raw)){ hadError='Batch '+(ci+1)+' was too large to send. Try fewer or smaller attachments.'; }
+        else { hadError='Server error on batch '+(ci+1)+' (status '+resp.status+'). '+(raw||'').slice(0,120); }
         break;
       }
-
       if(data.success){
         totalSent+=(data.sent||0); totalFailed+=(data.failed||0);
         if(data.messageIds) Object.assign(allMessageIds,data.messageIds);
@@ -1131,48 +927,40 @@ async function launchCampaign(approved){
         S.bulkProgress={total:approved.length,sent:totalSent,failed:totalFailed};draw();
       } else { hadError='Batch '+(ci+1)+' failed: '+(data.error||'Unknown error'); break; }
     }
-
-    // Save history for everything that got a message id
     try{await fetch('/.netlify/functions/email_history',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({records:approved.filter(ed=>allMessageIds[ed.id]).map(ed=>({campaignName:S.campaignName||'Campaign',name:getName(ed.lead),email:(ed.lead[S.colMap.email]||'').trim(),company:ed.lead[S.colMap.company]||'',title:ed.lead[S.colMap.title]||'',industry:ed.lead[S.colMap.industry]||'',subject:ed.subject,body:ed.body,status:S.scheduleAt?'scheduled':'sent',messageId:allMessageIds[ed.id]||null,scheduledAt:S.scheduleAt||null}))})});}catch(e){}
-
-    if(hadError && totalSent===0){
-      alert('Campaign failed: '+hadError);
-    } else if(hadError){
-      alert('Partly sent: '+totalSent+' delivered, then stopped. '+hadError);
-    } else {
-      alert(S.scheduleAt?'Done '+totalSent+' emails scheduled for '+new Date(S.scheduleAt).toLocaleString():'Done Campaign sent! '+totalSent+' sent . '+totalFailed+' failed');
+    if(hadError && totalSent===0){ alert('Campaign failed: '+hadError); }
+    else if(hadError){ alert('Partly sent: '+totalSent+' delivered, then stopped. '+hadError); }
+    else {
+      alert(S.scheduleAt?totalSent+' emails scheduled for '+new Date(S.scheduleAt).toLocaleString():'Campaign sent! '+totalSent+' sent . '+totalFailed+' failed');
       if(!S.scheduleAt)setTimeout(()=>checkTracking(),30000);
     }
   }catch(e){alert('Error: '+e.message);}
   S.bulkSending=false;draw();
 }
-
 async function checkTracking(){
   const sent=S.emails.filter(e=>S.sendStatus[e.id]==='sent');if(!sent.length)return;
   try{const resp=await fetch('/.netlify/functions/check-tracking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails:sent.map(e=>({email:e.lead[S.colMap.email],messageId:S.messageIds[e.id]||''}))})});const data=await resp.json();if(data.results){Object.entries(data.results).forEach(([email,status])=>{const em=sent.find(e=>e.lead[S.colMap.email]===email);if(em)S.trackingStatus[em.id]=status;});draw();}}catch(e){}
 }
-
 function doExport(){
   const approved=S.emails.filter(e=>e.approved&&!e.error);if(!approved.length){alert('No approved emails to export.');return;}
   const hdrs=['Name','Email','Company','Title','Industry','Subject','Body'];
   const csv=[hdrs,...approved.map(e=>[getName(e.lead),e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||'',e.lead[S.colMap.industry]||'',e.subject,e.body])].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='emails.csv';a.click();
 }
-
-// AUTH
-
+// AUTH & DASHBOARD
 function startNewCampaign(){
-  document.getElementById('campaign-divider').style.display='flex';
-  document.getElementById('root').scrollIntoView({behavior:'smooth',block:'start'});
+  const div=document.getElementById('campaign-divider');
+  if(div)div.style.display='flex';
+  const root=document.getElementById('root');
+  if(root)root.scrollIntoView({behavior:'smooth',block:'start'});
   S.step=0;S.leads=[];S.emails=[];S.genProgress=0;S._duplicates={};
   draw();
 }
-
 async function loadDashboardStats(){
   if(!_session)return;
   try{
-    var h=new Date().getHours();
-    var greet=h<12?'GOOD MORNING,':h<17?'GOOD AFTERNOON,':'GOOD EVENING,';
+    var hr=new Date().getHours();
+    var greet=hr<12?'GOOD MORNING,':hr<17?'GOOD AFTERNOON,':'GOOD EVENING,';
     var gel=document.getElementById('dash-greeting');
     if(gel)gel.textContent=greet;
   }catch(e){}
@@ -1191,13 +979,11 @@ async function loadDashboardStats(){
     el=document.getElementById('d-clicked');if(el)el.textContent=clicked;
     el=document.getElementById('d-campaigns');if(el)el.textContent=campaigns;
     el=document.getElementById('d-openrate');if(el)el.textContent=openPct+'% rate';
-    // Recent activity
     if(records.length){
       var feed=document.getElementById('activity-feed');
       if(feed){
-        var recent=records.slice(0,5);
         var html='';
-        recent.forEach(function(r){
+        records.slice(0,5).forEach(function(r){
           var color=r.tracking_status==='opened'?'var(--green)':r.tracking_status==='clicked'?'var(--blue)':'var(--text3)';
           var action=r.tracking_status==='opened'?'opened email':r.tracking_status==='clicked'?'clicked link':'email sent';
           var date=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
@@ -1211,16 +997,11 @@ async function loadDashboardStats(){
     }
   }catch(e){console.warn('Dashboard stats:',e.message);}
 }
-
-
-// -- DRAFT PERSISTENCE -----------------------------------------
 var _saveDraftTimer = null;
-
 function scheduleDraftSave() {
   if (_saveDraftTimer) clearTimeout(_saveDraftTimer);
   _saveDraftTimer = setTimeout(saveDraft, 3000);
 }
-
 async function saveDraft() {
   if (!_session || !S.leads || S.leads.length === 0) return;
   try {
@@ -1228,15 +1009,10 @@ async function saveDraft() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _session.access_token },
       body: JSON.stringify({
-        action:      'save_draft',
-        name:        S.campaignName || ('Campaign ' + new Date().toLocaleDateString()),
-        leads:       S.leads,
-        headers:     S.headers,
-        colMap:      S.colMap,
-        senderPrefs: S.senderPrefs,
-        source:      S.crmSource ? 'crm' : 'csv',
-        crmSource:   S.crmSource || null,
-        draft_id:    S.draftId,
+        action:'save_draft',
+        name: S.campaignName || ('Campaign ' + new Date().toLocaleDateString()),
+        leads: S.leads, headers: S.headers, colMap: S.colMap, senderPrefs: S.senderPrefs,
+        source: S.crmSource ? 'crm' : 'csv', crmSource: S.crmSource || null, draft_id: S.draftId
       })
     });
     var data = await resp.json();
@@ -1247,88 +1023,78 @@ async function saveDraft() {
     }
   } catch(e) {}
 }
-
-async function checkSessionStorage() {
-  // Resume from CRM import or draft
+function checkSessionStorage() {
   var csv = sessionStorage.getItem('velorah_leads_csv');
-  var source = sessionStorage.getItem('velorah_source');
+  var count = sessionStorage.getItem('velorah_leads_count');
   var crmSrc = sessionStorage.getItem('velorah_crm_source');
   var draftId = sessionStorage.getItem('velorah_draft_id');
-  if (csv) {
-    sessionStorage.removeItem('velorah_leads_csv');
-    sessionStorage.removeItem('velorah_leads_count');
-    sessionStorage.removeItem('velorah_source');
-    sessionStorage.removeItem('velorah_crm_source');
-    sessionStorage.removeItem('velorah_draft_id');
-    var parsed = parseCSV(csv);
-    S.headers = parsed.headers;
-    S.leads   = parsed.rows;
-    S.colMap  = autoMap(parsed.headers);
-    if (crmSrc)  S.crmSource = crmSrc;
-    if (draftId) S.draftId   = draftId;
-    S.step = 1;
-    draw();
+  if (!csv) return;
+  sessionStorage.removeItem('velorah_leads_csv');
+  sessionStorage.removeItem('velorah_leads_count');
+  sessionStorage.removeItem('velorah_source');
+  sessionStorage.removeItem('velorah_crm_source');
+  sessionStorage.removeItem('velorah_draft_id');
+  var parsed = parseCSV(csv);
+  S.headers = parsed.headers;
+  S.leads   = parsed.rows;
+  S.colMap  = autoMap(parsed.headers);
+  if (crmSrc)  S.crmSource = crmSrc;
+  if (draftId) S.draftId   = draftId;
+  S.step = 1;
+  draw();
+  scheduleDraftSave();
+  if(count){
+    var b=document.createElement('div');
+    b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';
+    b.textContent=count+' leads imported';
+    document.body.appendChild(b);setTimeout(function(){b.remove();},4000);
   }
 }
-
 async function initAuth(){
   draw();
   try{
     const{data:{session}}=await sbClient.auth.getSession();
     if(!session){window.location.href='/login.html';return;}
-   _session=session;
-    // Load the user's feature access map, then apply UI gating
+    _session=session;
+    document.getElementById('user-email').textContent=session.user.email;
     try{
       if(window.VelorahGate){
         await VelorahGate.load(session.access_token);
         VelorahGate.applyDom();
       }
-    }catch(e){ console.warn('Feature gate:', e.message); }
-    // nav always visible
-    document.getElementById('user-email').textContent=session.user.email;
+    }catch(ge){ console.warn('Feature gate:', ge.message); }
     loadDashboardStats();
     checkSessionStorage();
-    try{const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});const plan=await resp.json();document.getElementById('plan-chip').textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);document.getElementById('usage-text').textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);document.getElementById('usage-fill').style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';}catch(e){}
-    try{const resp=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});const{keys}=await resp.json();if(keys){S.sender.name=keys.sender_name||'';S.sender.email=keys.sender_email||'';S.sender.title=keys.sender_title||'';S.sender.company=keys.sender_company||'Velorah';_session._sendgridKey=keys.sendgrid_key||'';}}catch(e){}
+    try{
+      const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});
+      const plan=await resp.json();
+      const pc=document.getElementById('plan-chip');
+      if(pc&&plan.plan)pc.textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);
+      const ut=document.getElementById('usage-text');
+      if(ut)ut.textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);
+      const uf=document.getElementById('usage-fill');
+      if(uf)uf.style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';
+    }catch(e){}
+    try{
+      const resp=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});
+      const{keys}=await resp.json();
+      if(keys){
+        S.sender.name=keys.sender_name||'';
+        S.sender.email=keys.sender_email||'';
+        S.sender.title=keys.sender_title||'';
+        S.sender.company=keys.sender_company||'Velorah';
+        _session._sendgridKey=keys.sendgrid_key||'';
+      }
+    }catch(e){}
     draw();
-    try{const csv=sessionStorage.getItem('velorah_leads_csv');const count=sessionStorage.getItem('velorah_leads_count');if(csv&&count){sessionStorage.removeItem('velorah_leads_csv');sessionStorage.removeItem('velorah_leads_count');const{headers,rows}=parseCSV(csv);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);S.step=1;draw();scheduleDraftSave();const b=document.createElement('div');b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';b.textContent='Done '+count+' leads imported!';document.body.appendChild(b);setTimeout(()=>b.remove(),4000);}}catch(e){}
   }catch(e){console.warn('Auth:',e.message);}
 }
-
 async function saveUserKeys(){
   if(!_session||!_session.access_token)return;
   try{await fetch('/.netlify/functions/user_keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
 }
-
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 initAuth();
-</script>
-<script src="/resume-campaign.js"></script>
-  <script>
-// Performance: debounce helper
-function debounce(fn, ms) {
-  var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
-}
-// Performance: lazy-load non-critical content
-if ('IntersectionObserver' in window) {
-  var lazyObs = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) { if(e.isIntersecting) { e.target.src=e.target.dataset.src; lazyObs.unobserve(e.target); }});
-  });
-  document.querySelectorAll('img[data-src]').forEach(function(img){lazyObs.observe(img);});
-}
-// Performance: prevent duplicate fetch on rapid clicks
-window._fetchCache = window._fetchCache || {};
-window.cachedFetch = function(url, opts, ttlMs) {
-  var key = url + JSON.stringify(opts&&opts.body||'');
-  var cached = window._fetchCache[key];
-  if(cached && Date.now() < cached.exp) return Promise.resolve(new Response(JSON.stringify(cached.data)));
-  return fetch(url, opts).then(function(r) {
-    return r.clone().json().then(function(data) {
-      if(ttlMs) window._fetchCache[key] = { data: data, exp: Date.now() + ttlMs };
-      return r;
-    }).catch(function(){ return r; });
-  });
-};
 </script>
 </body>
 </html>
