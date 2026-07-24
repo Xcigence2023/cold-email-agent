@@ -13,6 +13,13 @@
 
   var _imported=false;
 
+  /* app.html declares `const S = {...}` and `const emailRx`. const/let at top
+     level are NOT attached to window, so window.S is undefined. They ARE
+     reachable as bare globals from another script once that script has run. */
+  function getS(){ try{ return S; }catch(e){ return null; } }
+  function getDraw(){ try{ return (typeof draw==='function') ? draw : null; }catch(e){ return null; } }
+
+
   /* ---------- RFC4180 CSV parser (handles newlines inside quoted fields) ---------- */
   function parseCSVStrict(text){
     var rows=[], row=[], cur='', q=false, i=0;
@@ -66,14 +73,15 @@
 
   /* ---------- Load a parsed export straight into the Review step ---------- */
   function loadCampaign(parsed){
+    var _S=getS(); if(!_S){ toast('App not ready — reload the page.', true); return; }
     var H=parsed.headers;
     var cSub=findCol(H,A.subject), cBody=findCol(H,A.body), cEmail=findCol(H,A.email);
 
     if(!cEmail){ toast('That file has no Email column.', true); return; }
 
-    window.S.headers=H;
-    window.S.leads=parsed.rows;
-    window.S.colMap={
+    _S.headers=H;
+    _S.leads=parsed.rows;
+    _S.colMap={
       email:cEmail,
       fullName:findCol(H,A.name),
       firstName:findCol(H,A.first),
@@ -85,35 +93,35 @@
     };
 
     var skipped=0;
-    window.S.emails=[];
+    _S.emails=[];
     parsed.rows.forEach(function(row){
       var to=(row[cEmail]||'').trim();
       var subject=(row[cSub]||'').trim();
       var body=(row[cBody]||'').trim();
       if(!to || !EMAIL_RX.test(to) || !subject || !body){ skipped++; return; }
-      window.S.emails.push({
-        id: window.S.emails.length,
+      _S.emails.push({
+        id: _S.emails.length,
         lead: row, subject: subject, body: body,
         approved: true, error: false, attachment: null
       });
     });
 
-    if(!window.S.emails.length){
+    if(!_S.emails.length){
       toast('No usable emails found — need Email, Subject and Body with values.', true);
       return;
     }
 
-    window.S.genProgress = window.S.emails.length;
-    window.S.sendStatus={}; window.S.trackingStatus={}; window.S.messageIds={};
-    window.S.validationDone=false; window.S.validationRunning=false;
-    window.S.validationResults={summary:null,results:[]};
-    if(!window.S.campaignName) window.S.campaignName='Imported '+new Date().toLocaleDateString();
+    _S.genProgress = _S.emails.length;
+    _S.sendStatus={}; _S.trackingStatus={}; _S.messageIds={};
+    _S.validationDone=false; _S.validationRunning=false;
+    _S.validationResults={summary:null,results:[]};
+    if(!_S.campaignName) _S.campaignName='Imported '+new Date().toLocaleDateString();
 
     _imported=true;
-    window.S.step=3; window.S.activeIdx=0;
-    if(typeof window.draw==='function') window.draw();
+    _S.step=3; _S.activeIdx=0;
+    var d=getDraw(); if(d) d();
 
-    var msg=window.S.emails.length+' ready-to-send email'+(window.S.emails.length===1?'':'s')+' loaded';
+    var msg=_S.emails.length+' ready-to-send email'+(_S.emails.length===1?'':'s')+' loaded';
     if(skipped) msg+=' · '+skipped+' row'+(skipped===1?'':'s')+' skipped';
     toast(msg, false);
   }
@@ -180,6 +188,7 @@
      launchCampaign() sends fromEmail/fromName from S.sender, so if those are
      empty the send fails. Show an inline form on Review/Send until filled. */
   function buildSenderForm(){
+    var _S=getS()||{sender:{}};
     var box=document.createElement('div');
     box.id='vr-sender-box';
     box.style.cssText='border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.08);'+
@@ -203,8 +212,8 @@
         'border-radius:8px;background:rgba(13,21,38,.85);color:#e8f0fe;font-family:inherit';
       return i;
     }
-    var nameI=mkInput('Your name (e.g. Yomi Olalere)', (window.S.sender&&window.S.sender.name)||'','160px');
-    var mailI=mkInput('Sender email (e.g. you@company.com)', (window.S.sender&&window.S.sender.email)||'','200px');
+    var nameI=mkInput('Your name (e.g. Yomi Olalere)', (_S.sender&&_S.sender.name)||'','160px');
+    var mailI=mkInput('Sender email (e.g. you@company.com)', (_S.sender&&_S.sender.email)||'','200px');
 
     var save=document.createElement('button');
     save.textContent='Save';
@@ -214,10 +223,10 @@
       var nm=nameI.value.trim(), em=mailI.value.trim();
       if(!EMAIL_RX.test(em)){ toast('Enter a valid sender email address.', true); return; }
       if(!nm){ toast('Enter the name these emails are sent from.', true); return; }
-      window.S.sender.name=nm; window.S.sender.email=em;
+      _S.sender.name=nm; _S.sender.email=em;
       try{ if(typeof window.saveUserKeys==='function') window.saveUserKeys(); }catch(e){}
       toast('Sender saved — you can send now.', false);
-      if(typeof window.draw==='function') window.draw();
+      var d=getDraw(); if(d) d();
     });
 
     row.appendChild(nameI); row.appendChild(mailI); row.appendChild(save);
@@ -226,7 +235,8 @@
   }
 
   function senderMissing(){
-    return !(window.S && window.S.sender && window.S.sender.email && EMAIL_RX.test(window.S.sender.email));
+    var _S=getS();
+    return !(_S && _S.sender && _S.sender.email && EMAIL_RX.test(_S.sender.email));
   }
 
   /* ---------- The visible panel (also proves this file loaded) ---------- */
@@ -273,20 +283,20 @@
 
   /* Insert the panel at the top of the Upload step whenever it's showing. */
   function mount(){
-    if(!window.S) return;
+    var _S=getS(); if(!_S) return;
     var root=document.getElementById('root');
     if(!root) return;
     var target=root.children.length>1 ? root.children[1] : root;
 
     // Resume panel: only on the Upload step
     var existing=document.getElementById('vr-resume-panel');
-    if(window.S.step===0){
+    if(_S.step===0){
       if(!existing && target && target.insertBefore) target.insertBefore(buildPanel(), target.firstChild);
     }else if(existing){ existing.remove(); }
 
     // Sender guard: on Review/Send, only for imported campaigns missing a sender
     var sbox=document.getElementById('vr-sender-box');
-    var needSender = _imported && (window.S.step===3 || window.S.step===4) && senderMissing();
+    var needSender = _imported && (_S.step===3 || _S.step===4) && senderMissing();
     if(needSender){
       if(!sbox && target && target.insertBefore) target.insertBefore(buildSenderForm(), target.firstChild);
     }else if(sbox){ sbox.remove(); }
