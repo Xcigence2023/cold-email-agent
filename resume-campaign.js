@@ -141,6 +141,36 @@
     rd.readAsText(file);
   }
 
+
+  /* ---------- Intercept the app's OWN upload paths ----------
+     The main drop zone and "Upload CSV" button both call the global
+     readFile(). We wrap it so a saved campaign is detected no matter
+     which control the user uses. Raw lead files fall through to the
+     original behaviour untouched. */
+  function wrapReadFile(){
+    if(typeof window.readFile!=='function'){ setTimeout(wrapReadFile,300); return; }
+    if(window.readFile.__vrWrapped) return;
+    var orig=window.readFile;
+    var wrapped=function(f){
+      if(!f){ return orig.apply(this,arguments); }
+      var args=arguments, self=this;
+      var rd=new FileReader();
+      rd.onload=function(e){
+        var parsed;
+        try{ parsed=parseCSVStrict(e.target.result); }catch(err){ parsed={headers:[],rows:[]}; }
+        if(parsed.headers.length && isCampaignExport(parsed.headers)){
+          loadCampaign(parsed);           // saved campaign -> straight to Review
+        }else{
+          orig.apply(self,args);          // raw leads -> original flow
+        }
+      };
+      rd.onerror=function(){ orig.apply(self,args); };
+      rd.readAsText(f);
+    };
+    wrapped.__vrWrapped=true;
+    window.readFile=wrapped;
+  }
+
   /* ---------- The visible panel (also proves this file loaded) ---------- */
   function buildPanel(){
     var wrap=document.createElement('div');
@@ -203,10 +233,11 @@
     _origDraw=window.draw;
     window.draw=function(){ _origDraw.apply(this,arguments); try{ mount(); }catch(e){} };
     try{ window.draw(); }catch(e){}
+    wrapReadFile();
   }
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',hook);
-  else hook();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){hook();wrapReadFile();});
+  else { hook(); wrapReadFile(); }
 
   // Expose for debugging
   window.VelorahResume={ parseCSVStrict:parseCSVStrict, isCampaignExport:isCampaignExport, handleFile:handleFile };
