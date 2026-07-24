@@ -1301,8 +1301,9 @@ async function saveUserKeys(){
 
 async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
 initAuth();
+</script>
 <script src="/resume-campaign.js"></script>
-<script>
+  <script>
 // Performance: debounce helper
 function debounce(fn, ms) {
   var t; return function() { var a=arguments; clearTimeout(t); t=setTimeout(function(){fn.apply(null,a);}, ms); };
