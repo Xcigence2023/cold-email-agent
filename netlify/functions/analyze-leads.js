@@ -31,7 +31,7 @@ For each recipient, score them based on:
 - Engagement signals (opened, clicked, re-opened)
 - Job title seniority (C-suite > VP > Director > Manager)
 - Company size (larger = higher deal value)
-- Industry fit for cybersecurity/compliance tools
+- Industry/company profile fit for the sender's offering
 - Time patterns (opened quickly = more interest)
 
 Recipients:
