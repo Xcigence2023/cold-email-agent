@@ -5,62 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Call Center — Velorah</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#070c18; --panel:#0c1424; --panel2:#0e1730; --border:#1b2942; --text:#e8eefc; --text2:#8b9bbd; --accent:#3b82f6; --accent2:#8b5cf6; --green:#16c784; --red:#ef4444; --amber:#f59e0b; }
+  :root{
+    --bg:#070c18; --panel:#0c1424; --panel2:#0e1730; --panel3:#111d38;
+    --border:#1b2942; --border2:#25375c;
+    --text:#e8eefc; --text2:#8b9bbd; --text3:#5b6b8c;
+    --accent:#3b82f6; --accent-dim:#1d4ed8; --accent2:#8b5cf6; --accent2-dim:#6d28d9;
+    --green:#16c784; --red:#ef4444; --amber:#f59e0b;
+  }
   *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
   body{ font-family:'Outfit',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-  .wrap{ max-width:1100px; margin:0 auto; padding:24px 20px 80px; }
-  h1{ font-size:22px; font-weight:600; margin-bottom:4px; }
-  .sub{ color:var(--text2); font-size:13px; margin-bottom:24px; }
-  .grid{ display:grid; grid-template-columns:380px 1fr; gap:20px; }
-  @media(max-width:880px){ .grid{ grid-template-columns:1fr; } }
-  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .panel h2{ font-size:14px; font-weight:600; margin-bottom:14px; color:var(--text); }
-  label{ display:block; font-size:12px; color:var(--text2); margin:12px 0 6px; }
-  input,select,textarea{ width:100%; background:var(--panel2); border:1px solid var(--border); border-radius:9px; padding:11px 13px; color:var(--text); font-family:inherit; font-size:14px; }
-  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--accent); }
-  .phone-input{ font-family:'IBM Plex Mono',monospace; font-size:18px; letter-spacing:1px; text-align:center; }
-  .mode-row{ display:flex; gap:10px; margin:14px 0; }
-  .mode-btn{ flex:1; padding:14px 10px; border-radius:10px; border:1.5px solid var(--border); background:var(--panel2); color:var(--text2); cursor:pointer; text-align:center; transition:all .15s; font-family:inherit; }
-  .mode-btn .mt{ font-size:14px; font-weight:600; display:block; margin-bottom:3px; }
-  .mode-btn .md{ font-size:11px; opacity:.8; }
-  .mode-btn.active-human{ border-color:var(--green); background:rgba(22,199,132,.08); color:var(--text); }
-  .mode-btn.active-ai{ border-color:var(--accent2); background:rgba(139,92,246,.1); color:var(--text); }
-  .call-btn{ width:100%; padding:15px; border:none; border-radius:11px; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer; margin-top:16px; color:#fff; transition:opacity .15s; }
-  .call-btn.human{ background:linear-gradient(135deg,#16c784,#0ea968); }
-  .call-btn.ai{ background:linear-gradient(135deg,#8b5cf6,#6d28d9); }
-  .call-btn:disabled{ opacity:.5; cursor:not-allowed; }
-  .hint{ font-size:11px; color:var(--text2); margin-top:10px; line-height:1.5; }
-  .logs-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-  .filters{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-  .filters select{ width:auto; font-size:12px; padding:7px 10px; }
-  .call-row{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:13px 15px; margin-bottom:9px; }
-  .call-row .cr-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
-  .cr-num{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; }
-  .cr-name{ font-size:12px; color:var(--text2); }
-  .badge{ font-size:10px; padding:3px 8px; border-radius:20px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
-  .badge.ai{ background:rgba(139,92,246,.15); color:#a78bfa; }
-  .badge.human{ background:rgba(22,199,132,.15); color:#34d399; }
-  .cr-meta{ display:flex; gap:14px; margin-top:8px; font-size:11px; color:var(--text2); flex-wrap:wrap; align-items:center; }
-  .outcome-sel{ width:auto; font-size:11px; padding:5px 8px; }
-  .cr-transcript{ margin-top:10px; font-size:12px; color:var(--text2); background:var(--bg); border-radius:8px; padding:10px; max-height:120px; overflow-y:auto; white-space:pre-wrap; display:none; }
-  .link-btn{ background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; padding:0; font-family:inherit; }
-  .empty{ text-align:center; color:var(--text2); padding:40px 20px; font-size:13px; }
-  .followups{ margin-top:20px; }
-  .fu-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; background:rgba(245,158,11,.06); border:1px solid rgba(245,158,11,.2); border-radius:9px; padding:11px 14px; margin-bottom:8px; }
-  .fu-info{ font-size:12px; }
-  .fu-due{ font-size:11px; color:var(--amber); margin-top:3px; }
-  .tabs{ display:flex; gap:6px; margin-bottom:16px; }
-  .tab{ padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--panel2); color:var(--text2); cursor:pointer; font-size:13px; font-family:inherit; }
-  .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
-  .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid var(--green); color:var(--text); padding:12px 20px; border-radius:10px; font-size:13px; z-index:9999; display:none; }
-  .stat-row{ display:flex; gap:10px; margin-bottom:16px; }
-  .stat{ flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
-  .stat .sv{ font-size:22px; font-weight:700; }
-  .stat .sl{ font-size:11px; color:var(--text2); margin-top:2px; }
+  ::selection{ background:rgba(59,130,246,.3); }
+  .mono{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
 
-  /* Portal topbar (matches the rest of Velorah) */
+  /* ---------- Portal topbar (shared shell — unchanged) ---------- */
   .topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
   .brand{display:flex;align-items:center;gap:10px}
   .brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px}
@@ -71,7 +33,119 @@
   .nav a.active{color:var(--text);background:rgba(59,130,246,.12)}
   .topbar-right{display:flex;align-items:center;gap:10px}
   .btn-sm{cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--panel2);color:var(--text2);font-family:'Outfit',sans-serif}
+  .btn-sm:hover{color:var(--text);border-color:var(--border2)}
   .user-email{font-size:11px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
+
+  /* ---------- Wallboard — the signature element ---------- */
+  /* A literal call-center wallboard: the shared display teams glance at
+     from across the floor. Tabular figures so digits don't jitter as they
+     update, a hairline grid instead of cards, one live pulse — everything
+     else on the page stays quiet so this reads as the room's pulse. */
+  .wallboard{
+    position:sticky; top:56px; z-index:90;
+    background:linear-gradient(180deg,var(--panel) 0%,var(--bg) 100%);
+    border-bottom:1px solid var(--border);
+  }
+  .wb-inner{ max-width:1180px; margin:0 auto; padding:14px 20px; display:flex; align-items:stretch; gap:0; }
+  .wb-live{ display:flex; align-items:center; gap:7px; padding-right:18px; margin-right:18px; border-right:1px solid var(--border); }
+  .wb-dot{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 0 rgba(22,199,132,.6); animation:pulse 2s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(22,199,132,.5)} 70%{box-shadow:0 0 0 7px rgba(22,199,132,0)} 100%{box-shadow:0 0 0 0 rgba(22,199,132,0)} }
+  .wb-live-label{ font-size:10px; letter-spacing:1.5px; color:var(--text2); text-transform:uppercase; font-weight:600; }
+  .wb-cell{ flex:1; padding:0 20px; border-right:1px solid var(--border); }
+  .wb-cell:last-child{ border-right:none; }
+  .wb-val{ font-size:26px; font-weight:600; line-height:1; letter-spacing:-.5px; }
+  .wb-val.accent-green{ color:var(--green); }
+  .wb-val.accent-blue{ color:var(--accent); }
+  .wb-val.accent-violet{ color:var(--accent2); }
+  .wb-label{ font-size:10.5px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-top:5px; font-weight:600; }
+  @media(max-width:880px){ .wb-inner{ flex-wrap:wrap; gap:14px; } .wb-live{ border-right:none; margin-right:0; padding-right:0; width:100%; order:-1; } .wb-cell{ flex:1 1 40%; border-right:none; padding:0; } }
+
+  /* ---------- Page shell ---------- */
+  .wrap{ max-width:1180px; margin:0 auto; padding:28px 20px 80px; }
+  .page-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px; }
+  h1{ font-size:21px; font-weight:700; letter-spacing:-.2px; }
+  .sub{ color:var(--text2); font-size:13px; }
+  .grid{ display:grid; grid-template-columns:352px 1fr; gap:20px; align-items:start; }
+  @media(max-width:880px){ .grid{ grid-template-columns:1fr; } }
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px; }
+  .panel h2{ font-size:12.5px; font-weight:700; margin-bottom:16px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+
+  /* ---------- Dialer ---------- */
+  .dialer{ position:sticky; top:150px; }
+  label{ display:block; font-size:11.5px; color:var(--text3); text-transform:uppercase; letter-spacing:.6px; font-weight:600; margin:14px 0 7px; }
+  label:first-of-type{ margin-top:0; }
+  input,select,textarea{ width:100%; background:var(--panel2); border:1px solid var(--border); border-radius:9px; padding:11px 13px; color:var(--text); font-family:inherit; font-size:14px; transition:border-color .15s; }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--accent); }
+  input::placeholder{ color:var(--text3); }
+  .phone-input{ font-family:'IBM Plex Mono',monospace; font-size:19px; letter-spacing:1.5px; text-align:center; padding:14px 13px; }
+
+  .mode-row{ display:flex; gap:8px; margin:16px 0 4px; }
+  .mode-btn{ flex:1; padding:13px 8px; border-radius:10px; border:1.5px solid var(--border); background:var(--panel2); color:var(--text2); cursor:pointer; text-align:center; transition:all .15s; font-family:inherit; position:relative; }
+  .mode-btn:hover{ border-color:var(--border2); }
+  .mode-btn .mt{ font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:3px; }
+  .mode-btn .md{ font-size:10.5px; opacity:.75; line-height:1.3; }
+  .mode-dot{ width:6px; height:6px; border-radius:50%; background:var(--text3); flex-shrink:0; }
+  .mode-btn.active-human{ border-color:var(--green); background:rgba(22,199,132,.08); color:var(--text); }
+  .mode-btn.active-human .mode-dot{ background:var(--green); }
+  .mode-btn.active-ai{ border-color:var(--accent2); background:rgba(139,92,246,.1); color:var(--text); }
+  .mode-btn.active-ai .mode-dot{ background:var(--accent2); animation:pulse 2s infinite; box-shadow:none; }
+
+  .call-btn{ width:100%; padding:15px; border:none; border-radius:11px; font-family:inherit; font-size:15px; font-weight:700; cursor:pointer; margin-top:18px; color:#fff; transition:filter .15s, transform .05s; letter-spacing:.2px; }
+  .call-btn:hover{ filter:brightness(1.08); }
+  .call-btn:active{ transform:scale(.99); }
+  .call-btn.human{ background:linear-gradient(135deg,#16c784,#0ea968); box-shadow:0 8px 24px -8px rgba(22,199,132,.5); }
+  .call-btn.ai{ background:linear-gradient(135deg,#8b5cf6,#6d28d9); box-shadow:0 8px 24px -8px rgba(139,92,246,.5); }
+  .call-btn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+  .hint{ font-size:11.5px; color:var(--text3); margin-top:11px; line-height:1.55; padding-top:11px; border-top:1px solid var(--border); }
+
+  /* ---------- Tabs ---------- */
+  .tabs{ display:flex; gap:4px; margin-bottom:18px; background:var(--panel2); padding:4px; border-radius:10px; width:fit-content; }
+  .tab{ padding:8px 16px; border-radius:7px; border:none; background:transparent; color:var(--text2); cursor:pointer; font-size:13px; font-family:inherit; font-weight:500; transition:all .15s; }
+  .tab.active{ background:var(--accent); color:#fff; font-weight:600; }
+  .tab:hover:not(.active){ color:var(--text); }
+
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filters select{ width:auto; font-size:12px; padding:8px 11px; }
+
+  /* ---------- Call log rows ---------- */
+  .call-row{ background:var(--panel2); border:1px solid var(--border); border-left:3px solid var(--border2); border-radius:10px; padding:14px 16px; margin-bottom:9px; transition:border-color .15s; }
+  .call-row:hover{ border-color:var(--border2); }
+  .call-row.type-ai{ border-left-color:var(--accent2); }
+  .call-row.type-human{ border-left-color:var(--green); }
+  .call-row .cr-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .cr-id{ display:flex; align-items:center; gap:10px; }
+  .cr-avatar{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .cr-avatar.type-ai{ background:rgba(139,92,246,.15); color:#a78bfa; }
+  .cr-avatar.type-human{ background:rgba(22,199,132,.15); color:#34d399; }
+  .cr-num{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; }
+  .cr-name{ font-size:11.5px; color:var(--text2); margin-top:1px; }
+  .badge{ font-size:9.5px; padding:4px 9px; border-radius:20px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; flex-shrink:0; }
+  .badge.ai{ background:rgba(139,92,246,.15); color:#a78bfa; }
+  .badge.human{ background:rgba(22,199,132,.15); color:#34d399; }
+  .cr-meta{ display:flex; gap:14px; margin-top:10px; font-size:11.5px; color:var(--text3); flex-wrap:wrap; align-items:center; }
+  .cr-meta .mono{ color:var(--text2); }
+  .outcome-sel{ width:auto; font-size:11.5px; padding:6px 9px; background:var(--panel3); }
+  .cr-transcript{ margin-top:11px; font-size:12px; color:var(--text2); background:var(--bg); border:1px solid var(--border); border-radius:8px; overflow:hidden; display:none; }
+  .cr-transcript .tr-head{ padding:8px 12px; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); font-weight:700; border-bottom:1px solid var(--border); }
+  .cr-transcript .tr-body{ padding:11px 12px; max-height:160px; overflow-y:auto; white-space:pre-wrap; font-family:'IBM Plex Mono',monospace; font-size:11.5px; line-height:1.6; }
+  .link-btn{ background:none; border:none; color:var(--accent); font-size:11.5px; cursor:pointer; padding:0; font-family:inherit; font-weight:600; }
+  .link-btn:hover{ text-decoration:underline; }
+
+  /* ---------- Empty states ---------- */
+  .empty{ text-align:center; color:var(--text2); padding:52px 20px; font-size:13px; }
+  .empty .ee-icon{ font-size:26px; margin-bottom:10px; opacity:.5; }
+  .empty .ee-sub{ color:var(--text3); font-size:12px; margin-top:4px; }
+
+  /* ---------- Follow-ups ---------- */
+  .fu-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--border); border-left:3px solid var(--text3); border-radius:9px; padding:12px 15px; margin-bottom:8px; }
+  .fu-row.urgent{ border-left-color:var(--red); }
+  .fu-row.soon{ border-left-color:var(--amber); }
+  .fu-info{ font-size:12.5px; }
+  .fu-due{ font-size:11px; color:var(--text3); margin-top:3px; }
+  .fu-row.urgent .fu-due{ color:var(--red); }
+  .fu-row.soon .fu-due{ color:var(--amber); }
+
+  .toast{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(0); background:var(--panel3); border:1px solid var(--green); color:var(--text); padding:12px 22px; border-radius:11px; font-size:13px; z-index:9999; display:none; box-shadow:0 12px 32px -8px rgba(0,0,0,.5); font-weight:500; }
 </style>
 </head>
 <body>
@@ -100,16 +174,47 @@
   </div>
 </div>
 
+<!-- Wallboard: the shared, glanceable readout — same numbers the stat-row
+     used to show, now doing the job of the page's centerpiece. -->
+<div class="wallboard">
+  <div class="wb-inner">
+    <div class="wb-live">
+      <span class="wb-dot"></span>
+      <span class="wb-live-label">Live</span>
+    </div>
+    <div class="wb-cell">
+      <div class="wb-val mono" id="stTotal">0</div>
+      <div class="wb-label">Calls today</div>
+    </div>
+    <div class="wb-cell">
+      <div class="wb-val mono accent-green" id="stInterested">0</div>
+      <div class="wb-label">Interested</div>
+    </div>
+    <div class="wb-cell">
+      <div class="wb-val mono accent-blue" id="stBooked">0</div>
+      <div class="wb-label">Booked</div>
+    </div>
+    <div class="wb-cell">
+      <div class="wb-val mono accent-violet" id="stFollowups">0</div>
+      <div class="wb-label">Open follow-ups</div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
-  <h1>Call Center</h1>
-  <div class="sub">Dial any number — choose a human call or the AI voice agent. Every call is logged with follow-ups.</div>
+  <div class="page-head">
+    <div>
+      <h1>Call Center</h1>
+      <div class="sub">Dial any number — choose a human call or the AI voice agent. Every call is logged with follow-ups.</div>
+    </div>
+  </div>
 
   <div class="grid">
     <!-- DIALER -->
-    <div class="panel">
-      <h2>New Call</h2>
+    <div class="panel dialer">
+      <h2>New call</h2>
       <label>Phone number</label>
-      <input id="phone" class="phone-input" placeholder="+1 416 555 1234" autocomplete="off">
+      <input id="phone" class="phone-input mono" placeholder="+1 416 555 1234" autocomplete="off">
 
       <div style="display:flex;gap:10px">
         <div style="flex:1"><label>Contact name (optional)</label><input id="cname" placeholder="Jane Doe"></div>
@@ -120,11 +225,11 @@
       <label>Choose how to call</label>
       <div class="mode-row">
         <div id="mHuman" class="mode-btn active-human" onclick="setMode('human')">
-          <span class="mt">Human dial</span>
+          <span class="mt"><span class="mode-dot"></span>Human dial</span>
           <span class="md">You speak to them</span>
         </div>
         <div id="mAI" class="mode-btn" onclick="setMode('ai')">
-          <span class="mt">AI Voice agent</span>
+          <span class="mt"><span class="mode-dot"></span>AI voice agent</span>
           <span class="md">Nick calls for you</span>
         </div>
       </div>
@@ -136,16 +241,11 @@
     <!-- LOGS + FOLLOW-UPS -->
     <div class="panel">
       <div class="tabs">
-        <div id="tabLogs" class="tab active" onclick="switchTab('logs')">Call Log</div>
+        <div id="tabLogs" class="tab active" onclick="switchTab('logs')">Call log</div>
         <div id="tabFollow" class="tab" onclick="switchTab('follow')">Follow-ups</div>
       </div>
 
       <div id="logsView">
-        <div class="stat-row">
-          <div class="stat"><div class="sv" id="stTotal">0</div><div class="sl">Calls today</div></div>
-          <div class="stat"><div class="sv" id="stInterested">0</div><div class="sl">Interested</div></div>
-          <div class="stat"><div class="sv" id="stBooked">0</div><div class="sl">Booked</div></div>
-        </div>
         <div class="filters">
           <select id="fOutcome" onchange="loadCalls()">
             <option value="">All outcomes</option>
@@ -300,24 +400,35 @@ function updateStats(calls){
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function fmtDur(s){ s=parseInt(s)||0; var m=Math.floor(s/60); var ss=s%60; return m+'m '+(ss<10?'0':'')+ss+'s'; }
 function fmtTime(t){ try{ return new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function initials(name,num){
+  if(name){ var parts=name.trim().split(/\s+/); return ((parts[0]||'')[0]||'').toUpperCase()+((parts[1]||'')[0]||'').toUpperCase(); }
+  return (String(num||'').replace(/[^\d]/g,'').slice(-2))||'--';
+}
 
 var OUTCOMES=['','interested','not-interested','callback','booked','left-voicemail','wrong-number'];
 function renderCalls(calls){
   var list=document.getElementById('callList');
-  if(!calls.length){ list.innerHTML='<div class="empty">No calls yet. Make your first call from the dialer.</div>'; return; }
+  if(!calls.length){
+    list.innerHTML='<div class="empty"><div class="ee-icon">☎</div>No calls yet<div class="ee-sub">Make your first call from the dialer on the left.</div></div>';
+    return;
+  }
   list.innerHTML=calls.map(function(c){
     var opts=OUTCOMES.map(function(o){ return '<option value="'+o+'"'+(c.outcome===o?' selected':'')+'>'+(o||'— set outcome —')+'</option>'; }).join('');
-    var transcript=c.transcript? '<div class="cr-transcript" id="tr-'+c.id+'">'+esc(c.transcript)+'</div>' : '';
-    var trBtn=c.transcript? '<button class="link-btn" onclick="toggleTranscript(\''+c.id+'\')">transcript</button>' : '';
-    var email=c.captured_email? '<span style="color:var(--green)">✉ '+esc(c.captured_email)+'</span>' : '';
-    return '<div class="call-row">'+
+    var transcript=c.transcript? '<div class="cr-transcript" id="tr-'+c.id+'"><div class="tr-head">Transcript</div><div class="tr-body">'+esc(c.transcript)+'</div></div>' : '';
+    var trBtn=c.transcript? '<button class="link-btn" onclick="toggleTranscript(\''+c.id+'\')">Transcript</button>' : '';
+    var email=c.captured_email? '<span class="mono" style="color:var(--green)">✉ '+esc(c.captured_email)+'</span>' : '';
+    var typeClass=c.call_type==='ai'?'ai':'human';
+    return '<div class="call-row type-'+typeClass+'">'+
       '<div class="cr-top">'+
-        '<div><span class="cr-num">'+esc(c.to_number)+'</span> '+(c.contact_name?'<span class="cr-name">'+esc(c.contact_name)+(c.company?' · '+esc(c.company):'')+'</span>':'')+'</div>'+
-        '<span class="badge '+(c.call_type==='ai'?'ai':'human')+'">'+(c.call_type==='ai'?'AI':'Human')+'</span>'+
+        '<div class="cr-id">'+
+          '<div class="cr-avatar type-'+typeClass+'">'+esc(initials(c.contact_name,c.to_number))+'</div>'+
+          '<div><div class="cr-num mono">'+esc(c.to_number)+'</div>'+(c.contact_name?'<div class="cr-name">'+esc(c.contact_name)+(c.company?' · '+esc(c.company):'')+'</div>':'')+'</div>'+
+        '</div>'+
+        '<span class="badge '+typeClass+'">'+(c.call_type==='ai'?'AI':'Human')+'</span>'+
       '</div>'+
       '<div class="cr-meta">'+
         '<span>'+fmtTime(c.started_at)+'</span>'+
-        '<span>'+fmtDur(c.duration_seconds)+'</span>'+
+        '<span class="mono">'+fmtDur(c.duration_seconds)+'</span>'+
         email+
         '<select class="outcome-sel" onchange="setOutcome(\''+c.id+'\',this.value)">'+opts+'</select>'+
         trBtn+
@@ -348,12 +459,17 @@ async function loadFollowups(){
     var d=await resp.json();
     if(!d.ok){ list.innerHTML='<div class="empty">'+(d.error||'Could not load')+'</div>'; return; }
     var fus=d.followups||[];
-    if(!fus.length){ list.innerHTML='<div class="empty">No open follow-ups. They appear here when a call is marked interested or callback.</div>'; return; }
+    var wbFu=document.getElementById('stFollowups'); if(wbFu) wbFu.textContent=fus.length;
+    if(!fus.length){ list.innerHTML='<div class="empty"><div class="ee-icon">✓</div>No open follow-ups<div class="ee-sub">They appear here when a call is marked interested or callback.</div></div>'; return; }
+    var now=Date.now();
     list.innerHTML=fus.map(function(f){
-      return '<div class="fu-row">'+
+      var due=new Date(f.due_at).getTime();
+      var urgency = due<now ? 'urgent' : (due-now < 24*3600*1000 ? 'soon' : '');
+      var duePrefix = due<now ? 'overdue · ' : 'due ';
+      return '<div class="fu-row '+urgency+'">'+
         '<div class="fu-info"><div>'+esc(f.to_number||'')+(f.contact_name?' · '+esc(f.contact_name):'')+'</div>'+
-        '<div class="fu-due">'+(f.followup_type||'callback')+' · due '+fmtTime(f.due_at)+'</div></div>'+
-        '<button class="link-btn" onclick="completeFu(\''+f.id+'\')">mark done</button>'+
+        '<div class="fu-due">'+(f.followup_type||'callback')+' · '+duePrefix+fmtTime(f.due_at)+'</div></div>'+
+        '<button class="link-btn" onclick="completeFu(\''+f.id+'\')">Mark done</button>'+
       '</div>';
     }).join('');
   }catch(e){ list.innerHTML='<div class="empty">Error</div>'; }
@@ -395,6 +511,7 @@ async function init(){
     return;
   }
   loadCalls();
+  loadFollowups();
 }
 init();
 </script>
