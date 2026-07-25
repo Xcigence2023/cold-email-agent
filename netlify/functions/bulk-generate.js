@@ -61,10 +61,14 @@ async function putJob(userId, job){
 async function genOne(contact, sender){
   const KEY = process.env.ANTHROPIC_API_KEY;
   if(!KEY) return null;
+  const offer = (sender.valueProposition||'').trim();
+  const offerLine = offer
+    ? '- What you offer (write about exactly this, nothing else): ' + offer
+    : '- No offer was specified -- do NOT invent a product or pitch; write a generic, professional connection follow-up instead.';
   const prompt = 'Write a warm, personalized cold email to a LinkedIn connection.\n' +
     '- To: ' + (contact.firstName||'') + ' ' + (contact.lastName||'') + ', ' + (contact.title||'professional') + ' at ' + (contact.company||'their company') + '\n' +
-    '- From: ' + (sender.name||'') + ', ' + (sender.company||'Velorah') + '\n' +
-    '- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n' +
+    '- From: ' + (sender.name||'') + (sender.company ? ', ' + sender.company : '') + '\n' +
+    offerLine + '\n' +
     '- ALWAYS open with the salutation "Dear ' + (contact.firstName||'there') + ',"\n' +
     '- Under 150 words, soft CTA for a 15-min demo. End with an opt-out line.\n' +
     'JSON only, no markdown: {"subject":"...","body":"..."}';
