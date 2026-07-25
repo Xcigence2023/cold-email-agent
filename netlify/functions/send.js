@@ -10,7 +10,10 @@ exports.handler = async function(event) {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'SENDGRID_API_KEY not configured' }) };
+  if (!SENDGRID_API_KEY) {
+    console.error('[send] SEND-CONFIG: SENDGRID_API_KEY missing');
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Sending is temporarily unavailable. If this keeps happening, mention error code SEND-CONFIG.', code: 'SEND-CONFIG' }) };
+  }
 
   let to, subject, body, fromEmail, fromName, attachments;
   try {
@@ -34,8 +37,8 @@ exports.handler = async function(event) {
 
   const payload = {
     personalizations: [{ to: [{ email: to }], subject }],
-    from: { email: fromEmail, name: fromName || 'Velorah' },
-    reply_to: { email: fromEmail, name: fromName || 'Velorah' },
+    from: { email: fromEmail, name: fromName || fromEmail },
+    reply_to: { email: fromEmail, name: fromName || fromEmail },
     content: [
       { type: 'text/plain', value: body },
       { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:20px 20px 40px;background:#fff;max-width:600px">${htmlBody}<p style="margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px">Sent by ${fromName||fromEmail} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>` }
@@ -71,8 +74,10 @@ exports.handler = async function(event) {
       return { statusCode: 200, headers, body: JSON.stringify({ success: true, messageId: sgMessageId }) };
     }
     const text = await res.text();
-    return { statusCode: res.status, headers, body: JSON.stringify({ error: 'SendGrid error ' + res.status + ': ' + text }) };
+    console.error('[send] SEND-SG: SendGrid ' + res.status + ': ' + text.slice(0, 300));
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'This email could not be sent. If this keeps happening, mention error code SEND-SG.', code: 'SEND-SG' }) };
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    console.error('[send] SEND-FAIL: ' + err.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'This email could not be sent. If this keeps happening, mention error code SEND-FAIL.', code: 'SEND-FAIL' }) };
   }
 };
