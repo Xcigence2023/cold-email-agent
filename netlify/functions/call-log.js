@@ -15,12 +15,15 @@
  *   complete_followup -- mark a follow-up done
  *
  * Auth: the browser sends the user's Supabase JWT (Authorization: Bearer ...).
- * ENV: SUPABASE_URL, SUPABASE_SERVICE_KEY
+ * The voice agent (server-to-server, no user browser session) instead sends
+ * body.user_id plus the X-Agent-Secret header, checked against
+ * VOICE_AGENT_SHARED_SECRET.
+ * ENV: SUPABASE_URL, SUPABASE_SERVICE_KEY, VOICE_AGENT_SHARED_SECRET
  */
 
 const HDR = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Agent-Secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 };
@@ -35,6 +38,15 @@ function _rate(id, max, win){
   if (n > r.t) { r.c = 0; r.t = n + (win||60000); }
   r.c++; _rl.set(id, r);
   return r.c <= (max||120);
+}
+
+// Constant-time string compare, to avoid leaking the shared secret via timing
+function safeEqual(a, b){
+  const bufA = Buffer.from(String(a || ''));
+  const bufB = Buffer.from(String(b || ''));
+  if (bufA.length !== bufB.length) return false;
+  try { return require('crypto').timingSafeEqual(bufA, bufB); }
+  catch (e) { return false; }
 }
 
 // Resolve the user id from their Supabase JWT
@@ -75,6 +87,7 @@ exports.handler = async function(event){
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+  const AGENT_SECRET = process.env.VOICE_AGENT_SHARED_SECRET;
   if (!SUPABASE_URL || !SERVICE_KEY) return err('Database not configured (SUPABASE_URL / SUPABASE_SERVICE_KEY missing)', 500);
 
   const ip = (event.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'anon';
@@ -86,20 +99,51 @@ exports.handler = async function(event){
 
   const authHeader = event.headers.authorization || event.headers.Authorization || '';
   const token = authHeader.replace('Bearer ', '');
+  const agentSecretHeader = event.headers['x-agent-secret'] || event.headers['X-Agent-Secret'] || '';
 
-  // The AI agent (server-side) can pass an explicit user_id + a shared secret
-  // instead of a JWT. For the browser, we resolve the user from their token.
-  let userId = body.user_id || null;
-  if (!userId) {
-    userId = await getUserId(token, SUPABASE_URL, SERVICE_KEY);
+  // Two ways in:
+  //  1. Browser: Supabase JWT identifies the user. Always wins if present.
+  //  2. Voice agent (server-to-server, no browser session): body.user_id is
+  //     trusted ONLY if paired with a valid X-Agent-Secret. Without a
+  //     correct secret, body.user_id is ignored outright -- it must never
+  //     be trusted on its own, or any caller could write/read another
+  //     user's call logs and follow-ups by supplying their user_id.
+  let userId = await getUserId(token, SUPABASE_URL, SERVICE_KEY);
+  if (!userId && body.user_id) {
+    if (!AGENT_SECRET) return err('Voice agent auth not configured (VOICE_AGENT_SHARED_SECRET missing)', 500);
+    if (!safeEqual(agentSecretHeader, AGENT_SECRET)) return err('Unauthorized -- invalid agent secret', 401);
+    userId = String(body.user_id);
   }
   if (!userId) return err('Unauthorized -- no valid user', 401);
 
   // ---- LOG A CALL ----
   if (action === 'log_call') {
+    const toNumber = String(body.to_number || '').slice(0, 32);
+
+    // Look up the matching consent record and snapshot it onto the call
+    // log as it stood AT CALL TIME. This is a snapshot, not a live join --
+    // consent can change later (e.g. an opt-out the next day), and the
+    // compliance record has to reflect what was true when the call
+    // happened, not what's true when someone reads the log afterward.
+    let numberRow = null;
+    if (toNumber) {
+      const nres = await sb(
+        'GET',
+        'phone_numbers?user_id=eq.' + userId + '&phone_e164=eq.' + encodeURIComponent(toNumber) +
+          '&select=id,consent_call,consent_sms,consent_record,do_not_call&limit=1',
+        SUPABASE_URL, SERVICE_KEY
+      );
+      if (nres.ok && Array.isArray(nres.data) && nres.data.length) numberRow = nres.data[0];
+    }
+
+    let complianceFlag = null;
+    if (!numberRow) complianceFlag = 'no_consent_record_found';
+    else if (numberRow.do_not_call) complianceFlag = 'called_despite_do_not_call';
+    else if (body.call_type === 'ai' && !numberRow.consent_call) complianceFlag = 'no_call_consent_on_file';
+
     const row = {
       user_id: userId,
-      to_number: String(body.to_number || '').slice(0, 32),
+      to_number: toNumber,
       from_number: body.from_number ? String(body.from_number).slice(0, 32) : null,
       contact_name: body.contact_name ? String(body.contact_name).slice(0, 200) : null,
       company: body.company ? String(body.company).slice(0, 200) : null,
@@ -114,7 +158,14 @@ exports.handler = async function(event){
       captured_email: body.captured_email ? String(body.captured_email).slice(0, 200) : null,
       recording_url: body.recording_url ? String(body.recording_url).slice(0, 500) : null,
       started_at: body.started_at || new Date().toISOString(),
-      ended_at: body.ended_at || new Date().toISOString()
+      ended_at: body.ended_at || new Date().toISOString(),
+      number_id: numberRow ? numberRow.id : null,
+      answered_by: body.answered_by ? String(body.answered_by).slice(0, 16) : null,
+      consent_call_at_call: numberRow ? !!numberRow.consent_call : false,
+      consent_sms_at_call: numberRow ? !!numberRow.consent_sms : false,
+      consent_record_at_call: numberRow ? !!numberRow.consent_record : false,
+      recording_disclosed: body.recording_disclosed === true,
+      compliance_flag: complianceFlag
     };
     const res = await sb('POST', 'call_logs', SUPABASE_URL, SERVICE_KEY, row);
     if (!res.ok) return err('Failed to log call (' + res.status + '): ' + JSON.stringify(res.data).slice(0, 200), 500);
