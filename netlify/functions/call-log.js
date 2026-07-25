@@ -7,7 +7,12 @@
  * calls automatically.
  *
  * Actions (POST JSON with { action: ... }):
- *   log_call      -- record a completed call (human or AI)
+ *   log_call      -- record a completed call (human or AI). If a row for
+ *                     this twilio_call_sid already exists (started via
+ *                     append_note), merges into it rather than duplicating.
+ *   append_note   -- capture a note WHILE a call is still in progress.
+ *                     Upserts by twilio_call_sid so multiple notes across
+ *                     one call accumulate onto a single row.
  *   list_calls    -- get call logs (daily view, filterable)
  *   update_call   -- set outcome/notes/disposition on a call
  *   create_followup -- schedule a follow-up/callback
@@ -116,6 +121,51 @@ exports.handler = async function(event){
   }
   if (!userId) return err('Unauthorized -- no valid user', 401);
 
+  // ---- APPEND A LIVE NOTE (call still in progress) ----
+  // Lets the voice agent capture notes AS the call happens, not just at the
+  // end. Upserts by twilio_call_sid: first call creates an 'in_progress'
+  // row, later calls append to its notes. log_call (above/below) will find
+  // and finish this same row rather than creating a duplicate.
+  if (action === 'append_note') {
+    const sid = body.twilio_call_sid ? String(body.twilio_call_sid).slice(0, 64) : null;
+    if (!sid) return err('twilio_call_sid required');
+    const note = body.note ? String(body.note).slice(0, 2000) : '';
+    if (!note) return err('note required');
+
+    const eres = await sb('GET',
+      'call_logs?user_id=eq.' + userId + '&twilio_call_sid=eq.' + encodeURIComponent(sid) + '&limit=1',
+      SUPABASE_URL, SERVICE_KEY);
+    const existing = (eres.ok && Array.isArray(eres.data) && eres.data[0]) || null;
+
+    const stamped = '[' + new Date().toISOString().slice(11, 19) + '] ' + note;
+
+    if (existing) {
+      const merged = (existing.notes ? existing.notes + '\n' : '') + stamped;
+      const pres = await sb('PATCH', 'call_logs?id=eq.' + encodeURIComponent(existing.id), SUPABASE_URL, SERVICE_KEY,
+        { notes: merged.slice(0, 4000) });
+      if (!pres.ok) return err('Failed to append note', 500);
+      return ok({ ok: true, call: Array.isArray(pres.data) ? pres.data[0] : pres.data });
+    }
+
+    const row = {
+      user_id: userId,
+      to_number: body.to_number ? String(body.to_number).slice(0, 32) : '',
+      contact_name: body.contact_name ? String(body.contact_name).slice(0, 200) : null,
+      company: body.company ? String(body.company).slice(0, 200) : null,
+      call_type: (body.call_type === 'ai' ? 'ai' : 'human'),
+      direction: 'outbound',
+      status: 'in_progress',
+      duration_seconds: 0,
+      notes: stamped,
+      twilio_call_sid: sid,
+      started_at: body.started_at || new Date().toISOString(),
+      ended_at: new Date().toISOString() // placeholder, overwritten when log_call finalizes
+    };
+    const res = await sb('POST', 'call_logs', SUPABASE_URL, SERVICE_KEY, row);
+    if (!res.ok) return err('Failed to start call note (' + res.status + '): ' + JSON.stringify(res.data).slice(0, 200), 500);
+    return ok({ ok: true, call: Array.isArray(res.data) ? res.data[0] : res.data });
+  }
+
   // ---- LOG A CALL ----
   if (action === 'log_call') {
     const toNumber = String(body.to_number || '').slice(0, 32);
@@ -153,7 +203,6 @@ exports.handler = async function(event){
       outcome: body.outcome ? String(body.outcome).slice(0, 48) : null,
       duration_seconds: parseInt(body.duration_seconds || 0) || 0,
       transcript: body.transcript ? String(body.transcript).slice(0, 20000) : null,
-      notes: body.notes ? String(body.notes).slice(0, 4000) : null,
       twilio_call_sid: body.twilio_call_sid ? String(body.twilio_call_sid).slice(0, 64) : null,
       captured_email: body.captured_email ? String(body.captured_email).slice(0, 200) : null,
       recording_url: body.recording_url ? String(body.recording_url).slice(0, 500) : null,
@@ -167,9 +216,40 @@ exports.handler = async function(event){
       recording_disclosed: body.recording_disclosed === true,
       compliance_flag: complianceFlag
     };
-    const res = await sb('POST', 'call_logs', SUPABASE_URL, SERVICE_KEY, row);
-    if (!res.ok) return err('Failed to log call (' + res.status + '): ' + JSON.stringify(res.data).slice(0, 200), 500);
-    const created = Array.isArray(res.data) ? res.data[0] : res.data;
+
+    // If a note-taking pass already started this call (see 'append_note'),
+    // merge into that row instead of inserting a duplicate -- this is what
+    // lets live notes taken mid-call survive into the final record even if
+    // the agent only calls append_note and then log_call at the end, and
+    // protects against ending up with two rows for one call if the agent
+    // calls both.
+    let existing = null;
+    if (row.twilio_call_sid) {
+      const eres = await sb('GET',
+        'call_logs?user_id=eq.' + userId + '&twilio_call_sid=eq.' + encodeURIComponent(row.twilio_call_sid) + '&limit=1',
+        SUPABASE_URL, SERVICE_KEY);
+      if (eres.ok && Array.isArray(eres.data) && eres.data.length) existing = eres.data[0];
+    }
+
+    // New freeform notes from this call, appended to (not replacing)
+    // whatever was accumulated live via append_note -- both the agent's
+    // live notes and any final wrap-up note the caller sends here are kept.
+    const incomingNotes = body.notes ? String(body.notes).slice(0, 4000) : '';
+    const mergedNotes = existing && existing.notes
+      ? (incomingNotes ? existing.notes + '\n' + incomingNotes : existing.notes)
+      : (incomingNotes || null);
+    row.notes = mergedNotes ? mergedNotes.slice(0, 4000) : null;
+
+    let created;
+    if (existing) {
+      const pres = await sb('PATCH', 'call_logs?id=eq.' + encodeURIComponent(existing.id), SUPABASE_URL, SERVICE_KEY, row);
+      if (!pres.ok) return err('Failed to update call (' + pres.status + '): ' + JSON.stringify(pres.data).slice(0, 200), 500);
+      created = Array.isArray(pres.data) ? pres.data[0] : pres.data;
+    } else {
+      const res = await sb('POST', 'call_logs', SUPABASE_URL, SERVICE_KEY, row);
+      if (!res.ok) return err('Failed to log call (' + res.status + '): ' + JSON.stringify(res.data).slice(0, 200), 500);
+      created = Array.isArray(res.data) ? res.data[0] : res.data;
+    }
 
     // Auto-create a follow-up if requested or implied by outcome
     let followup = null;
