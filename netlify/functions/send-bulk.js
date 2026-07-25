@@ -24,7 +24,10 @@ exports.handler = async function(event) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-  if (!SENDGRID_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'SENDGRID_API_KEY not configured' }) };
+  if (!SENDGRID_KEY) {
+    console.error('[send-bulk] BULK-CONFIG: SENDGRID_API_KEY missing');
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Sending is temporarily unavailable. If this keeps happening, mention error code BULK-CONFIG.', code: 'BULK-CONFIG' }) };
+  }
 
   // Verify user
   const token = (event.headers.authorization || '').replace('Bearer ', '');
@@ -88,15 +91,29 @@ exports.handler = async function(event) {
   async function sendOne(ed) {
     if (!ed.to || !emailRegex.test(ed.to)) return { id: ed.id, success: false, error: 'Invalid email: ' + ed.to };
 
-    let bodyText = ed.body || '';
-    if (bodyText && !optOutPattern.test(bodyText)) {
-      bodyText = bodyText + '\n\nIf this is not relevant, just reply and I will remove you from my list.';
-    }
+    const stripTags = s => String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const optOutLine = 'If this is not relevant, just reply and I will remove you from my list.';
 
-    const htmlBody = (bodyText)
-      .split('\n\n')
-      .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g,'<br>')}</p>`)
-      .join('');
+    let bodyText, htmlBody;
+    if (ed.bodyHtml) {
+      // Body was edited in the rich text editor -- it's already real HTML
+      // (bold, links, lists, colors, etc.), so use it directly rather than
+      // re-deriving HTML from a plain-text version and losing all of that
+      // formatting.
+      const plainCheck = stripTags(ed.bodyHtml);
+      htmlBody = ed.bodyHtml;
+      if (plainCheck && !optOutPattern.test(plainCheck)) {
+        htmlBody += `<p style="margin:16px 0 0 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${optOutLine}</p>`;
+      }
+      bodyText = plainCheck + (plainCheck && !optOutPattern.test(plainCheck) ? '\n\n' + optOutLine : '');
+    } else {
+      bodyText = ed.body || '';
+      if (bodyText && !optOutPattern.test(bodyText)) bodyText = bodyText + '\n\n' + optOutLine;
+      htmlBody = bodyText
+        .split('\n\n')
+        .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g,'<br>')}</p>`)
+        .join('');
+    }
 
     // Per-recipient attachments take precedence over shared campaign attachments.
     var thisAttachments = sgAttachments;
@@ -143,7 +160,8 @@ exports.handler = async function(event) {
       return { id: ed.id, success: true, scheduled: !!sendAt, messageId: res.headers.get('x-message-id') || ed.id };
     }
     const err = await res.text();
-    return { id: ed.id, success: false, error: `SG ${res.status}: ${err}` };
+    console.error('[send-bulk] BULK-SG: SendGrid ' + res.status + ' for ' + ed.to + ': ' + err.slice(0, 300));
+    return { id: ed.id, success: false, error: 'Could not send to this address (code BULK-SG-' + res.status + ')' };
   }
 
   // Send in parallel batches
