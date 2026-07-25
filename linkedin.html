@@ -142,7 +142,7 @@ var S={page:1,
   raw:[], filtered:[], selected:new Set(), messages:[],
   filters:{emailOnly:false,searchText:'',titles:[], locations:[], companies:[], keywords:''},
   channel:'both', angle:'connection',
-  sender:{name:'', email:'', company:'Velorah'},
+  sender:{name:'', email:'', company:'', valueProposition:''},
   generating:false, genProgress:0
 };
 
@@ -292,7 +292,7 @@ async function init(){
     _session=session;
     document.getElementById('user-email').textContent=session.user.email;
     checkForRecovery();
-    try{var kr=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'Velorah';}}catch(e){}
+    try{var kr=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});var kd=await kr.json();if(kd.keys){S.sender.name=kd.keys.sender_name||'';S.sender.email=kd.keys.sender_email||'';S.sender.company=kd.keys.sender_company||'';}}catch(e){}
   }catch(e){}
   showTab('import', document.querySelector('.tab-btn'));
 }
@@ -787,7 +787,7 @@ function renderCompose(wrap){
   // Sender
   cc.appendChild(mk('div',null)).style.height='14px';
   var sg=mk('div','g3');sg.style.marginTop='0';
-  [{k:'name',l:'Your Name',p:'Alex Rivera'},{k:'email',l:'Sender Email',p:'alex@company.com'},{k:'company',l:'Company',p:'Velorah'}].forEach(function(f){
+  [{k:'name',l:'Your Name',p:'Alex Rivera'},{k:'email',l:'Sender Email',p:'alex@company.com'},{k:'company',l:'Company',p:'Acme Corp'}].forEach(function(f){
     var d=mk('div',null);
     d.appendChild(mkLbl(f.l));
     var inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
@@ -795,6 +795,11 @@ function renderCompose(wrap){
     d.appendChild(inp);sg.appendChild(d);
   });
   cc.appendChild(sg);
+  var vpd=mk('div',null);vpd.style.marginTop='10px';
+  vpd.appendChild(mkLbl('Value Proposition (required -- what do you actually offer?)'));
+  var vpi=document.createElement('input');vpi.type='text';vpi.placeholder='e.g. We help mid-size clinics cut no-show rates by 30% with automated reminders';vpi.value=S.sender.valueProposition||'';
+  vpi.addEventListener('input',function(e){S.sender.valueProposition=e.target.value;});
+  vpd.appendChild(vpi);cc.appendChild(vpd);
 
   // Angle selector
   var ac=mk('div',null);ac.style.marginTop='14px';
@@ -961,8 +966,10 @@ async function generateAll(contacts,wrap){
 }
 
 function buildPrompt(r){
-  var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with their most pressing business risk.',roi:'Lead with financial impact and ROI.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising industry data point.'};
-  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+', '+S.sender.company+'\n- Product: Velorah - AI Cold Email & Cybersecurity Risk Assessment Platform\n- Tone: Warm, professional. ALWAYS open with the salutation "Dear [FirstName]," - reference the LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
+  var angleMap={connection:'You are connected on LinkedIn with this person. Reference this warm connection naturally in the opening.',pain:'Lead with the most pressing problem this offer solves for them.',roi:'Lead with the concrete financial or time payoff.',question:'Open with one sharp, visceral business question.',insight:'Open with a surprising, specific data point relevant to their industry.'};
+  var offer=(S.sender.valueProposition||'').trim();
+  var offerLine=offer?('- What you offer (write about exactly this, nothing else): '+offer):'- No offer was specified -- do NOT invent a product or pitch; write a generic, professional connection follow-up instead.';
+  return 'You are an expert B2B sales copywriter. '+( angleMap[S.angle]||angleMap.connection)+'\n\nWrite a cold email to a LinkedIn connection:\n- To: '+r.firstName+' '+r.lastName+', '+(r.title||'professional')+' at '+(r.company||'their company')+'\n- From: '+S.sender.name+(S.sender.company?', '+S.sender.company:'')+'\n'+offerLine+'\n- Tone: Warm, professional. ALWAYS open with the salutation "Dear [FirstName]," - reference the LinkedIn connection\n- Under 150 words, 3 paragraphs, soft CTA for 15-min call\n\nJSON only no markdown: {"subject":"...","body":"..."}';
 }
 
 function buildLinkedIn(r,email){
@@ -974,7 +981,9 @@ function buildLinkedIn(r,email){
     var msg='Dear '+name+', '+first.substring(0,160)+(first.length>160?'...':'')+' Open to a quick 15-min chat? - '+S.sender.name;
     return msg.substring(0,300);
   }
-  return ('Dear '+name+', I came across your profile and thought our AI-powered platform Velorah might be relevant to your work at '+(r.company||'your company')+'. Would love to connect - open to 15 mins? - '+S.sender.name).substring(0,300);
+  var offer=(S.sender.valueProposition||'').trim();
+  var offerPhrase=offer?('thought this might be relevant to your work at '+(r.company||'your company')+': '+offer.substring(0,120)):('thought it might be worth connecting about your work at '+(r.company||'your company'));
+  return ('Dear '+name+', I came across your profile and '+offerPhrase+'. Open to 15 mins? - '+S.sender.name).substring(0,300);
 }
 
 // ========== STEP 4: SEND ==========
@@ -1057,7 +1066,7 @@ async function sendEmailsDirectly(btn){
       body:JSON.stringify({
         emails:emails,
         fromEmail:S.sender.email,
-        fromName:S.sender.name||S.sender.company||'Velorah',
+        fromName:S.sender.name||S.sender.company||'',
         campaignName:'LinkedIn Outreach '+new Date().toLocaleDateString(),
         attachments: (window.LI_ATTACHMENTS||[])
       })
