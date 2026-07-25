@@ -199,8 +199,15 @@ function updateStats(){
   var total=allRecords.length;
   var opened=allRecords.filter(function(r){return r.tracking_status==='opened';}).length;
   var clicked=allRecords.filter(function(r){return r.tracking_status==='clicked';}).length;
-  var delivered=allRecords.filter(function(r){return r.tracking_status==='delivered'||r.status==='sent';}).length;
-  var bounced=allRecords.filter(function(r){return r.tracking_status==='bounced';}).length;
+  // "Delivered" means we have actual confirmation of delivery (or a
+  // stronger downstream signal like opened/clicked, which implies
+  // delivery). It must NOT fall back to status==='sent' -- that field only
+  // records that SendGrid's API accepted the send request, not that the
+  // email was ever delivered. Under the old logic here, a bounced email
+  // was counted as BOTH bounced AND delivered at the same time, because
+  // status stays 'sent' forever regardless of what actually happened.
+  var delivered=allRecords.filter(function(r){return r.tracking_status==='delivered'||r.tracking_status==='opened'||r.tracking_status==='clicked';}).length;
+  var bounced=allRecords.filter(function(r){return r.tracking_status==='bounced'||r.tracking_status==='dropped';}).length;
   var unsub=allRecords.filter(function(r){return r.tracking_status==='unsubscribed';}).length;
   var openPct=total>0?Math.round(opened/total*100):0;
   var clickPct=total>0?Math.round(clicked/total*100):0;
@@ -380,11 +387,34 @@ async function refreshTracking(){
   if(!toCheck.length){btn.disabled=false;btn.textContent='Refresh Tracking';alert('All emails have tracking data.');return;}
   try{
     var resp=await fetch('/.netlify/functions/check-tracking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails:toCheck.map(function(r){return{email:r.recipient_email,messageId:r.message_id||''};})})});
+    if(!resp.ok){alert('Could not refresh tracking right now (error code TRK-'+resp.status+'). Try again shortly.');btn.disabled=false;btn.textContent='Refresh Tracking';return;}
     var data=await resp.json();
-    if(data.results){Object.keys(data.results).forEach(function(email){var r=allRecords.find(function(x){return x.recipient_email===email;});if(r)r.tracking_status=data.results[email];});}
+    var toPersist=[];
+    if(data.results){
+      Object.keys(data.results).forEach(function(email){
+        // Update EVERY record with this email, not just the first match --
+        // the same address can legitimately appear in more than one
+        // campaign, and only updating one left the others permanently
+        // stuck showing stale status.
+        allRecords.filter(function(x){return x.recipient_email===email;}).forEach(function(r){
+          if(r.tracking_status!==data.results[email]){
+            r.tracking_status=data.results[email];
+            toPersist.push({id:r.id,trackingStatus:data.results[email]});
+          }
+        });
+      });
+    }
+    // Actually save the real status, not just hold it in memory for this
+    // page view -- without this, a reload wiped out everything Refresh
+    // Tracking just found.
+    if(toPersist.length){
+      try{
+        await fetch('/.netlify/functions/email_history',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({updates:toPersist})});
+      }catch(persistErr){ console.error('Failed to persist tracking status:',persistErr); }
+    }
     updateStats();applyFilters();
     document.getElementById('last-updated').textContent='Refreshed: '+new Date().toLocaleString();
-  }catch(e){alert('Refresh failed: '+e.message);}
+  }catch(e){alert('Refresh failed. If this keeps happening, mention error code TRK-NET.');}
   btn.disabled=false;btn.textContent='Refresh Tracking';
 }
 
