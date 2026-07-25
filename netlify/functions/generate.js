@@ -54,7 +54,10 @@ exports.handler = async function(event) {
   }
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'API not configured' }) };
+  if (!ANTHROPIC_KEY) {
+    console.error('[generate] GEN-CONFIG: ANTHROPIC_API_KEY missing');
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Email generation is temporarily unavailable. If this keeps happening, mention error code GEN-CONFIG.', code: 'GEN-CONFIG' }) };
+  }
 
   if (companySize || revenue) {
     prompt += '\n\nCOMPANY SIZE: ' + companySize + (revenue ? ' | Revenue: ' + revenue : '') + '. Calibrate language to this scale.';
@@ -121,6 +124,7 @@ exports.handler = async function(event) {
     const result = await callClaude([{ role: 'user', content: enrichedPrompt }], 1000);
     return { statusCode: 200, headers, body: JSON.stringify(result) };
   } catch(e) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
+    console.error('[generate] GEN-FAIL: ' + e.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Could not generate this email right now. If this keeps happening, mention error code GEN-FAIL.', code: 'GEN-FAIL' }) };
   }
 };
