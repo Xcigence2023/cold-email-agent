@@ -470,7 +470,7 @@ async function runGeneration(){
     try{
       var scriptResp=await fetch('/.netlify/functions/video_agent',{
         method:'POST',headers:vaHeaders(),
-        body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:'Velorah'}})
+        body:JSON.stringify({action:'generate-script',payload:{recipientName:lead.name,company:lead.company,industry:lead.industry||S.industry,title:lead.title,senderName:S.senderName,productName:S.senderName||''}})
       });
       var scriptData=await scriptResp.json();
       S.leadResults.push({lead:lead,script:scriptData,videoUrl:null,youtubeUrl:null,emailSent:false});
