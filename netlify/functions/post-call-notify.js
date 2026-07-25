@@ -2,22 +2,31 @@
  * post-call-notify.js -- Netlify Function: AI-composed post-call email/SMS
  * Place in: netlify/functions/post-call-notify.js
  *
- * Reads a completed call's transcript from call_logs (written by
- * call-log.js) and drafts a follow-up email and, if consent allows, an SMS.
- * Composing and sending are separate actions on purpose: 'compose' only
- * ever writes a draft, 'send' is the one action that reaches an outside
- * inbox or phone, so it's the one action that re-checks consent fresh
- * against the current state of phone_numbers -- not whatever consent
- * looked like at call time (call_logs.consent_*_at_call), because a
- * contact can opt out at any point between the call ending and the
- * message going out, and TCPA/opt-out compliance has to hold at the
- * moment you actually contact them, not at the moment you drafted the
- * message.
+ * Reads a completed call's notes and/or transcript from call_logs (written
+ * by call-log.js -- notes may come from live note-taking during the call
+ * via its append_note action) and drafts a follow-up email, an SMS if
+ * consent allows, and a follow-up schedule entry. Composing and sending
+ * are separate actions on purpose: 'compose' only ever writes a draft,
+ * 'send' is the one action that reaches an outside inbox or phone, so it's
+ * the one action that re-checks consent fresh against the current state of
+ * phone_numbers -- not whatever consent looked like at call time
+ * (call_logs.consent_*_at_call), because a contact can opt out at any
+ * point between the call ending and the message going out, and
+ * TCPA/opt-out compliance has to hold at the moment you actually contact
+ * them, not at the moment you drafted the message.
+ *
+ * This function has no built-in notion of what business or product is
+ * being discussed -- everything it writes is derived from the call's own
+ * notes/transcript, never from a hardcoded pitch, so it works the same
+ * regardless of what the calling business sells.
  *
  * Actions (POST JSON with { action: ... }):
- *   compose  -- { call_id } -> draft an email, and an SMS if consented,
- *               from the call's transcript. Writes post_call_messages
- *               rows with status 'draft' or 'blocked'.
+ *   compose  -- { call_id } -> draft an email, an SMS if consented, and a
+ *               follow-up schedule entry (due date set from the model's
+ *               urgency read, computed server-side) from the call's notes
+ *               and/or transcript. Writes post_call_messages rows with
+ *               status 'draft' or 'blocked', and a call_followups row if
+ *               warranted and none already exists for this call.
  *   send     -- { message_id } -> re-check consent, then actually send
  *               the draft. Writes status 'sent'/'failed'/'blocked'.
  *   list     -- { call_id } -> list messages drafted for a call.
@@ -87,18 +96,29 @@ async function draftFromTranscript(call, wantSms){
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
   const sys = 'You write short, professional post-sales-call follow-up messages. '
-    + 'Base everything strictly on the transcript provided -- never invent commitments, '
+    + 'Base everything strictly on the call information provided -- never invent commitments, '
     + 'prices, or dates the contact did not actually agree to. '
     + 'Respond with ONLY a JSON object, no markdown fences, no preamble, matching exactly: '
     + '{"interest_level":"high|medium|low|none","interest_summary":"one sentence","next_step":"one sentence",'
+    + '"followup_urgency":"same_day|next_business_day|three_days|one_week|none",'
     + '"email":{"subject":"...","body":"..."}' + (wantSms ? ',"sms":{"body":"..."}' : '') + '}. '
+    + 'followup_urgency reflects how quickly a human should follow up, based on what the contact actually said '
+    + '(e.g. "call me back tomorrow" -> next_business_day; genuine buying interest with no timeline -> three_days; '
+    + 'polite brush-off or not interested -> none). '
     + 'The email body should be plain text, 3-6 short sentences, no markdown.'
     + (wantSms ? ' The sms.body must be under 300 characters and stand alone -- do NOT include opt-out language, it will be appended automatically.' : '');
 
+  // Live agent notes (from call-log.js's append_note, taken DURING the
+  // call) are the agent's own distilled read of what happened, so they're
+  // higher-signal than asking the model to re-derive the same conclusions
+  // from a raw transcript. Use notes as the primary source when present,
+  // and still pass the transcript as supporting detail/context.
+  const hasNotes = call.notes && call.notes.trim();
   const userMsg = 'Contact: ' + (call.contact_name || 'Unknown') + (call.company ? ' at ' + call.company : '')
     + '\nCall outcome (if logged): ' + (call.outcome || 'not set')
     + '\nDuration: ' + (call.duration_seconds || 0) + 's'
-    + '\n\nTranscript:\n' + String(call.transcript || '').slice(0, 12000);
+    + (hasNotes ? '\n\nAgent notes taken during the call (treat as the primary, most reliable source):\n' + call.notes.slice(0, 4000) : '')
+    + '\n\nFull transcript' + (hasNotes ? ' (supporting detail)' : '') + ':\n' + String(call.transcript || '(no transcript available)').slice(0, 12000);
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -154,7 +174,9 @@ async function compose(userId, body, SUPABASE_URL, SERVICE_KEY){
   if (!cres.ok || !Array.isArray(cres.data) || !cres.data.length) return err('Call not found', 404);
   const call = cres.data[0];
 
-  if (!call.transcript || !call.transcript.trim()) return err('This call has no transcript to compose from', 422);
+  const hasTranscript = call.transcript && call.transcript.trim();
+  const hasNotes = call.notes && call.notes.trim();
+  if (!hasTranscript && !hasNotes) return err('This call has no transcript or notes to compose from', 422);
 
   // Live consent check -- current state, not the at-call-time snapshot.
   let smsAllowed = false;
@@ -179,6 +201,41 @@ async function compose(userId, body, SUPABASE_URL, SERVICE_KEY){
     interest_summary: call.interest_summary || drafted.interest_summary || null,
     next_step: call.next_step || drafted.next_step || null
   });
+
+  // Turn the model's urgency judgment into a concrete follow-up, with the
+  // actual due date computed here rather than trusted from model output --
+  // "in 3 days" from an LLM is a category, not a reliable timestamp.
+  const URGENCY_MS = {
+    same_day: 4 * 3600 * 1000,
+    next_business_day: 24 * 3600 * 1000,
+    three_days: 3 * 24 * 3600 * 1000,
+    one_week: 7 * 24 * 3600 * 1000
+  };
+  let followup = null;
+  const urgency = drafted.followup_urgency;
+  if (urgency && urgency !== 'none' && URGENCY_MS[urgency]) {
+    // Don't stack a second open follow-up on the same call if one already
+    // exists (e.g. a human agent already scheduled one via call-log.js).
+    const existingFu = await sb('GET',
+      'call_followups?call_log_id=eq.' + encodeURIComponent(call.id) + '&status=eq.open&limit=1',
+      SUPABASE_URL, SERVICE_KEY);
+    const alreadyHasOpenFollowup = existingFu.ok && Array.isArray(existingFu.data) && existingFu.data.length > 0;
+    if (!alreadyHasOpenFollowup) {
+      const fu = {
+        user_id: userId,
+        call_log_id: call.id,
+        to_number: call.to_number,
+        contact_name: call.contact_name,
+        company: call.company,
+        followup_type: (drafted.interest_level === 'high' ? 'meeting' : 'callback'),
+        due_at: new Date(Date.now() + URGENCY_MS[urgency]).toISOString(),
+        notes: drafted.next_step || ('AI-scheduled follow-up from call notes/transcript'),
+        status: 'open'
+      };
+      const fres = await sb('POST', 'call_followups', SUPABASE_URL, SERVICE_KEY, fu);
+      if (fres.ok) followup = Array.isArray(fres.data) ? fres.data[0] : fres.data;
+    }
+  }
 
   const businessName = process.env.BUSINESS_NAME || '';
   const drafts = [];
@@ -227,7 +284,7 @@ async function compose(userId, body, SUPABASE_URL, SERVICE_KEY){
     if (r.ok) drafts.push(Array.isArray(r.data) ? r.data[0] : r.data);
   }
 
-  return ok({ ok: true, drafts, interest_level: drafted.interest_level, interest_summary: drafted.interest_summary, next_step: drafted.next_step });
+  return ok({ ok: true, drafts, followup, interest_level: drafted.interest_level, interest_summary: drafted.interest_summary, next_step: drafted.next_step });
 }
 
 // ============================================================
