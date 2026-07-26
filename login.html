@@ -173,7 +173,7 @@ async function resetPassword(){
   const email=document.getElementById('forgot-email').value.trim();
   if(!email)return showMsg('forgot-msg','Please enter your email.','error');
   try{
-    const{error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/app.html'});
+    const{error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});
     if(error)showMsg('forgot-msg',error.message,'error');
     else showMsg('forgot-msg','Reset link sent! Check your inbox.','success');
   }catch(e){showMsg('forgot-msg',e.message,'error');}
