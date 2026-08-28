@@ -5,186 +5,1124 @@
 <meta name="theme-color" content="#070c18"/>
 <meta name="robots" content="noindex,nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Velorah — Sign In</title>
+<title>Velorah — AI Cold Email Agent</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/feature-config.js"></script>
+<script src="/features-ui.js"></script>
+<script src="/resume-campaign.js"></script>
+<script src="/campaign-intel-ui.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#070c18;--bg2:#0d1526;--bg3:#111e35;
+  --bg:#070c18;--bg2:#0d1526;--bg3:#111e35;--bg4:#162240;
   --text:#e8f0fe;--text2:#7b91b4;--text3:#4a5f80;
-  --blue:#3b82f6;--blue-dim:#1e3a6e;--blue-glow:rgba(59,130,246,.25);
-  --cyan:#06b6d4;--green:#10b981;--red:#ef4444;
+  --blue:#3b82f6;--blue-dim:#1e3a6e;--blue-glow:rgba(59,130,246,.2);
+  --cyan:#06b6d4;--cyan-dim:#0e4a5a;
+  --green:#10b981;--green-dim:#0a3528;
+  --red:#ef4444;--red-dim:#3b1010;
+  --gold:#f59e0b;--purple:#8b5cf6;
   --border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.3);
-  --glass:rgba(255,255,255,.03);--r:10px;--rl:16px;
+  --r:10px;--rl:14px;--rx:20px;
+  --glass:rgba(255,255,255,.03);
+  --glass2:rgba(59,130,246,.06);
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --glow:0 0 20px rgba(59,130,246,.25);
 }
-body{
-  font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);
-  background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;
-  position:relative;overflow:hidden;
-}
+body{font-family:'Outfit',sans-serif;font-size:14px;color:var(--text);background:var(--bg);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:
-  radial-gradient(ellipse 70% 60% at 15% 10%,rgba(59,130,246,.1) 0%,transparent 60%),
-  radial-gradient(ellipse 50% 40% at 85% 90%,rgba(6,182,212,.08) 0%,transparent 60%);
-  pointer-events:none}
+  radial-gradient(ellipse 80% 50% at 20% 0%,rgba(59,130,246,.08) 0%,transparent 60%),
+  radial-gradient(ellipse 60% 40% at 80% 100%,rgba(6,182,212,.06) 0%,transparent 60%);
+  pointer-events:none;z-index:0}
 body::after{content:'';position:fixed;inset:0;background-image:
-  linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);
-  background-size:60px 60px;pointer-events:none}
-.card{
-  position:relative;z-index:1;
-  background:rgba(13,21,38,.8);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border:1px solid var(--border);
-  border-radius:var(--rl);
-  padding:2.5rem;width:100%;max-width:420px;
-  box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 80px rgba(59,130,246,.05);
-}
-.logo{text-align:center;margin-bottom:2rem}
-.logo-mark{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px;box-shadow:0 0 30px rgba(59,130,246,.4)}
-.logo h1{font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo p{font-size:13px;color:var(--text2);margin-top:4px}
-.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem}
-.tab{flex:1;text-align:center;padding:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;letter-spacing:.02em}
-.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab:hover{color:var(--text)}
-.form-group{margin-bottom:14px}
-label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase}
-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r);background:rgba(7,12,24,.8);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;transition:all .2s}
-input::placeholder{color:var(--text3)}
-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
-.btn{width:100%;padding:12px;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-top:6px;letter-spacing:.02em}
-.btn-primary{background:linear-gradient(135deg,var(--blue),#2563eb);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,.35)}
-.btn-primary:hover{box-shadow:0 4px 25px rgba(59,130,246,.55);transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.forgot{text-align:right;margin-top:-8px;margin-bottom:10px}
-.forgot a{font-size:12px;color:var(--blue);text-decoration:none}
-.msg{font-size:12px;padding:10px 14px;border-radius:var(--r);margin-top:12px;display:none;line-height:1.5}
-.msg.error{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.25);display:block}
-.msg.success{background:rgba(16,185,129,.1);color:#6ee7b7;border:1px solid rgba(16,185,129,.25);display:block}
-.footer-note{text-align:center;font-size:12px;color:var(--text3);margin-top:1.5rem;line-height:1.6}
-.footer-note a{color:var(--blue);text-decoration:none}
-.free-badge{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(59,130,246,.1);color:var(--blue);border:1px solid var(--border2)}
-.back-link{text-align:center;margin-top:14px}
-.back-link a{font-size:13px;color:var(--blue);text-decoration:none}
+  linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;z-index:0}
+.topbar{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(7,12,24,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:var(--glow)}
+.brand-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#e8f0fe,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav{display:flex;gap:2px;margin-left:12px}
+.nav a{font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;text-decoration:none;color:var(--text2);transition:all .2s;letter-spacing:.01em}
+.nav a:hover{color:var(--text);background:var(--glass2)}
+.nav a.active{color:var(--blue);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.user-info{display:flex;align-items:center;gap:8px}
+.user-email{font-size:11px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
+.plan-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.usage-wrap{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.usage-bar{width:64px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.usage-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .4s}
+.btn-sm{cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border:1px solid var(--border);border-radius:8px;background:var(--glass);color:var(--text2);font-family:'Outfit',sans-serif;transition:all .2s}
+.btn-sm:hover{border-color:var(--border2);color:var(--text);background:var(--glass2)}
+.page{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:1.5rem}
+.hero{padding:1.5rem;border-radius:var(--rx);background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(6,182,212,.05));border:1px solid var(--border);margin-bottom:1.5rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,.1),transparent 70%);pointer-events:none}
+.hero h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--text),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.hero p{font-size:13px;color:var(--text2)}
+.step-bar{display:flex;align-items:center;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--glass);border:1px solid var(--border);border-radius:var(--rl)}
+.si{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);letter-spacing:.02em;white-space:nowrap}
+.si.active{color:var(--blue)}
+.si.done{color:var(--green)}
+.sn{width:24px;height:24px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;transition:all .3s}
+.si.active .sn{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 10px rgba(59,130,246,.5)}
+.si.done .sn{background:var(--green);border-color:var(--green);color:#fff}
+.sdiv{flex:1;height:1px;background:linear-gradient(90deg,var(--border),var(--border));margin:0 8px;min-width:20px}
+.si.done+.sdiv{background:linear-gradient(90deg,var(--green),var(--border))}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;position:relative;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';width:3px;height:16px;background:linear-gradient(var(--blue),var(--cyan));border-radius:2px}
+.lbl{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;letter-spacing:.06em;text-transform:uppercase}
+input,select,textarea{width:100%;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r);background:rgba(13,21,38,.8);color:var(--text);font-family:'Outfit',sans-serif;transition:all .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow),0 0 12px var(--blue-glow)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+select option{background:var(--bg2);color:var(--text)}
+textarea{resize:vertical;line-height:1.6;min-height:160px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:640px){.g2,.g4{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:0}
+.btn{cursor:pointer;font-size:13px;font-weight:600;padding:9px 18px;border:1px solid var(--border);border-radius:var(--r);background:var(--glass);color:var(--text);font-family:'Outfit',sans-serif;white-space:nowrap;transition:all .2s;letter-spacing:.01em}
+.btn:hover{border-color:var(--border2);background:var(--glass2)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#2563eb);border-color:var(--blue);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,.3)}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(59,130,246,.5);transform:translateY(-1px)}
+.btn-launch{background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;color:#fff;font-size:15px;font-weight:800;padding:14px 32px;border-radius:var(--rl);box-shadow:0 4px 20px rgba(59,130,246,.4),0 0 40px rgba(6,182,212,.15);letter-spacing:.02em}
+.btn-launch:hover{box-shadow:0 8px 30px rgba(59,130,246,.6),0 0 60px rgba(6,182,212,.2);transform:translateY(-2px)}
+.btn-success{background:linear-gradient(135deg,var(--green),#059669);border-color:var(--green);color:#fff}
+.btn-danger{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.btn-outline{background:transparent;border-color:var(--border2);color:var(--blue)}
+.btn-outline:hover{background:var(--blue-dim)}
+.flex{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fb{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.tip{font-size:12px;color:var(--text2);padding:10px 14px;background:rgba(59,130,246,.06);border-radius:var(--r);border-left:3px solid var(--blue-dim);line-height:1.6;margin-top:8px}
+.tip a{color:var(--blue);text-decoration:none}
+.warn{font-size:12px;padding:10px 14px;background:rgba(245,158,11,.08);border-radius:var(--r);border-left:3px solid var(--gold);color:var(--gold);margin-top:8px;line-height:1.5}
+.pbar{height:5px;border-radius:3px;background:var(--bg3);overflow:hidden;margin-top:8px}
+.pfill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width .4s}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--rx);padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s;background:var(--glass);position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(59,130,246,.05),transparent 70%);pointer-events:none;opacity:0;transition:opacity .3s}
+.drop-zone:hover,.drop-zone.over{border-color:var(--blue);background:rgba(59,130,246,.05);box-shadow:inset 0 0 40px rgba(59,130,246,.08)}
+.drop-zone:hover::before,.drop-zone.over::before{opacity:1}
+.drop-icon{font-size:42px;margin-bottom:14px;display:block;filter:drop-shadow(0 0 10px rgba(59,130,246,.4))}
+.email-panel{display:grid;grid-template-columns:260px 1fr;gap:1rem;align-items:start}
+@media(max-width:720px){.email-panel{grid-template-columns:1fr}}
+.lead-list{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.ll-hdr{padding:10px 14px;font-size:11px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:rgba(13,21,38,.5);letter-spacing:.05em;text-transform:uppercase}
+.ll-body{max-height:500px;overflow-y:auto}
+.ll-body::-webkit-scrollbar{width:4px}
+.ll-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.lr{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:all .15s}
+.lr:hover{background:var(--glass2)}
+.lr.active{background:rgba(59,130,246,.1);border-left:2px solid var(--blue)}
+.la{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.lr.active .la{background:var(--blue-dim);color:var(--blue);border-color:var(--blue)}
+.email-detail{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;display:flex;flex-direction:column;gap:14px}
+.angle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.angle-card{padding:12px;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--glass);transition:all .2s}
+.angle-card:hover{border-color:var(--border2);background:var(--glass2)}
+.angle-card.active{border-color:var(--blue);background:rgba(59,130,246,.1);box-shadow:0 0 20px rgba(59,130,246,.15)}
+.angle-emoji{font-size:18px;margin-bottom:4px}
+.angle-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.angle-desc{font-size:11px;color:var(--text2);line-height:1.4}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+.toggle-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.toggle{width:44px;height:24px;border-radius:12px;cursor:pointer;position:relative;display:flex;align-items:center;padding:2px;transition:background .25s;border:1px solid var(--border)}
+.toggle.on{background:linear-gradient(135deg,var(--blue),var(--cyan));border-color:var(--blue);box-shadow:0 0 10px rgba(59,130,246,.4)}
+.toggle.off{background:var(--bg3)}
+.toggle-knob{width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.toggle.on .toggle-knob{transform:translateX(20px)}
+.toggle-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--glass);gap:8px;margin-bottom:6px;transition:all .2s}
+.srow:hover{border-color:var(--border2)}
+.schedule-card{border:1px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem;background:var(--glass);margin-bottom:12px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.page>*{animation:fadeUp .35s ease both}
+.card{animation:fadeUp .35s ease both}
+.agent-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;transition:all .25s;position:relative;overflow:hidden}
+.agent-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.ac-icon{font-size:26px;margin-bottom:8px}
+.ac-badge{position:absolute;top:10px;right:10px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.03em}
+.ac-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.ac-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.ac-action{font-size:12px;font-weight:700;transition:letter-spacing .2s}
+.agent-card:hover .ac-action{letter-spacing:.03em}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;transition:all .2s}
+.stat-card:hover{border-color:var(--border2);background:var(--glass2);transform:translateY(-2px);box-shadow:var(--glow)}
+.stat-val{font-size:24px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;margin-bottom:3px}
+.stat-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.qa-row{display:block;padding:8px 12px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:rgba(13,21,38,.4);color:var(--text);text-decoration:none;transition:all .15s;margin-bottom:4px}
+.qa-row:hover{border-color:var(--border2);background:var(--glass2);transform:translateX(3px)}
+.vf-locked{opacity:.5!important;cursor:not-allowed!important}
+.vf-badge{display:inline-flex;align-items:center;gap:.3em;margin-left:.4em;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;vertical-align:middle}
+.vf-badge-locked{background:rgba(139,92,246,.2)!important;color:#a78bfa!important}
+.vf-badge-addon{background:rgba(245,158,11,.2)!important;color:#fbbf24!important}
+@media(max-width:700px){#agent-cards{grid-template-columns:1fr 1fr!important}#stats-row{grid-template-columns:repeat(3,1fr)!important}}
+@media(max-width:450px){#agent-cards{grid-template-columns:1fr!important}#stats-row{grid-template-columns:1fr 1fr!important}}
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">
-    <div class="logo-mark">✉</div>
-    <h1>Velorah</h1>
-    <p>AI-Powered Cold Email Agent for B2B Sales</p>
-  </div>
-  <div class="tabs">
-    <div class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
-    <div class="tab" id="tab-signup" onclick="switchTab('signup')">Create Account</div>
-  </div>
-
-  <!-- LOGIN -->
-  <div id="form-login">
-    <div class="form-group"><label>Email Address</label><input type="email" id="login-email" placeholder="you@company.com" autocomplete="email"/></div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password"/>
+<div class="topbar">
+  <div class="flex" style="gap:0">
+    <div class="brand">
+      <div class="brand-logo">✉</div>
+      <span class="brand-name">Velorah</span>
     </div>
-    <div class="forgot"><a href="#" onclick="showForgot();return false">Forgot password?</a></div>
-    <button class="btn btn-primary" id="btn-login" onclick="login()">Sign In</button>
-    <div class="msg" id="login-msg"></div>
+    <nav class="nav">
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/app.html" class="active">Campaigns</a>
+      <a href="/campaign-video.html" data-feature="ai_video" data-locked="hide">Ares</a>
+      <a href="/linkedin.html">LinkedIn</a>
+      <a href="/find-leads.html">Koios Intel</a>
+      <a href="/social-listen.html" data-feature="social_listening" data-locked="hide">Athena One</a>
+      <a href="/visitors.html" data-feature="visitor_intel" data-locked="hide">Argus Watch</a>
+      <a href="/crm-settings.html">CRM</a>
+      <a href="/call-center.html" data-feature="call_center" data-locked="hide">Call Center</a>
+      <a href="/history.html">History</a>
+    </nav>
   </div>
-
-  <!-- SIGNUP -->
-  <div id="form-signup" style="display:none">
-    <div class="form-group"><label>Full Name</label><input type="text" id="signup-name" placeholder="Alex Rivera" autocomplete="name"/></div>
-    <div class="form-group"><label>Work Email</label><input type="email" id="signup-email" placeholder="you@company.com" autocomplete="email"/></div>
-    <div class="form-group"><label>Password (min 8 chars)</label><input type="password" id="signup-password" placeholder="Min 8 characters" autocomplete="new-password"/></div>
-    <div class="form-group"><label>Company</label><input type="text" id="signup-company" placeholder="Your company"/></div>
-    <button class="btn btn-primary" id="btn-signup" onclick="signup()">Create Free Account</button>
-    <div class="msg" id="signup-msg"></div>
-    <div style="text-align:center;margin-top:12px"><span class="free-badge">Free: 50 leads/month · No credit card required</span></div>
+  <div class="topbar-right" id="topbar-right">
+    <div class="usage-wrap">
+      <span id="usage-text" style="font-family:'IBM Plex Mono',monospace">0/50</span>
+      <div class="usage-bar"><div class="usage-fill" id="usage-fill" style="width:0%"></div></div>
+    </div>
+    <span id="plan-chip" class="plan-pill">Free</span>
+    <span id="user-email" class="user-email"></span>
+    <button class="btn-sm" onclick="signOut()">Sign out</button>
   </div>
-
-  <!-- FORGOT -->
-  <div id="form-forgot" style="display:none">
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Enter your email and we'll send you a reset link.</p>
-    <div class="form-group"><label>Email Address</label><input type="email" id="forgot-email" placeholder="you@company.com"/></div>
-    <button class="btn btn-primary" onclick="resetPassword()">Send Reset Link</button>
-    <div class="msg" id="forgot-msg"></div>
-    <div class="back-link"><a href="#" onclick="switchTab('login');return false">← Back to Sign In</a></div>
-  </div>
-
-  <div class="footer-note">By signing in you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a></div>
 </div>
-
+<div class="page">
+  <div class="hero" id="dashboard-section">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:1.5rem">
+      <div>
+        <div id="dash-greeting" style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;letter-spacing:.05em">WELCOME BACK</div>
+        <h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Velorah Command Centre</h1>
+        <p style="font-size:13px;color:var(--text2)">All your outreach tools in one place</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="usage-wrap">
+          <span style="font-size:10px;color:var(--text3)">leads</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem" id="stats-row">
+      <div class="stat-card"><div class="stat-val" style="color:var(--blue)" id="d-sent">-</div><div class="stat-lbl">Emails Sent</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="d-opened">-</div><div class="stat-lbl">Opened</div><div style="font-size:10px;color:var(--text2);margin-top:2px" id="d-openrate"></div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--cyan)" id="d-clicked">-</div><div class="stat-lbl">Clicked</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--purple)" id="d-campaigns">-</div><div class="stat-lbl">Campaigns</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--gold)" id="d-leads">0</div><div class="stat-lbl">Leads Found</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem" id="agent-cards">
+      <div class="agent-card" onclick="startNewCampaign()" style="cursor:pointer">
+        <div class="ac-icon">🚀</div>
+        <div class="ac-title">Email Campaign</div>
+        <div class="ac-desc">Upload leads, AI writes personalized emails, bulk send</div>
+        <div class="ac-action" style="color:var(--blue)">New Campaign →</div>
+      </div>
+      <a href="/campaign-video.html" class="agent-card" data-feature="ai_video" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">🛡</div>
+        <div class="ac-badge" style="background:rgba(239,68,68,.15);color:#ef4444">ARES</div>
+        <div class="ac-title">Video Campaign</div>
+        <div class="ac-desc">AI talking-head videos for each lead, distributed via email + YouTube</div>
+        <div class="ac-action" style="color:#ef4444">Launch Ares →</div>
+      </a>
+      <a href="/linkedin.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">💼</div>
+        <div class="ac-title">LinkedIn Agent</div>
+        <div class="ac-desc">Import connections, filter by title, generate personalised outreach</div>
+        <div class="ac-action" style="color:#0077b5">Import Connections →</div>
+      </a>
+      <a href="/find-leads.html" class="agent-card" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">🧠</div>
+        <div class="ac-badge" style="background:rgba(139,92,246,.15);color:var(--purple)">KOIOS</div>
+        <div class="ac-title">Koios Intel</div>
+        <div class="ac-desc">Search 275M+ verified B2B contacts by title, industry, company size</div>
+        <div class="ac-action" style="color:var(--purple)">Find Contacts →</div>
+      </a>
+      <a href="/social-listen.html" class="agent-card" data-feature="social_listening" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">📡</div>
+        <div class="ac-badge" style="background:rgba(6,182,212,.15);color:var(--cyan)">ATHENA</div>
+        <div class="ac-title">Athena One</div>
+        <div class="ac-desc">Find people on Reddit, HN, forums actively looking for your product</div>
+        <div class="ac-action" style="color:var(--cyan)">Monitor Discussions →</div>
+      </a>
+      <a href="/visitors.html" class="agent-card" data-feature="visitor_intel" style="text-decoration:none;color:var(--text)">
+        <div class="ac-icon">👁</div>
+        <div class="ac-badge" style="background:rgba(16,185,129,.15);color:var(--green)">ARGUS</div>
+        <div class="ac-title">Argus Watch</div>
+        <div class="ac-desc">See which companies visit your website and auto-launch outreach</div>
+        <div class="ac-action" style="color:var(--green)">View Visitors →</div>
+      </a>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="padding:1rem">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:6px">📋 Recent Activity</div>
+        <div id="activity-feed">
+          <div style="text-align:center;padding:1.5rem;color:var(--text3);font-size:12px">No recent activity. Launch your first campaign.</div>
+        </div>
+        <a href="/history.html" style="display:block;text-align:center;font-size:12px;color:var(--blue);margin-top:10px;text-decoration:none">View full analytics →</a>
+      </div>
+      <div class="card" style="padding:1rem">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px">⚡ Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="qa-row" onclick="startNewCampaign()">🚀 New Email Campaign</div>
+          <a href="/campaign-video.html" class="qa-row" data-feature="ai_video">🛡 Launch Ares Video Campaign</a>
+          <a href="/find-leads.html" class="qa-row">🧠 Search Leads (Koios Intel)</a>
+          <a href="/social-listen.html" class="qa-row" data-feature="social_listening">📡 Monitor Discussions (Athena One)</a>
+          <a href="/linkedin.html" class="qa-row">💼 LinkedIn Outreach</a>
+          <a href="/history.html" class="qa-row">📊 Email Analytics</a>
+        </div>
+      </div>
+    </div>
+    <div style="display:none;align-items:center;gap:12px;margin:1.5rem 0 0.5rem" id="campaign-divider">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--text3);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Email Campaign Agent</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+  </div>
+  <div id="root"></div>
+</div>
 <script>
 const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
 const sbClient=window.supabase.createClient(SB_URL,SB_KEY);
-
-(async()=>{
-  try{const{data:{session}}=await sbClient.auth.getSession();if(session)window.location.href='/app.html';}
-  catch(e){console.warn(e);}
-})();
-
-function switchTab(t){
-  document.getElementById('form-login').style.display=t==='login'?'block':'none';
-  document.getElementById('form-signup').style.display=t==='signup'?'block':'none';
-  document.getElementById('form-forgot').style.display='none';
-  document.getElementById('tab-login').className='tab'+(t==='login'?' active':'');
-  document.getElementById('tab-signup').className='tab'+(t==='signup'?' active':'');
+let _session=null;
+const emailRx=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const S={
+  step:0,leads:[],headers:[],
+  colMap:{email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''},
+  sender:{name:'',email:'',title:'',company:''},
+  senderPrefs:{tone:'professional',emailLength:'short (under 100 words)',ctaStyle:'book a 15-min call',valueProposition:'',avoidPhrases:'',socialProof:'',hook:'industry insight'},
+  emails:[],genProgress:0,activeIdx:0,
+  sendStatus:{},
+  validationResults:{summary:null,results:[]},
+  validationDone:false,validationRunning:false,trackingStatus:{},messageIds:{},
+  dragOver:false,emailAngle:'pain',researchMode:false,
+  attachments:[],scheduleAt:null,campaignName:'',
+  bulkSending:false,bulkProgress:{total:0,sent:0,failed:0},
+  draftId:null,crmSource:null,_duplicates:{},_rawLeads:''
+};
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length)return{headers:[],rows:[]};
+  const pr=line=>{const r=[];let c='',q=false;for(const ch of line){if(ch==='"'){q=!q;}else if(ch===','&&!q){r.push(c.trim());c='';}else c+=ch;}r.push(c.trim());return r;};
+  const headers=pr(lines[0]);
+  const rows=lines.slice(1).filter(l=>l.trim()).map(l=>{const v=pr(l);const o={};headers.forEach((h,i)=>o[h]=v[i]||'');return o;});
+  return{headers,rows};
 }
-function showForgot(){
-  document.getElementById('form-login').style.display='none';
-  document.getElementById('form-forgot').style.display='block';
+function autoMap(headers){
+  const map={email:'',fullName:'',firstName:'',lastName:'',company:'',title:'',industry:'',companySize:'',revenue:''};
+  const v={email:['email','e-mail','mail'],fullName:['full name','fullname','name','contact name'],firstName:['first name','firstname','first'],lastName:['last name','lastname','surname'],company:['company','organization','org','account'],title:['title','job title','position','role'],industry:['industry','sector','vertical'],companySize:['company size','size','employees','headcount'],revenue:['revenue','annual revenue','arr']};
+  headers.forEach(h=>{const hl=h.toLowerCase().trim();Object.entries(v).forEach(([k,vs])=>{if(!map[k]&&vs.some(vv=>hl===vv||hl.includes(vv)))map[k]=h;});});
+  return map;
 }
-function showMsg(id,txt,type){const el=document.getElementById(id);el.textContent=txt;el.className='msg '+type;}
+function getName(lead){return(lead[S.colMap.fullName]||((lead[S.colMap.firstName]||'')+' '+(lead[S.colMap.lastName]||'')).trim()||lead[S.colMap.email]||'Unknown').trim();}
+function getSystem(angle,sz,rev,vp,socialProof,senderCompany){
+  const angles={
+    pain:'EMAIL ANGLE: PAIN-FOCUSED. Open by naming the most pressing problem this offer solves for them.',
+    roi:'EMAIL ANGLE: ROI-FOCUSED. Lead with the concrete financial or time payoff -- cost saved, hours back, revenue gained.',
+    risk:'EMAIL ANGLE: RISK-FOCUSED. Open with the real cost of doing nothing -- what it\'s costing them to not have this.',
+    proof:'EMAIL ANGLE: SOCIAL PROOF. Reference how similar companies got results with this offer.',
+    question:'EMAIL ANGLE: QUESTION-BASED. Open with one sharp, visceral business question relevant to their role.',
+    insight:'EMAIL ANGLE: INSIGHT-LED. Open with a surprising, specific data point relevant to their industry.'
+  };
+  const sizeCtx=sz?'\n\nCOMPANY SIZE: '+sz+' employees'+(rev?' | Revenue: '+rev:'')+'.\nAdjust all stats, stakes, and language to match this exact scale. Do not apply SMB language to enterprises.':'';
 
-async function login(){
-  const email=document.getElementById('login-email').value.trim();
-  const pw=document.getElementById('login-password').value;
-  if(!email||!pw)return showMsg('login-msg','Please enter email and password.','error');
-  const btn=document.getElementById('btn-login');btn.disabled=true;btn.textContent='Signing in...';
+  // The offer being pitched comes entirely from what this user told us they
+  // sell (senderPrefs.valueProposition). Nothing about the product, industry,
+  // or use case is assumed or hardcoded here -- this function has no idea
+  // what business is using it, and it must stay that way so it works
+  // identically for a cybersecurity vendor, a landscaping company, or a
+  // law firm.
+  const offer = (vp||'').trim();
+  const productBlock = offer
+    ? 'WHAT YOU ARE OFFERING (from the sender -- write about exactly this, nothing else):\n' + offer
+      + (senderCompany ? '\nSender company: ' + senderCompany : '')
+      + (socialProof ? '\nSocial proof to weave in naturally: ' + socialProof : '')
+    : 'WHAT YOU ARE OFFERING: not specified. Do NOT invent a product, industry, or pitch -- '
+      + 'write a generic, professional outreach opener that asks a relevant business question instead of pitching anything specific.';
+
+  return 'You are an elite B2B sales copywriter. Every email you write lands in the inbox and gets read.\n\n'
+    + (angles[angle]||angles.pain) + '\n\n'
+    + productBlock + sizeCtx
+    + '\n\nSTRICT RULES:\n'
+    + '- Subject: under 50 chars, no spam triggers, outcome or question format\n'
+    + '- Body: exactly 3 short paragraphs - hook, value, CTA\n'
+    + '- Conversational peer-to-peer tone, NOT corporate\n'
+    + '- ONE specific stat or number, only if it appears in the offer above -- never invent one\n'
+    + '- Soft CTA: offer 15-min call or quick question\n'
+    + "- Last line: If this is not relevant, just reply and I will remove you.\n"
+    + '- Under 170 words total\n'
+    + '- NEVER start with I hope, My name is, or any preamble\n\n'
+    + 'Respond ONLY with valid JSON, no markdown: {"subject":"...","body":"..."}';
+}
+async function callAI(lead){
+  const name=getName(lead);
+  const company=lead[S.colMap.company]||'your company';
+  const title=lead[S.colMap.title]||'decision maker';
+  const industry=lead[S.colMap.industry]||'technology';
+  const sz=lead[S.colMap.companySize]||'';
+  const rev=lead[S.colMap.revenue]||'';
+  const prompt=getSystem(S.emailAngle,sz,rev,S.senderPrefs.valueProposition,S.senderPrefs.socialProof,S.sender.company)+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nJSON only: {"subject":"...","body":"..."}';
+  const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company,industry,companySize:sz,revenue:rev,researchMode:S.researchMode,senderPrefs:S.senderPrefs})});
+  const txt=await resp.text();
+  if(!resp.ok){let e='HTTP '+resp.status;try{const d=JSON.parse(txt);e=d.error||e;}catch(ex){}throw new Error(e);}
+  const data=JSON.parse(txt);
+  let out=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  out=out.replace(/json/g,'').trim();
+  const js=out.indexOf('{');const je=out.lastIndexOf('}');
+  if(js<0||je<0)throw new Error('Could not parse AI response');
+  return JSON.parse(out.substring(js,je+1));
+}
+function h(tag,attrs,...kids){
+  const el=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==='cls')el.className=v;
+    else if(k==='html')el.innerHTML=v;
+    else if(k==='style'&&typeof v==='object')Object.assign(el.style,v);
+    else if(k.startsWith('on'))el.addEventListener(k.slice(2).toLowerCase(),v);
+    else el.setAttribute(k,v);
+  });
+  kids.flat().forEach(c=>{if(c!=null&&c!==false)el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return el;
+}
+function draw(){
+  const root=document.getElementById('root');if(!root)return;
+  root.innerHTML='';
+  root.appendChild(stepBar());
+  const steps=[p0,p1,p2,p3,p4];
+  if(steps[S.step])root.appendChild(steps[S.step]());
+}
+function stepBar(){
+  const names=['Upload Leads','Configure','Generate','Review & Edit','Send Campaign'];
+  const bar=h('div',{cls:'step-bar'});
+  names.forEach((s,i)=>{
+    const cls='si'+(i===S.step?' active':i<S.step?' done':'');
+    const si=h('div',{cls},h('div',{cls:'sn'},i<S.step?'OK':String(i+1)),h('span',null,s));
+    if(i<S.step){si.style.cursor='pointer';si.addEventListener('click',()=>{S.step=i;draw();});}
+    bar.appendChild(si);
+    if(i<names.length-1)bar.appendChild(h('div',{cls:'sdiv'}));
+  });
+  return bar;
+}
+// STEP 0: UPLOAD
+function p0(){
+  const wrap=h('div',null);
+  const draftInd=h('div',{style:{display:'none',alignItems:'center',gap:'6px',fontSize:'12px',color:'var(--green)',padding:'6px 12px',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.2)',borderRadius:'8px',marginBottom:'12px'}});
+  draftInd.id='draft-saved-indicator';
+  draftInd.textContent='Draft saved';
+  if(S.draftId) draftInd.style.display='flex';
+  wrap.appendChild(draftInd);
+  const crmImportBtn=h('a',{href:'/crm-settings.html',style:{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',borderRadius:'8px',border:'1px solid var(--border2)',background:'rgba(59,130,246,.06)',color:'var(--blue)',fontSize:'13px',fontWeight:'700',textDecoration:'none',marginBottom:'12px',cursor:'pointer'}});
+  crmImportBtn.innerHTML='<span style="font-size:16px">&#x1F517;</span> Import from CRM &nbsp;<span style="font-size:11px;color:var(--text3);font-weight:400">(HubSpot, Salesforce, Pipedrive, Zoho, GHL and more)</span>';
+  wrap.appendChild(crmImportBtn);
+  let fi;
+  const dz=h('div',{cls:'drop-zone'+(S.dragOver?' over':''),
+    onClick:()=>fi.click(),
+    onDragover:e=>{e.preventDefault();S.dragOver=true;draw();},
+    onDragleave:()=>{S.dragOver=false;draw();},
+    onDrop:e=>{e.preventDefault();S.dragOver=false;readFile(e.dataTransfer.files[0]);}
+  },
+    h('span',{cls:'drop-icon'},'📂'),
+    h('p',{style:{fontWeight:'700',fontSize:'15px',marginBottom:'6px'}},'Drop your CSV file here'),
+    h('p',{style:{fontSize:'13px',color:'var(--text2)'}},'or click to browse - we auto-detect your columns')
+  );
+  wrap.appendChild(dz);
+  fi=document.createElement('input');fi.type='file';fi.accept='.csv';fi.style.display='none';
+  fi.addEventListener('change',e=>{if(e.target.files[0])readFile(e.target.files[0]);});
+  wrap.appendChild(fi);
+  const tip=h('div',{cls:'tip',style:{marginTop:'12px'}});
+  tip.innerHTML='<strong style="color:var(--blue)">Required columns:</strong> Email, Company &nbsp;.&nbsp; <strong style="color:var(--text2)">Optional:</strong> First Name, Last Name, Job Title, Industry, Company Size, Revenue &nbsp;.&nbsp; <a href="#" id="dl-sample">Download sample CSV</a>';
+  wrap.appendChild(tip);
+  setTimeout(()=>{const a=document.getElementById('dl-sample');if(a)a.onclick=e=>{e.preventDefault();dlSample();};},0);
+  if(S.leads.length>0){
+    const pv=h('div',{cls:'card',style:{marginTop:'12px',background:'rgba(16,185,129,.06)',borderColor:'rgba(16,185,129,.2)'}});
+    const sample=S.leads.slice(0,3).map(r=>[getName(r),r[S.colMap.company]||''].filter(Boolean).join(' . ')).join('  .  ');
+    pv.appendChild(h('div',{cls:'fb',style:{marginBottom:'10px'}},
+      h('div',{cls:'flex'},
+        h('span',{style:{fontSize:'18px'}},'Done'),
+        h('div',null,
+          h('p',{style:{fontWeight:'700',fontSize:'14px'}},'CSV loaded successfully'),
+          h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'2px'}},S.leads.length+' leads . '+S.headers.length+' columns detected')
+        )
+      ),
+      h('span',{cls:'badge',style:{background:'rgba(16,185,129,.15)',color:'var(--green)',border:'1px solid rgba(16,185,129,.3)'}},S.leads.length+' leads')
+    ));
+    if(sample)pv.appendChild(h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},sample+(S.leads.length>3?'  ...and '+(S.leads.length-3)+' more':'')));
+    const dupRow=h('div',{style:{marginTop:'10px'}});
+    const dupBtn=h('button',{cls:'btn',style:{fontSize:'12px'},onClick:async function(){
+      if(!_session){return;}
+      this.disabled=true;this.textContent='Checking...';
+      try{
+        const emails=S.leads.map(r=>(r[S.colMap.email]||'').trim().toLowerCase()).filter(Boolean);
+        const resp=await fetch('/.netlify/functions/check_duplicates',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({emails})});
+        const data=await resp.json();
+        const dr=document.getElementById('dup-result-box');
+        S._duplicates=data.duplicates||{};
+        if(data.total===0){
+          dr.style.cssText='padding:10px;border-radius:8px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:12px;margin-top:8px;display:block';
+          dr.textContent='All clear - no duplicate emails found across your previous campaigns.';
+        }else{
+          const list=Object.entries(data.duplicates).slice(0,5).map(function(e){return e[0]+' (was in: '+e[1].campaignName+')';}).join(', ');
+          dr.style.cssText='padding:10px;border-radius:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:var(--gold);font-size:12px;margin-top:8px;display:block;line-height:1.5';
+          dr.textContent='WARNING: '+data.total+' duplicate email(s) found: '+list+(data.total>5?' ...and '+(data.total-5)+' more':'');
+        }
+      }catch(e){console.error(e);}
+      this.disabled=false;this.textContent='Check Duplicates';
+    }},'Check Duplicates');
+    const dupResultBox=h('div',{id:'dup-result-box',style:{display:'none'}});
+    dupRow.appendChild(dupBtn);dupRow.appendChild(dupResultBox);
+    pv.appendChild(dupRow);
+    pv.appendChild(h('div',{style:{textAlign:'right',marginTop:'10px'}},
+      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=1;draw();}},'Map Columns & Configure ->')
+    ));
+    wrap.appendChild(pv);
+  }
+  return wrap;
+}
+function readFile(f){const rd=new FileReader();rd.onload=e=>{const{headers,rows}=parseCSV(e.target.result);S.headers=headers;S.leads=rows;S.colMap=autoMap(headers);draw();scheduleDraftSave();};rd.readAsText(f);}
+function dlSample(){const csv='First Name,Last Name,Email,Company,Job Title,Industry,Company Size\nJohn,Smith,john@acme.com,Acme Financial,CISO,Financial Services,2500\nSarah,Chen,sarah@health.io,HealthTech Inc,Chief Compliance Officer,Healthcare,800\nMike,Johnson,mike@retail.com,RetailCo,VP of IT,Retail,150';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='sample_leads.csv';a.click();}
+// STEP 1: CONFIGURE
+function p1(){
+  const wrap=h('div',null);
+  const mc=h('div',{cls:'card',style:{marginBottom:'12px'}},h('div',{cls:'card-title'},'Map Your CSV Columns'));
+  const g=h('div',{cls:'g2'});
+  [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'},{k:'companySize',l:'Company Size'},{k:'revenue',l:'Revenue'}].forEach(f=>{
+    const d=h('div',{cls:'field'},h('label',{cls:'lbl'},f.l));
+    const s=h('select',{onChange:e=>S.colMap[f.k]=e.target.value});
+    s.appendChild(h('option',{value:''},'- not mapped -'));
+    S.headers.forEach(hd=>{const o=h('option',{value:hd},hd);if(S.colMap[f.k]===hd)o.selected=true;s.appendChild(o);});
+    d.appendChild(s);g.appendChild(d);
+  });
+  mc.appendChild(g);wrap.appendChild(mc);
+  const sc=h('div',{cls:'card',style:{marginBottom:'12px'}},h('div',{cls:'card-title'},'Your Sender Details'));
+  const sg=h('div',{cls:'g2'});
+  [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@company.com'},{k:'title',l:'Your Job Title',p:'Account Executive'},{k:'company',l:'Your Company',p:'Acme Corp'}].forEach(f=>{
+    const d=h('div',{cls:'field'},h('label',{cls:'lbl'},f.l));
+    const inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
+    inp.addEventListener('input',e=>S.sender[f.k]=e.target.value);
+    d.appendChild(inp);sg.appendChild(d);
+  });
+  sc.appendChild(sg);
+  const attDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Attachments (up to 5 files)'));
+  if(S.attachments.length){
+    const al=h('div',{style:{display:'flex',flexWrap:'wrap',gap:'6px',marginBottom:'8px'}});
+    S.attachments.forEach((a,i)=>{
+      al.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'4px',background:'rgba(59,130,246,.1)',border:'1px solid var(--border)',borderRadius:'6px',padding:'3px 8px',fontSize:'12px'}},
+        h('span',null,'📎 '+a.name),
+        h('button',{cls:'btn',style:{padding:'1px 6px',fontSize:'11px',background:'var(--red-dim)',color:'var(--red)',border:'none'},onClick:()=>{S.attachments.splice(i,1);draw();}},'x')
+      ));
+    });
+    attDiv.appendChild(al);
+  }
+  if(S.attachments.length<5){
+    const ab=h('button',{cls:'btn btn-outline',style:{fontSize:'12px'},onClick:()=>{
+      const fi2=document.createElement('input');fi2.type='file';fi2.multiple=true;fi2.style.display='none';
+      fi2.addEventListener('change',async e=>{
+        const files=Array.from(e.target.files).slice(0,5-S.attachments.length);
+        for(const file of files){const b64=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=ev=>res(ev.target.result.split(',')[1]);rd.onerror=rej;rd.readAsDataURL(file);});S.attachments.push({name:file.name,type:file.type,base64:b64});}
+        draw();
+      });
+      document.body.appendChild(fi2);fi2.click();document.body.removeChild(fi2);
+    }},'+ Add Attachment'+(S.attachments.length?' ('+S.attachments.length+'/5)':''));
+    attDiv.appendChild(ab);
+  }
+  sc.appendChild(attDiv);
+  wrap.appendChild(sc);
+  const ac=h('div',{cls:'card',style:{marginBottom:'12px'}});
+  ac.appendChild(h('div',{cls:'card-title'},'Email Angle & Tone'));
+  ac.appendChild(h('p',{style:{fontSize:'13px',color:'var(--text2)',marginBottom:'12px'}},'Choose the messaging strategy. Each produces completely different email copy.'));
+  const ag=h('div',{cls:'angle-grid'});
+  [{v:'pain',e:'🎯',n:'Pain-Focused',d:'Lead with their specific operational risk'},{v:'roi',e:'💰',n:'ROI-Focused',d:'Lead with breach costs and financial impact'},{v:'risk',e:'⚠',n:'Risk-Focused',d:'Highlight fines, shutdowns, executive liability'},{v:'proof',e:'🏆',n:'Social Proof',d:'Reference results from similar companies'},{v:'question',e:'?',n:'Question-Based',d:'Open with a sharp thought-provoking question'},{v:'insight',e:'💡',n:'Insight-Led',d:'Start with a surprising industry data point'}].forEach(a=>{
+    const active=S.emailAngle===a.v;
+    ag.appendChild(h('div',{cls:'angle-card'+(active?' active':''),onClick:()=>{S.emailAngle=a.v;draw();}},
+      h('div',{cls:'angle-emoji'},a.e),
+      h('div',{cls:'angle-name',style:{color:active?'var(--blue)':'var(--text)'}},a.n+(active?' OK':'')),
+      h('div',{cls:'angle-desc'},a.d)
+    ));
+  });
+  ac.appendChild(ag);wrap.appendChild(ac);
+  const rc=h('div',{cls:'card',style:{marginBottom:'12px'}});
+  const rrow=h('div',{cls:'toggle-row'});
+  rrow.appendChild(h('div',null,
+    h('p',{style:{fontWeight:'700',marginBottom:'3px'}},'🔍 AI Research Mode'),
+    h('p',{style:{fontSize:'12px',color:'var(--text2)'}},'AI searches the web for each company before writing. Makes emails hyper-specific.')
+  ));
+  const togWrap=h('div',{cls:'toggle-wrap'});
+  const tog=h('div',{cls:'toggle '+(S.researchMode?'on':'off'),onClick:()=>{S.researchMode=!S.researchMode;draw();}},h('div',{cls:'toggle-knob'}));
+  togWrap.appendChild(tog);
+  togWrap.appendChild(h('span',{cls:'toggle-label',style:{color:S.researchMode?'var(--cyan)':'var(--text3)'}},S.researchMode?'ON':'OFF'));
+  rrow.appendChild(togWrap);rc.appendChild(rrow);
+  if(S.researchMode){const w=h('div',{cls:'warn'});w.innerHTML='<strong>Note:</strong> Research mode takes 15-30 seconds per lead. Best for high-value prospects.';rc.appendChild(w);}
+  wrap.appendChild(rc);
+  const canGo=S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&(S.senderPrefs.valueProposition||'').trim().length>=10;
+  wrap.appendChild(h('div',{cls:'fb'},
+    h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'<- Back'),
+    h('button',{cls:'btn btn-primary',style:{opacity:canGo?1:.4},onClick:()=>{
+      if(!canGo){alert('Please fill in: Email column, Company column, Your Name, Your Email, and Value Proposition (describe what you actually offer -- this is what the AI writes about, so it needs to be specific to your business, at least a sentence).');return;}
+      S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};
+      saveUserKeys();draw();runGenerate();
+    }},'Generate '+S.leads.length+' Emails ->')
+  ));
+  const spCard=h('div',{cls:'card',style:{marginTop:'14px'}},
+    h('div',{cls:'card-title'},'Sender Preferences'),
+    h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},'AI uses these to match your voice, tone and goals when writing every email'),
+    h('div',{cls:'g2',style:{marginBottom:'12px'}},
+      h('div',null,h('label',{cls:'lbl'},'Value Proposition (required -- what do you actually offer? Be specific, this is what every email is about)'),
+        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'e.g. We help mid-size clinics cut no-show rates by 30% with automated reminders',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;}})),
+      h('div',null,h('label',{cls:'lbl'},'Social Proof (1 line)'),
+        h('input',{type:'text',value:S.senderPrefs.socialProof||'',placeholder:'Trusted by 200+ B2B companies',oninput:e=>{S.senderPrefs.socialProof=e.target.value;}}))
+    ),
+    h('div',{cls:'g3',style:{marginBottom:'12px'}},
+      h('div',null,h('label',{cls:'lbl'},'Tone'),
+        h('select',{onchange:e=>{S.senderPrefs.tone=e.target.value;}},
+          ...[['professional','Professional'],['friendly','Warm & Friendly'],['direct','Direct & Bold'],['casual','Casual Peer'],['formal','Formal & Executive']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.tone===o[0])op.selected=true;return op;}))),
+      h('div',null,h('label',{cls:'lbl'},'Email Length'),
+        h('select',{onchange:e=>{S.senderPrefs.emailLength=e.target.value;}},
+          ...[['very short (under 60 words)','Very Short (< 60 words)'],['short (under 100 words)','Short (< 100 words)'],['medium (100-150 words)','Medium (100-150)'],['long (150-200 words)','Long (150-200)']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.emailLength===o[0])op.selected=true;return op;}))),
+      h('div',null,h('label',{cls:'lbl'},'CTA Style'),
+        h('select',{onchange:e=>{S.senderPrefs.ctaStyle=e.target.value;}},
+          ...[['book a 15-min call','Book a 15-min call'],['reply to this email','Reply to this email'],['visit our website','Visit our website'],['watch a demo video','Watch a demo video'],['would this be relevant?','Soft relevance question']].map(function(o){const op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(S.senderPrefs.ctaStyle===o[0])op.selected=true;return op;})))
+    ),
+    h('div',{cls:'g2'},
+      h('div',null,h('label',{cls:'lbl'},'Opening Hook Angle'),
+        h('input',{type:'text',value:S.senderPrefs.hook||'',placeholder:'Industry insight / recent company news',oninput:e=>{S.senderPrefs.hook=e.target.value;}})),
+      h('div',null,h('label',{cls:'lbl'},'Phrases to NEVER Use'),
+        h('input',{type:'text',value:S.senderPrefs.avoidPhrases||'',placeholder:'leverage, synergy, game-changer',oninput:e=>{S.senderPrefs.avoidPhrases=e.target.value;}}))
+    )
+  );
+  wrap.appendChild(spCard);
+  return wrap;
+}
+// STEP 2: GENERATING
+function p2(){
+  const latest=S.emails.length>0?S.emails[S.emails.length-1]:null;
+  const card=h('div',{cls:'card',style:{textAlign:'center',padding:'3.5rem 2rem'}});
+  const pct2=Math.round(S.genProgress/(S.leads.length||1)*100);
+  card.innerHTML=
+    '<div style="font-size:48px;margin-bottom:16px">&#x1F916;</div>'+
+    '<h2 style="font-size:18px;font-weight:800;margin-bottom:6px">Generating Personalised Emails</h2>'+
+    '<p style="font-size:13px;color:var(--text2);margin-bottom:20px">AI is researching companies and crafting emails...</p>'+
+    '<div style="max-width:440px;margin:0 auto">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">'+
+        '<span style="color:var(--text2)">'+S.genProgress+' of '+S.leads.length+' generated</span>'+
+        '<span style="font-family:IBM Plex Mono,monospace;color:var(--cyan);font-weight:700">'+pct2+'%</span>'+
+      '</div>'+
+      '<div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct2+'%"></div></div>'+
+    '</div>';
+  if(latest&&!latest.error){
+    const prev=h('div',{style:{textAlign:'left',maxWidth:'440px',margin:'16px auto 0',background:'rgba(59,130,246,.06)',borderRadius:'var(--r)',padding:'12px',fontSize:'12px',border:'1px solid var(--border)'}});
+    prev.innerHTML='<p style="font-weight:700;margin-bottom:4px;color:var(--cyan)">Latest generated:</p><p style="color:var(--text);font-weight:600;margin-bottom:3px">'+latest.subject+'</p><p style="color:var(--text2)">'+latest.body.substring(0,100)+'...</p>';
+    card.appendChild(prev);
+  }
+  return card;
+}
+async function runGenerate(){
+  for(let i=0;i<S.leads.length;i++){
+    try{
+      const{subject,body}=await callAI(S.leads[i]);
+      S.emails.push({id:i,lead:S.leads[i],subject,body,approved:true,error:false});
+    }catch(err){
+      const overload=err.message&&(err.message.includes('529')||err.message.includes('overload')||err.message.includes('504'));
+      S.emails.push({id:i,lead:S.leads[i],subject:overload?'[Overloaded - Regenerate]':'[Failed - Regenerate]',body:err.message,approved:false,error:true});
+    }
+    S.genProgress=i+1;draw();
+    await new Promise(r=>setTimeout(r,4000));
+  }
+  S.step=3;S.activeIdx=0;draw();
+}
+// STEP 3: REVIEW
+function p3(){
+  const wrap=h('div',null);
+  const approved=S.emails.filter(e=>e.approved&&!e.error).length;
+  const sg4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
+  [{v:S.emails.length,l:'Generated',c:'var(--blue)'},{v:approved,l:'Approved',c:'var(--green)'},{v:S.emails.filter(e=>!e.approved).length,l:'Excluded',c:'var(--text3)'},{v:S.emails.filter(e=>e.error).length,l:'Failed',c:'var(--red)'}].forEach(s=>{
+    const card=h('div',{cls:'stat-card'});
+    card.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';
+    sg4.appendChild(card);
+  });
+  wrap.appendChild(sg4);
+  const panel=h('div',{cls:'email-panel'});
+  const list=h('div',{cls:'lead-list'},h('div',{cls:'ll-hdr'},'LEADS ('+S.emails.length+')'));
+  const lb=h('div',{cls:'ll-body'});
+  S.emails.forEach((e,i)=>{
+    const nm=getName(e.lead).substring(0,20);
+    const co=(e.lead[S.colMap.company]||'').substring(0,18);
+    const ini=(nm.split(' ').map(w=>w[0]).join('').toUpperCase()||'?').substring(0,2);
+    lb.appendChild(h('div',{cls:'lr'+(i===S.activeIdx?' active':''),onClick:()=>{S.activeIdx=i;draw();}},
+      h('div',{cls:'la'},ini),
+      h('div',{style:{flex:'1',minWidth:'0'}},
+        h('div',{style:{fontWeight:'600',fontSize:'13px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},nm),
+        h('div',{style:{fontSize:'11px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},co)
+      ),
+      e.error?h('span',{cls:'badge',style:{background:'var(--red-dim)',color:'var(--red)'}},'ERR'):
+      e.approved?h('span',{cls:'badge',style:{background:'rgba(16,185,129,.15)',color:'var(--green)'}},'OK'):
+      h('span',{cls:'badge',style:{background:'var(--bg3)',color:'var(--text3)'}},'-')
+    ));
+  });
+  list.appendChild(lb);panel.appendChild(list);
+  const ae=S.emails[S.activeIdx];
+  const det=h('div',{cls:'email-detail'});
+  if(ae){
+    const nm=getName(ae.lead);const co=ae.lead[S.colMap.company]||'';const ttl=ae.lead[S.colMap.title]||'';const ind=ae.lead[S.colMap.industry]||'';const em=ae.lead[S.colMap.email]||'';
+    const hdr=h('div',{cls:'fb'},
+      h('div',null,
+        h('p',{style:{fontWeight:'700',fontSize:'15px'}},nm),
+        h('p',{style:{fontSize:'12px',color:'var(--text2)',marginTop:'3px'}},[ttl,co].filter(Boolean).join(' . '))
+      ),
+      h('div',{cls:'flex'},
+        ind?h('span',{cls:'badge',style:{background:'var(--bg3)',color:'var(--text2)',border:'1px solid var(--border)'}},ind):null,
+        em?h('span',{cls:'badge',style:{background:'var(--blue-dim)',color:'var(--blue)',border:'1px solid rgba(59,130,246,.3)'}},em):null
+      )
+    );
+    det.appendChild(hdr);
+    if(ae.error){det.appendChild(h('div',{style:{background:'var(--red-dim)',border:'1px solid var(--red)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--red)'}},ae.body));}
+    const ae_email=(ae.lead[S.colMap.email]||'').toLowerCase().trim();
+    const ae_dup=S._duplicates&&S._duplicates[ae_email];
+    if(ae_dup){
+      const dupWarn=h('div',{style:{background:'rgba(245,158,11,.1)',border:'1px solid rgba(245,158,11,.3)',borderRadius:'var(--r)',padding:'10px',fontSize:'12px',color:'var(--gold)',marginBottom:'4px'}});
+      dupWarn.innerHTML='<strong>Duplicate Warning</strong> - This email was already sent in campaign "<strong>'+ae_dup.campaignName+'</strong>". Consider excluding this lead.';
+      det.appendChild(dupWarn);
+    }
+    const sWrap=h('div',{cls:'field'});
+    sWrap.appendChild(h('label',{cls:'lbl'},'Subject Line - Edit then Rewrite Body'));
+    const sRow=h('div',{cls:'flex'});
+    const sInp=document.createElement('input');sInp.type='text';sInp.style.fontWeight='700';sInp.value=ae.subject;sInp.addEventListener('input',e=>S.emails[S.activeIdx].subject=e.target.value);
+    const rwBtn=document.createElement('button');rwBtn.className='btn btn-primary';rwBtn.style.whiteSpace='nowrap';rwBtn.textContent='Rewrite Body';
+    rwBtn.addEventListener('click',async function(){
+      const idx=S.activeIdx;const lead=S.emails[idx].lead;const subj=sInp.value.trim();
+      if(!subj){alert('Enter a subject first.');return;}
+      this.disabled=true;this.textContent='Rewriting...';
+      try{
+        const sz=lead[S.colMap.companySize]||'';const rev=lead[S.colMap.revenue]||'';
+        const nm2=getName(lead);const co2=lead[S.colMap.company]||'';const ttl2=lead[S.colMap.title]||'';const ind2=lead[S.colMap.industry]||'';
+        const prompt=getSystem(S.emailAngle,sz,rev)+'\n\nWrite ONLY the email body following this subject:\nSUBJECT: "'+subj+'"\n\nTo: '+nm2+', '+ttl2+' at '+co2+' ('+ind2+')\nFrom: '+S.sender.name+', '+S.sender.company+'\n\nJSON only: {"body":"..."}';
+        const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,company:co2,industry:ind2,researchMode:false})});
+        const txt=await resp.text();const data=JSON.parse(txt);
+        let out=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+        out=out.replace(/json/g,'').trim();
+        const js=out.indexOf('{');const je=out.lastIndexOf('}');
+        if(js>=0&&je>js){const pp=JSON.parse(out.substring(js,je+1));S.emails[idx].body=pp.body||out;S.emails[idx].subject=subj;S.emails[idx].approved=true;S.emails[idx].error=false;draw();}
+        else alert('Could not parse response. Try again.');
+      }catch(e){alert('Rewrite failed: '+e.message);}
+      this.disabled=false;this.textContent='Rewrite Body';
+    });
+    sRow.appendChild(sInp);sRow.appendChild(rwBtn);sWrap.appendChild(sRow);det.appendChild(sWrap);
+    const bodyWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Email Body - Edit directly or use Rewrite Body above'));
+    const ta=document.createElement('textarea');ta.value=ae.body;ta.addEventListener('input',e=>S.emails[S.activeIdx].body=e.target.value);
+    bodyWrap.appendChild(ta);det.appendChild(bodyWrap);
+    const attWrap=h('div',{cls:'field'},h('label',{cls:'lbl'},'Personalized attachment for this recipient (optional)'));
+    if(ae.attachment){
+      attWrap.appendChild(h('div',{style:{display:'flex',alignItems:'center',gap:'8px',fontSize:'12px',color:'var(--text2)',marginBottom:'6px'}},
+        h('span',{},'📎 '+ae.attachment.name+' ('+Math.round((ae.attachment.base64.length*0.75)/1024)+' KB)'),
+        h('button',{cls:'btn',style:{padding:'1px 6px',fontSize:'11px',background:'var(--red-dim)',color:'var(--red)',border:'none'},onClick:()=>{S.emails[S.activeIdx].attachment=null;draw();}},'x')
+      ));
+    } else {
+      const attInput=document.createElement('input');attInput.type='file';attInput.style.fontSize='12px';
+      attInput.addEventListener('change',function(e){
+        const f=e.target.files[0]; if(!f) return;
+        if(f.size>7*1024*1024){alert('"'+f.name+'" is larger than 7MB. Please use a smaller file.');return;}
+        const rd=new FileReader();
+        rd.onload=function(){
+          const base64=String(rd.result).split(',')[1]||'';
+          S.emails[S.activeIdx].attachment={name:f.name,type:f.type||'application/octet-stream',base64:base64};
+          draw();
+        };
+        rd.readAsDataURL(f);
+      });
+      attWrap.appendChild(attInput);
+    }
+    det.appendChild(attWrap);
+    det.appendChild(h('div',{cls:'fb'},
+      h('div',{cls:'flex'},
+        h('button',{cls:'btn '+(ae.approved&&!ae.error?'btn-danger':'btn-success'),style:{fontSize:'12px'},onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;draw();}},ae.approved&&!ae.error?'Exclude':'Include'),
+        h('button',{cls:'btn',style:{fontSize:'12px'},onClick:async function(){
+          this.disabled=true;this.textContent='Regenerating...';
+          try{const{subject,body}=await callAI(ae.lead);S.emails[S.activeIdx].subject=subject;S.emails[S.activeIdx].body=body;S.emails[S.activeIdx].approved=true;S.emails[S.activeIdx].error=false;}
+          catch(e){alert('Failed: '+e.message);}
+          draw();
+        }},'Regenerate')
+      ),
+      h('button',{cls:'btn btn-primary',onClick:()=>{S.step=4;draw();}},'Proceed to Send ->')
+    ));
+  }
+  panel.appendChild(det);wrap.appendChild(panel);return wrap;
+}
+// STEP 4: SEND
+async function validateEmails(){
+  const approved=S.emails.filter(e=>e.approved&&!e.error);
+  if(!approved.length){alert('Approve at least one email first.');return;}
+  S.validationDone=false;S.validationRunning=true;
+  S.validationResults={summary:null,results:[]};
+  draw();
   try{
-    const{error}=await sbClient.auth.signInWithPassword({email,password:pw});
-    if(error){showMsg('login-msg',error.message,'error');btn.disabled=false;btn.textContent='Sign In';}
-    else window.location.href='/app.html';
-  }catch(e){showMsg('login-msg',e.message,'error');btn.disabled=false;btn.textContent='Sign In';}
+    const emails=approved.map(e=>e.lead[S.colMap.email]).filter(Boolean);
+    const firstEmail=approved[0];
+    const resp=await fetch('/.netlify/functions/email-validate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({emails,subject:firstEmail?firstEmail.subject:'',body:firstEmail?firstEmail.body:'',action:'full'})
+    });
+    if(!resp.ok) throw new Error('Validation service error: '+resp.status);
+    const vtxt=await resp.text();
+    S.validationResults = vtxt ? JSON.parse(vtxt) : { summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0}, results:[] };
+    S.validationDone=true;S.validationRunning=false;draw();
+  }catch(e){
+    console.warn('Email validation error:',e.message);
+    S.validationDone=true;S.validationRunning=false;
+    S.validationResults={summary:{total:0,valid:0,warnings:0,invalid:0,highRisk:0,readyToSend:0},results:[],error:e.message};
+    draw();
+  }
 }
-
-async function signup(){
-  const name=document.getElementById('signup-name').value.trim();
-  const email=document.getElementById('signup-email').value.trim();
-  const pw=document.getElementById('signup-password').value;
-  const co=document.getElementById('signup-company').value.trim();
-  if(!name||!email||!pw)return showMsg('signup-msg','Please fill in all required fields.','error');
-  if(pw.length<8)return showMsg('signup-msg','Password must be at least 8 characters.','error');
-  const btn=document.getElementById('btn-signup');btn.disabled=true;btn.textContent='Creating account...';
+function p4(){
+  const wrap=h('div',null);
+  const approved=S.emails.filter(e=>e.approved&&!e.error);
+  const sent=Object.values(S.sendStatus).filter(s=>s==='sent').length;
+  const failed=Object.values(S.sendStatus).filter(s=>s==='error').length;
+  const scheduled=Object.values(S.sendStatus).filter(s=>s==='scheduled').length;
+  const sg4=h('div',{cls:'g4',style:{marginBottom:'14px'}});
+  [{v:approved.length,l:'Approved',c:'var(--blue)'},{v:sent,l:'Sent',c:'var(--green)'},{v:scheduled,l:'Scheduled',c:'var(--purple)'},{v:failed,l:'Failed',c:'var(--red)'}].forEach(s=>{
+    const card=h('div',{cls:'stat-card'});card.innerHTML='<div class="stat-val" style="color:'+s.c+'">'+s.v+'</div><div class="stat-lbl">'+s.l+'</div>';sg4.appendChild(card);
+  });
+  wrap.appendChild(sg4);
+  if(S.validationRunning){
+    const vRun=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.3)',background:'rgba(59,130,246,.05)',marginBottom:'14px',textAlign:'center',padding:'18px'}});
+    vRun.innerHTML='<p style="font-weight:700;font-size:13px;color:var(--blue)">Running deliverability checks...</p><p style="font-size:12px;color:var(--text2);margin-top:4px">Checking DNS records, spam score, and firewall risk</p>';
+    wrap.appendChild(vRun);
+  } else if(S.validationDone&&S.validationResults&&S.validationResults.summary){
+    const vs=S.validationResults.summary;
+    const scoreColor=vs.avgDelivScore>=80?'var(--green)':vs.avgDelivScore>=50?'var(--gold)':'var(--red)';
+    const vPanel=h('div',{cls:'card',style:{borderColor:vs.highRisk>0?'rgba(245,158,11,.4)':'rgba(16,185,129,.3)',background:vs.highRisk>0?'rgba(245,158,11,.05)':'rgba(16,185,129,.04)',marginBottom:'14px'}});
+    var vHtml='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px">'+
+      '<div style="font-weight:700;font-size:14px">Pre-send Deliverability Report</div>'+
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">'+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:'+scoreColor+'">'+(vs.avgDelivScore||0)+'</div><div style="font-size:10px;color:var(--text2)">DELIVERABILITY</div></div>'+
+        '<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+vs.valid+'</div><div style="font-size:10px;color:var(--text2)">VALID</div></div>'+
+        (vs.warnings>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--gold)">'+vs.warnings+'</div><div style="font-size:10px;color:var(--text2)">WARNINGS</div></div>':'')+
+        (vs.invalid>0?'<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+vs.invalid+'</div><div style="font-size:10px;color:var(--text2)">INVALID</div></div>':'')+
+      '</div></div>';
+    vHtml+='<button class="btn" style="margin-top:10px;font-size:12px" onclick="validateEmails()">Re-run Check</button>';
+    vPanel.innerHTML=vHtml;
+    wrap.appendChild(vPanel);
+  } else {
+    const vPrompt=h('div',{cls:'card',style:{borderColor:'rgba(59,130,246,.35)',background:'rgba(59,130,246,.06)',marginBottom:'14px',cursor:'pointer'},onClick:validateEmails});
+    vPrompt.innerHTML='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+      '<div style="flex:1;min-width:200px"><p style="font-weight:700;font-size:14px;margin-bottom:3px;color:var(--blue)">Run Deliverability Check</p>'+
+      '<p style="font-size:12px;color:var(--text2)">Validates DNS records, detects corporate firewalls, scores spam risk before any email is sent.</p></div>'+
+      '<button class="btn btn-primary" style="white-space:nowrap" onclick="event.stopPropagation();validateEmails()">Run Check Now</button>'+
+      '</div>';
+    wrap.appendChild(vPrompt);
+  }
+  if(S.bulkSending){
+    const pct=S.bulkProgress.total>0?Math.round((S.bulkProgress.sent+S.bulkProgress.failed)/S.bulkProgress.total*100):0;
+    const card=h('div',{cls:'card',style:{textAlign:'center',padding:'3rem'}});
+    card.innerHTML='<div style="font-size:40px;margin-bottom:14px">🚀</div><h2 style="font-size:18px;font-weight:800;margin-bottom:6px">Sending campaign...</h2><p style="color:var(--text2);font-size:13px;margin-bottom:20px">'+S.bulkProgress.sent+' sent . '+S.bulkProgress.failed+' failed . '+S.bulkProgress.total+' total</p><div style="max-width:400px;margin:0 auto"><div class="pbar" style="height:6px"><div class="pfill" style="width:'+pct+'%"></div></div></div>';
+    wrap.appendChild(card);return wrap;
+  }
+  const launcher=h('div',{cls:'schedule-card'});
+  const nameDiv=h('div',{style:{marginBottom:'14px'}},h('label',{cls:'lbl'},'Campaign Name'));
+  const nameInp=document.createElement('input');nameInp.type='text';nameInp.placeholder='e.g. Q2 CISO Outreach';nameInp.value=S.campaignName||'';nameInp.addEventListener('input',e=>S.campaignName=e.target.value);
+  nameDiv.appendChild(nameInp);launcher.appendChild(nameDiv);
+  const schedRow=h('div',{cls:'toggle-row',style:{borderTop:'1px solid var(--border)',paddingTop:'14px'}});
+  schedRow.appendChild(h('div',null,h('p',{style:{fontWeight:'700',marginBottom:'2px'}},'Schedule Delivery'),h('p',{style:{fontSize:'12px',color:'var(--text2)'}},'Send now or schedule up to 72 hours ahead via SendGrid')));
+  const togWrap=h('div',{cls:'toggle-wrap'});
+  const tog=h('div',{cls:'toggle '+(S.scheduleAt?'on':'off'),onClick:()=>{if(S.scheduleAt){S.scheduleAt=null;}else{const d=new Date();d.setHours(d.getHours()+1);S.scheduleAt=d.toISOString().slice(0,16);}draw();}},h('div',{cls:'toggle-knob'}));
+  togWrap.appendChild(tog);togWrap.appendChild(h('span',{cls:'toggle-label',style:{color:S.scheduleAt?'var(--cyan)':'var(--text3)'}},S.scheduleAt?'SCHEDULED':'SEND NOW'));
+  schedRow.appendChild(togWrap);launcher.appendChild(schedRow);
+  if(S.scheduleAt){
+    const dtDiv=h('div',{style:{marginTop:'12px'}},h('label',{cls:'lbl'},'Schedule Date & Time'));
+    const dtInp=document.createElement('input');dtInp.type='datetime-local';dtInp.value=S.scheduleAt;
+    const min=new Date();min.setMinutes(min.getMinutes()+5);dtInp.min=min.toISOString().slice(0,16);
+    dtInp.addEventListener('change',e=>S.scheduleAt=e.target.value);dtDiv.appendChild(dtInp);launcher.appendChild(dtDiv);
+  }
+  launcher.appendChild(h('div',{cls:'flex',style:{marginTop:'16px'}},
+    h('button',{cls:'btn',style:{background:'linear-gradient(135deg,#ef4444,#f59e0b)',border:'none',color:'#fff',fontWeight:'700',padding:'10px 18px',borderRadius:'var(--r)',cursor:'pointer'},onClick:()=>{
+      if(window.VelorahGate && !VelorahGate.guard('ai_video')) return;
+      const ap=S.emails.filter(e=>e.approved&&!e.error);
+      if(!ap.length){alert('No approved emails.');return;}
+      const hdrs='First Name,Last Name,Email,Company,Job Title\n';
+      const rows=ap.map(e=>[getName(e.lead).split(' ')[0]||'',getName(e.lead).split(' ').slice(1).join(' ')||'',e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+      sessionStorage.setItem('velorah_leads_csv',hdrs+rows);
+      sessionStorage.setItem('velorah_leads_count',ap.length);
+      sessionStorage.setItem('velorah_source','app');
+      window.location.href='/campaign-video.html';
+    }},'Launch with Ares'),
+    h('button',{cls:'btn btn-launch',onClick:async()=>{
+      if(!approved.length){alert('No approved emails to send.');return;}
+      const label=S.scheduleAt?'Schedule '+approved.length+' emails for '+new Date(S.scheduleAt).toLocaleString()+'?':'Send '+approved.length+' emails now?';
+      if(!S.validationDone){
+        const runVal=confirm('Run deliverability check before sending? (Recommended)');
+        if(runVal){
+          try{ await validateEmails(); }catch(ve){ console.warn('Validation skipped:',ve&&ve.message); }
+          return;
+        }
+      }
+      if(!confirm(label))return;
+      await launchCampaign(approved);
+    }},S.scheduleAt?'Schedule Campaign ('+approved.length+')':'🚀 Launch Campaign ('+approved.length+')'),
+    h('button',{cls:'btn',onClick:doExport},'Export CSV'),
+    h('button',{cls:'btn',onClick:()=>checkTracking()},'🔄 Tracking'),
+    h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'<- Edit')
+  ));
+  wrap.appendChild(launcher);
+  if(!approved.length){
+    wrap.appendChild(h('div',{cls:'card',style:{textAlign:'center',padding:'2.5rem',marginTop:'12px'}},h('div',{style:{fontSize:'32px',marginBottom:'10px'}},'📭'),h('p',{style:{fontWeight:'700',marginBottom:'8px'}},'No approved emails'),h('button',{cls:'btn btn-primary',style:{marginTop:'12px'},onClick:()=>{S.step=3;draw();}},'<- Back to Review')));
+    return wrap;
+  }
+  const legend=h('div',{cls:'flex',style:{marginBottom:'10px',marginTop:'4px'}});
+  [['🟢','Opened','rgba(16,185,129,.2)','var(--green)'],['🔵','Clicked','rgba(59,130,246,.2)','var(--blue)'],['🟡','Delivered','rgba(245,158,11,.15)','var(--gold)'],['🔴','Bounced/Failed','rgba(239,68,68,.15)','var(--red)'],['·','Pending','var(--bg3)','var(--text3)']].forEach(([e,l,bg,c])=>{
+    legend.appendChild(h('span',{style:{padding:'2px 8px',borderRadius:'6px',background:bg,color:c,fontSize:'11px',fontWeight:'700',border:'1px solid '+c+'33'}},e+' '+l));
+  });
+  wrap.appendChild(legend);
+  approved.forEach(ed=>{
+    const id=ed.id;const st=S.sendStatus[id];const tr=S.trackingStatus[id];
+    const toEmail=(ed.lead[S.colMap.email]||'').trim();
+    const nm=getName(ed.lead).substring(0,28);const co=(ed.lead[S.colMap.company]||'').substring(0,22);
+    let bg='var(--glass)';let bc='var(--border)';
+    if(tr==='opened'){bg='rgba(16,185,129,.08)';bc='rgba(16,185,129,.3)';}
+    else if(tr==='clicked'){bg='rgba(59,130,246,.08)';bc='rgba(59,130,246,.3)';}
+    else if(tr==='delivered'||st==='sent'){bg='rgba(245,158,11,.06)';bc='rgba(245,158,11,.2)';}
+    else if(tr==='bounced'||st==='error'){bg='rgba(239,68,68,.06)';bc='rgba(239,68,68,.2)';}
+    else if(st==='scheduled'){bg='rgba(139,92,246,.06)';bc='rgba(139,92,246,.2)';}
+    const row=h('div',{cls:'srow',style:{background:bg,borderColor:bc}});
+    row.appendChild(h('div',{style:{flex:'1',minWidth:'0'}},h('p',{style:{fontWeight:'700',fontSize:'13px'}},nm+(co?' . ':'')+co),h('p',{style:{fontSize:'12px',color:'var(--text2)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},ed.subject)));
+    row.appendChild(h('span',{style:{fontSize:'11px',color:'var(--text2)',flexShrink:'0',maxWidth:'160px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},toEmail));
+    const badge=h('div',{style:{flexShrink:'0',fontSize:'11px',fontWeight:'700',padding:'3px 8px',borderRadius:'6px'}});
+    if(tr==='opened'){badge.style.cssText='background:rgba(16,185,129,.15);color:var(--green)';badge.textContent='🟢 Opened';}
+    else if(tr==='clicked'){badge.style.cssText='background:rgba(59,130,246,.15);color:var(--blue)';badge.textContent='🔵 Clicked';}
+    else if(tr==='delivered'){badge.style.cssText='background:rgba(245,158,11,.15);color:var(--gold)';badge.textContent='🟡 Delivered';}
+    else if(tr==='bounced'){badge.style.cssText='background:var(--red-dim);color:var(--red)';badge.textContent='🔴 Bounced';}
+    else if(st==='sent'){badge.style.cssText='background:rgba(245,158,11,.1);color:var(--gold)';badge.textContent='🟡 Sent';}
+    else if(st==='scheduled'){badge.style.cssText='background:rgba(139,92,246,.15);color:var(--purple)';badge.textContent='Scheduled';}
+    else if(st==='sending'){badge.appendChild(h('span',{cls:'spin'}));}
+    else if(st==='error'){badge.style.cssText='background:var(--red-dim);color:var(--red)';badge.textContent='🔴 Failed';}
+    else{badge.style.cssText='background:var(--bg3);color:var(--text3)';badge.textContent='Pending';}
+    row.appendChild(badge);wrap.appendChild(row);
+  });
+  return wrap;
+}
+function _emailSize(e){
+  var n = (e.subject||'').length + (e.body||'').length + (e.to||'').length + 50;
+  if(e.attachments){ e.attachments.forEach(function(a){ n += (a.base64||'').length + (a.name||'').length; }); }
+  return n;
+}
+function _chunkEmails(list){
+  var MAX_BYTES = 4.5 * 1024 * 1024;
+  var MAX_COUNT = 100;
+  var chunks=[], cur=[], curBytes=0;
+  for(var i=0;i<list.length;i++){
+    var sz=_emailSize(list[i]);
+    if(cur.length>0 && (curBytes+sz>MAX_BYTES || cur.length>=MAX_COUNT)){ chunks.push(cur); cur=[]; curBytes=0; }
+    cur.push(list[i]); curBytes+=sz;
+  }
+  if(cur.length) chunks.push(cur);
+  return chunks;
+}
+async function launchCampaign(approved){
+  S.bulkSending=true;S.bulkProgress={total:approved.length,sent:0,failed:0};draw();
+  const allEmails=approved.map(ed=>({id:ed.id,to:(ed.lead[S.colMap.email]||'').trim(),subject:ed.subject,body:ed.body,attachments:ed.attachment?[ed.attachment]:undefined}));
+  const approvedById={}; approved.forEach(function(ed){approvedById[ed.id]=ed;});
+  const chunks=_chunkEmails(allEmails);
+  let totalSent=0, totalFailed=0; const allMessageIds={}; let hadError=null;
   try{
-    const{data,error}=await sbClient.auth.signUp({email,password:pw,options:{data:{full_name:name,company:co}}});
-    if(error){showMsg('signup-msg',error.message,'error');}
-    else if(data.user&&!data.session){showMsg('signup-msg','Check your email for a confirmation link!','success');btn.textContent='Check your email ✓';}
-    else window.location.href='/app.html';
-  }catch(e){showMsg('signup-msg',e.message,'error');}
-  if(btn.textContent==='Creating account...')btn.disabled=false;btn.textContent=btn.disabled?btn.textContent:'Create Free Account';
+    for(let ci=0; ci<chunks.length; ci++){
+      const emails=chunks[ci];
+      let resp, data;
+      try{
+        resp=await fetch('/.netlify/functions/send-bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({emails,fromEmail:S.sender.email,fromName:S.sender.name,scheduleAt:S.scheduleAt||null,campaignName:S.campaignName||'Campaign'})});
+      }catch(netErr){ hadError='Network error sending batch '+(ci+1)+': '+netErr.message; break; }
+      const raw=await resp.text();
+      try{ data=JSON.parse(raw); }
+      catch(parseErr){
+        if(resp.status===413 || /too large|payload/i.test(raw)){ hadError='Batch '+(ci+1)+' was too large to send. Try fewer or smaller attachments.'; }
+        else { hadError='Server error on batch '+(ci+1)+' (status '+resp.status+'). '+(raw||'').slice(0,120); }
+        break;
+      }
+      if(data.success){
+        totalSent+=(data.sent||0); totalFailed+=(data.failed||0);
+        if(data.messageIds) Object.assign(allMessageIds,data.messageIds);
+        emails.forEach(function(em){
+          const ed=approvedById[em.id]; if(!ed) return;
+          S.sendStatus[ed.id]=data.messageIds&&data.messageIds[ed.id]?(S.scheduleAt?'scheduled':'sent'):'error';
+          if(data.messageIds&&data.messageIds[ed.id])S.messageIds[ed.id]=data.messageIds[ed.id];
+        });
+        S.bulkProgress={total:approved.length,sent:totalSent,failed:totalFailed};draw();
+      } else { hadError='Batch '+(ci+1)+' failed: '+(data.error||'Unknown error'); break; }
+    }
+    try{await fetch('/.netlify/functions/email_history',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_session?_session.access_token:'')},body:JSON.stringify({records:approved.filter(ed=>allMessageIds[ed.id]).map(ed=>({campaignName:S.campaignName||'Campaign',name:getName(ed.lead),email:(ed.lead[S.colMap.email]||'').trim(),company:ed.lead[S.colMap.company]||'',title:ed.lead[S.colMap.title]||'',industry:ed.lead[S.colMap.industry]||'',subject:ed.subject,body:ed.body,status:S.scheduleAt?'scheduled':'sent',messageId:allMessageIds[ed.id]||null,scheduledAt:S.scheduleAt||null}))})});}catch(e){}
+    if(hadError && totalSent===0){ alert('Campaign failed: '+hadError); }
+    else if(hadError){ alert('Partly sent: '+totalSent+' delivered, then stopped. '+hadError); }
+    else {
+      alert(S.scheduleAt?totalSent+' emails scheduled for '+new Date(S.scheduleAt).toLocaleString():'Campaign sent! '+totalSent+' sent . '+totalFailed+' failed');
+      if(!S.scheduleAt)setTimeout(()=>checkTracking(),30000);
+    }
+  }catch(e){alert('Error: '+e.message);}
+  S.bulkSending=false;draw();
 }
-
-async function resetPassword(){
-  const email=document.getElementById('forgot-email').value.trim();
-  if(!email)return showMsg('forgot-msg','Please enter your email.','error');
+async function checkTracking(){
+  const sent=S.emails.filter(e=>S.sendStatus[e.id]==='sent');if(!sent.length)return;
+  try{const resp=await fetch('/.netlify/functions/check-tracking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails:sent.map(e=>({email:e.lead[S.colMap.email],messageId:S.messageIds[e.id]||''}))})});const data=await resp.json();if(data.results){Object.entries(data.results).forEach(([email,status])=>{const em=sent.find(e=>e.lead[S.colMap.email]===email);if(em)S.trackingStatus[em.id]=status;});draw();}}catch(e){}
+}
+function doExport(){
+  const approved=S.emails.filter(e=>e.approved&&!e.error);if(!approved.length){alert('No approved emails to export.');return;}
+  const hdrs=['Name','Email','Company','Title','Industry','Subject','Body'];
+  const csv=[hdrs,...approved.map(e=>[getName(e.lead),e.lead[S.colMap.email]||'',e.lead[S.colMap.company]||'',e.lead[S.colMap.title]||'',e.lead[S.colMap.industry]||'',e.subject,e.body])].map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='emails.csv';a.click();
+}
+// AUTH & DASHBOARD
+function startNewCampaign(){
+  const div=document.getElementById('campaign-divider');
+  if(div)div.style.display='flex';
+  const root=document.getElementById('root');
+  if(root)root.scrollIntoView({behavior:'smooth',block:'start'});
+  S.step=0;S.leads=[];S.emails=[];S.genProgress=0;S._duplicates={};
+  draw();
+}
+async function loadDashboardStats(){
+  if(!_session)return;
   try{
-    const{error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/reset-password.html'});
-    if(error)showMsg('forgot-msg',error.message,'error');
-    else showMsg('forgot-msg','Reset link sent! Check your inbox.','success');
-  }catch(e){showMsg('forgot-msg',e.message,'error');}
+    var hr=new Date().getHours();
+    var greet=hr<12?'GOOD MORNING,':hr<17?'GOOD AFTERNOON,':'GOOD EVENING,';
+    var gel=document.getElementById('dash-greeting');
+    if(gel)gel.textContent=greet;
+  }catch(e){}
+  try{
+    var resp=await fetch('/.netlify/functions/email_history?limit=1000',{headers:{'Authorization':'Bearer '+_session.access_token}});
+    var data=await resp.json();
+    var records=data.records||[];
+    var total=records.length;
+    var opened=records.filter(function(r){return r.tracking_status==='opened';}).length;
+    var clicked=records.filter(function(r){return r.tracking_status==='clicked';}).length;
+    var campaigns=new Set(records.map(function(r){return r.campaign_name;}).filter(Boolean)).size;
+    var openPct=total>0?Math.round(opened/total*100):0;
+    var el;
+    el=document.getElementById('d-sent');if(el)el.textContent=total;
+    el=document.getElementById('d-opened');if(el)el.textContent=opened;
+    el=document.getElementById('d-clicked');if(el)el.textContent=clicked;
+    el=document.getElementById('d-campaigns');if(el)el.textContent=campaigns;
+    el=document.getElementById('d-openrate');if(el)el.textContent=openPct+'% rate';
+    if(records.length){
+      var feed=document.getElementById('activity-feed');
+      if(feed){
+        var html='';
+        records.slice(0,5).forEach(function(r){
+          var color=r.tracking_status==='opened'?'var(--green)':r.tracking_status==='clicked'?'var(--blue)':'var(--text3)';
+          var action=r.tracking_status==='opened'?'opened email':r.tracking_status==='clicked'?'clicked link':'email sent';
+          var date=r.sent_at?new Date(r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+          html+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">'
+            +'<div style="width:6px;height:6px;border-radius:50%;background:'+color+';flex-shrink:0"></div>'
+            +'<span style="flex:1"><strong>'+(r.recipient_name||r.recipient_email||'Unknown')+'</strong> '+action+'</span>'
+            +'<span style="color:var(--text3);font-size:10px">'+date+'</span></div>';
+        });
+        feed.innerHTML=html;
+      }
+    }
+  }catch(e){console.warn('Dashboard stats:',e.message);}
 }
-
-document.addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
-  const lv=document.getElementById('form-login').style.display!=='none';
-  const sv=document.getElementById('form-signup').style.display!=='none';
-  if(lv)login();else if(sv)signup();
-});
+var _saveDraftTimer = null;
+function scheduleDraftSave() {
+  if (_saveDraftTimer) clearTimeout(_saveDraftTimer);
+  _saveDraftTimer = setTimeout(saveDraft, 3000);
+}
+async function saveDraft() {
+  if (!_session || !S.leads || S.leads.length === 0) return;
+  try {
+    var resp = await fetch('/.netlify/functions/crm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _session.access_token },
+      body: JSON.stringify({
+        action:'save_draft',
+        name: S.campaignName || ('Campaign ' + new Date().toLocaleDateString()),
+        leads: S.leads, headers: S.headers, colMap: S.colMap, senderPrefs: S.senderPrefs,
+        source: S.crmSource ? 'crm' : 'csv', crmSource: S.crmSource || null, draft_id: S.draftId
+      })
+    });
+    var data = await resp.json();
+    if (data.draft_id) {
+      S.draftId = data.draft_id;
+      var indicator = document.getElementById('draft-saved-indicator');
+      if (indicator) { indicator.textContent = 'Draft saved (' + S.leads.length + ' contacts)'; indicator.style.display = 'flex'; }
+    }
+  } catch(e) {}
+}
+function checkSessionStorage() {
+  var csv = sessionStorage.getItem('velorah_leads_csv');
+  var count = sessionStorage.getItem('velorah_leads_count');
+  var crmSrc = sessionStorage.getItem('velorah_crm_source');
+  var draftId = sessionStorage.getItem('velorah_draft_id');
+  if (!csv) return;
+  sessionStorage.removeItem('velorah_leads_csv');
+  sessionStorage.removeItem('velorah_leads_count');
+  sessionStorage.removeItem('velorah_source');
+  sessionStorage.removeItem('velorah_crm_source');
+  sessionStorage.removeItem('velorah_draft_id');
+  var parsed = parseCSV(csv);
+  S.headers = parsed.headers;
+  S.leads   = parsed.rows;
+  S.colMap  = autoMap(parsed.headers);
+  if (crmSrc)  S.crmSource = crmSrc;
+  if (draftId) S.draftId   = draftId;
+  S.step = 1;
+  draw();
+  scheduleDraftSave();
+  if(count){
+    var b=document.createElement('div');
+    b.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--cyan));color:white;padding:12px 24px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(59,130,246,.5)';
+    b.textContent=count+' leads imported';
+    document.body.appendChild(b);setTimeout(function(){b.remove();},4000);
+  }
+}
+async function initAuth(){
+  draw();
+  try{
+    const{data:{session}}=await sbClient.auth.getSession();
+    if(!session){window.location.href='/login.html';return;}
+    _session=session;
+    document.getElementById('user-email').textContent=session.user.email;
+    try{
+      if(window.VelorahGate){
+        await VelorahGate.load(session.access_token);
+        VelorahGate.applyDom();
+      }
+    }catch(ge){ console.warn('Feature gate:', ge.message); }
+    loadDashboardStats();
+    checkSessionStorage();
+    try{
+      const resp=await fetch('/.netlify/functions/check-plan',{headers:{'Authorization':'Bearer '+session.access_token}});
+      const plan=await resp.json();
+      const pc=document.getElementById('plan-chip');
+      if(pc&&plan.plan)pc.textContent=plan.plan.charAt(0).toUpperCase()+plan.plan.slice(1);
+      const ut=document.getElementById('usage-text');
+      if(ut)ut.textContent=plan.used+'/'+(plan.limit===-1?'Unlim':plan.limit);
+      const uf=document.getElementById('usage-fill');
+      if(uf)uf.style.width=(plan.limit===-1?0:Math.min(100,(plan.used/plan.limit)*100))+'%';
+    }catch(e){}
+    try{
+      const resp=await fetch('/.netlify/functions/user_keys',{headers:{'Authorization':'Bearer '+session.access_token}});
+      const{keys}=await resp.json();
+      if(keys){
+        S.sender.name=keys.sender_name||'';
+        S.sender.email=keys.sender_email||'';
+        S.sender.title=keys.sender_title||'';
+        S.sender.company=keys.sender_company||'';
+        _session._sendgridKey=keys.sendgrid_key||'';
+      }
+    }catch(e){}
+    draw();
+  }catch(e){console.warn('Auth:',e.message);}
+}
+async function saveUserKeys(){
+  if(!_session||!_session.access_token)return;
+  try{await fetch('/.netlify/functions/user_keys',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+_session.access_token},body:JSON.stringify({sendgrid_key:_session._sendgridKey||'',sender_name:S.sender.name,sender_email:S.sender.email,sender_title:S.sender.title,sender_company:S.sender.company})});}catch(e){}
+}
+async function signOut(){await sbClient.auth.signOut();window.location.href='/login.html';}
+initAuth();
 </script>
 </body>
 </html>
