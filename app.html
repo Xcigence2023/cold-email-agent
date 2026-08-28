@@ -393,6 +393,11 @@ function h(tag,attrs,...kids){
   kids.flat().forEach(c=>{if(c!=null&&c!==false)el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
   return el;
 }
+function syncGenBtn(){
+  const btn=document.getElementById('gen-btn');if(!btn)return;
+  const cg=S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&(S.senderPrefs.valueProposition||'').trim().length>=10;
+  btn.style.opacity=cg?1:.4;
+}
 function draw(){
   const root=document.getElementById('root');if(!root)return;
   root.innerHTML='';
@@ -496,7 +501,7 @@ function p1(){
   const g=h('div',{cls:'g2'});
   [{k:'email',l:'Email *'},{k:'fullName',l:'Full Name'},{k:'firstName',l:'First Name'},{k:'lastName',l:'Last Name'},{k:'company',l:'Company *'},{k:'title',l:'Job Title'},{k:'industry',l:'Industry'},{k:'companySize',l:'Company Size'},{k:'revenue',l:'Revenue'}].forEach(f=>{
     const d=h('div',{cls:'field'},h('label',{cls:'lbl'},f.l));
-    const s=h('select',{onChange:e=>S.colMap[f.k]=e.target.value});
+    const s=h('select',{onChange:e=>{S.colMap[f.k]=e.target.value;syncGenBtn();}});
     s.appendChild(h('option',{value:''},'- not mapped -'));
     S.headers.forEach(hd=>{const o=h('option',{value:hd},hd);if(S.colMap[f.k]===hd)o.selected=true;s.appendChild(o);});
     d.appendChild(s);g.appendChild(d);
@@ -507,7 +512,7 @@ function p1(){
   [{k:'name',l:'Your Full Name *',p:'Alex Rivera'},{k:'email',l:'Sender Email *',p:'alex@company.com'},{k:'title',l:'Your Job Title',p:'Account Executive'},{k:'company',l:'Your Company',p:'Acme Corp'}].forEach(f=>{
     const d=h('div',{cls:'field'},h('label',{cls:'lbl'},f.l));
     const inp=document.createElement('input');inp.type='text';inp.placeholder=f.p;inp.value=S.sender[f.k]||'';
-    inp.addEventListener('input',e=>S.sender[f.k]=e.target.value);
+    inp.addEventListener('input',e=>{S.sender[f.k]=e.target.value;syncGenBtn();});
     d.appendChild(inp);sg.appendChild(d);
   });
   sc.appendChild(sg);
@@ -565,8 +570,9 @@ function p1(){
   const canGo=S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&(S.senderPrefs.valueProposition||'').trim().length>=10;
   wrap.appendChild(h('div',{cls:'fb'},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'<- Back'),
-    h('button',{cls:'btn btn-primary',style:{opacity:canGo?1:.4},onClick:()=>{
-      if(!canGo){alert('Please fill in: Email column, Company column, Your Name, Your Email, and Value Proposition (describe what you actually offer -- this is what the AI writes about, so it needs to be specific to your business, at least a sentence).');return;}
+    h('button',{id:'gen-btn',cls:'btn btn-primary',style:{opacity:canGo?1:.4},onClick:()=>{
+      const canGoNow=S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email&&(S.senderPrefs.valueProposition||'').trim().length>=10;
+      if(!canGoNow){alert('Please fill in: Email column, Company column, Your Name, Your Email, and Value Proposition (describe what you actually offer -- this is what the AI writes about, so it needs to be specific to your business, at least a sentence).');return;}
       S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};
       saveUserKeys();draw();runGenerate();
     }},'Generate '+S.leads.length+' Emails ->')
@@ -576,7 +582,7 @@ function p1(){
     h('p',{style:{fontSize:'12px',color:'var(--text2)',marginBottom:'12px'}},'AI uses these to match your voice, tone and goals when writing every email'),
     h('div',{cls:'g2',style:{marginBottom:'12px'}},
       h('div',null,h('label',{cls:'lbl'},'Value Proposition (required -- what do you actually offer? Be specific, this is what every email is about)'),
-        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'e.g. We help mid-size clinics cut no-show rates by 30% with automated reminders',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;}})),
+        h('input',{type:'text',value:S.senderPrefs.valueProposition||'',placeholder:'e.g. We help mid-size clinics cut no-show rates by 30% with automated reminders',oninput:e=>{S.senderPrefs.valueProposition=e.target.value;syncGenBtn();}})),
       h('div',null,h('label',{cls:'lbl'},'Social Proof (1 line)'),
         h('input',{type:'text',value:S.senderPrefs.socialProof||'',placeholder:'Trusted by 200+ B2B companies',oninput:e=>{S.senderPrefs.socialProof=e.target.value;}}))
     ),
