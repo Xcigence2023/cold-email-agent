@@ -1090,6 +1090,10 @@ async function initAuth(){
     const{data:{session}}=await sbClient.auth.getSession();
     if(!session){window.location.href='/login.html';return;}
     _session=session;
+    sbClient.auth.onAuthStateChange((event,newSession)=>{
+      if(event==='SIGNED_OUT'){window.location.href='/login.html';return;}
+      if(newSession){_session=newSession;}
+    });
     document.getElementById('user-email').textContent=session.user.email;
     try{
       if(window.VelorahGate){
