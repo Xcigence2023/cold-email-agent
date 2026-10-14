@@ -114,7 +114,7 @@ input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blu
     <div class="back-link"><a href="#" onclick="switchTab('login');return false">← Back to Sign In</a></div>
   </div>
 
-  <div class="footer-note">By signing in you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a></div>
+  <div class="footer-note">By signing in you agree to our <a href="https://velorahflow.io/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="https://velorahflow.io/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></div>
 </div>
 
 <script>
@@ -161,7 +161,7 @@ async function signup(){
   if(pw.length<8)return showMsg('signup-msg','Password must be at least 8 characters.','error');
   const btn=document.getElementById('btn-signup');btn.disabled=true;btn.textContent='Creating account...';
   try{
-    const{data,error}=await sbClient.auth.signUp({email,password:pw,options:{data:{full_name:name,company:co}}});
+    const{data,error}=await sbClient.auth.signUp({email,password:pw,options:{data:{full_name:name,company:co},emailRedirectTo:window.location.origin+'/login.html'}});
     if(error){showMsg('signup-msg',error.message,'error');}
     else if(data.user&&!data.session){showMsg('signup-msg','Check your email for a confirmation link!','success');btn.textContent='Check your email ✓';}
     else window.location.href='/app.html';

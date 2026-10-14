@@ -90,7 +90,7 @@ tr:hover td{background:var(--bg2)}
       <button class="btn btn-sm" onclick="document.getElementById('install-card').style.display='none'">Dismiss</button>
     </div>
     <div class="install-box" id="install-code">
-&lt;!-- Add before &lt;/body&gt; on every page of xcigence.com --&gt;
+&lt;!-- Add before &lt;/body&gt; on every page of your website --&gt;
 &lt;script src="/velorah-tracker.js"&gt;&lt;/script&gt;</div>
     <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="copyInstall()">📋 Copy Install Code</button>
     <p style="font-size:12px;color:var(--text2);margin-top:8px">Also set <strong>IPINFO_TOKEN</strong> in Netlify env vars (free at <a href="https://ipinfo.io" target="_blank" style="color:var(--blue)">ipinfo.io</a> — 50,000 lookups/month). Optional: <strong>CLEARBIT_API_KEY</strong> for richer company data.</p>
@@ -354,7 +354,7 @@ function renderTable(){
   var mode=document.getElementById('view-mode').value;
   var wrap=document.getElementById('table-wrap');
   if(!filtered.length){
-    wrap.innerHTML='<div class="empty"><p style="color:var(--text2)">No visitor data yet. Add the tracker to xcigence.com to start capturing visitors.</p></div>';
+    wrap.innerHTML='<div class="empty"><p style="color:var(--text2)">No visitor data yet. Add the tracker to your website to start capturing visitors.</p></div>';
     return;
   }
   var page=filtered.slice((currentPage-1)*PAGE,currentPage*PAGE);

@@ -397,7 +397,7 @@ async function init(){
       const recent=records.slice(0,6);
       const colors={opened:'var(--green)',clicked:'var(--blue)',delivered:'var(--gold)',bounced:'var(--red)',pending:'var(--text3)'};
       const icons={opened:'👁',clicked:'🔵',delivered:'📬',bounced:'🔴',pending:'o'};
-      document.getElementById('activity-list').innerHTML=recent.map(r=>'
+      document.getElementById('activity-list').innerHTML=recent.map(r=>`
         <div class="activity-item">
           <div class="activity-dot" style="background:${colors[r.tracking_status]||'var(--text3)'}"></div>
           <div class="activity-text">
@@ -407,7 +407,7 @@ async function init(){
           </div>
           <div class="activity-time">${r.opened_at||r.sent_at?new Date(r.opened_at||r.sent_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</div>
         </div>
-      ').join('');
+      `).join('');
     }
   }catch(e){
     document.getElementById('stat-sent').textContent='0';
@@ -421,7 +421,7 @@ async function init(){
 }
 
 function showUpgrade(){
-  alert('Contact us at support@velorah.ai to upgrade your plan.\n\nPlans:\nStarter: $49/mo - 500 leads\nGrowth: $149/mo - 2,000 leads\nPro: $399/mo - 10,000 leads\nEnterprise: Custom');
+  alert('Contact us at sales@velorahflow.io to upgrade your plan.\n\nPlans:\nStarter: $49/mo - 500 leads\nGrowth: $149/mo - 2,000 leads\nPro: $399/mo - 10,000 leads\nEnterprise: Custom');
 }
 
 async function signOut(){

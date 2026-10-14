@@ -36,7 +36,8 @@
  *
  * ENV: SUPABASE_URL, SUPABASE_SERVICE_KEY, VOICE_AGENT_SHARED_SECRET,
  *      ANTHROPIC_API_KEY, ANTHROPIC_MODEL (optional, defaults below),
- *      SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, BUSINESS_NAME,
+ *      ZEPTOMAIL_API_KEY, ZEPTOMAIL_FROM_EMAIL, ZEPTOMAIL_API_URL (optional,
+ *      only needed for non-default ZeptoMail data centers), BUSINESS_NAME,
  *      BUSINESS_MAILING_ADDRESS (CAN-SPAM requires a physical address
  *      in every commercial email -- set this),
  *      TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
@@ -339,17 +340,19 @@ async function sendMessage(userId, body, SUPABASE_URL, SERVICE_KEY){
   }
 
   if (msg.channel === 'email') {
-    const key = process.env.SENDGRID_API_KEY, fromEmail = process.env.SENDGRID_FROM_EMAIL;
-    if (!key || !fromEmail) return err('Email sending not configured (SENDGRID_API_KEY / SENDGRID_FROM_EMAIL missing)', 500);
+    const key = process.env.ZEPTOMAIL_API_KEY, fromEmail = process.env.ZEPTOMAIL_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL;
+    const zeptoUrl = process.env.ZEPTOMAIL_API_URL || 'https://api.zeptomail.com/v1.1/email';
+    if (!key || !fromEmail) return err('Email sending not configured (ZEPTOMAIL_API_KEY / ZEPTOMAIL_FROM_EMAIL missing)', 500);
     try {
-      const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      const r = await fetch(zeptoUrl, {
         method: 'POST',
-        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        headers: { Authorization: key, 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          personalizations: [{ to: [{ email: msg.to_address }] }],
-          from: { email: fromEmail, name: process.env.BUSINESS_NAME || undefined },
+          from: { address: fromEmail, name: process.env.BUSINESS_NAME || undefined },
+          to: [{ email_address: { address: msg.to_address } }],
           subject: msg.subject || 'Following up',
-          content: [{ type: 'text/plain', value: msg.body }]
+          htmlbody: '<p>' + String(msg.body || '').replace(/\n/g, '<br>') + '</p>',
+          textbody: msg.body || '',
         })
       });
       if (!r.ok) {
@@ -358,7 +361,8 @@ async function sendMessage(userId, body, SUPABASE_URL, SERVICE_KEY){
           { status: 'failed', block_reason: t.slice(0, 300) });
         return err('Email send failed: ' + r.status, 502);
       }
-      const providerId = r.headers.get('x-message-id') || null;
+      let providerId = null;
+      try { providerId = (await r.json()).request_id || null; } catch {}
       const upd = await sb('PATCH', 'post_call_messages?id=eq.' + encodeURIComponent(msg.id), SUPABASE_URL, SERVICE_KEY,
         { status: 'sent', provider_id: providerId, sent_at: new Date().toISOString() });
       return ok({ ok: true, message: Array.isArray(upd.data) ? upd.data[0] : upd.data });

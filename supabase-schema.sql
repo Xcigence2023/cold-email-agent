@@ -1,5 +1,5 @@
 -- ============================================================
--- XCIGENCE AI COLD EMAIL AGENT — SUPABASE SCHEMA
+-- VELORAH IGNITION — AI COLD EMAIL AGENT — SUPABASE SCHEMA
 -- Run this entire script in Supabase → SQL Editor → New Query
 -- ============================================================
 
@@ -19,16 +19,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. USER API KEYS TABLE (each user's own Anthropic + SendGrid keys)
+-- 2. USER API KEYS TABLE (each user's own Anthropic key + sender details; email sending itself uses the account-wide ZEPTOMAIL_API_KEY)
 CREATE TABLE IF NOT EXISTS public.user_api_keys (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
   anthropic_key TEXT,                 -- stored encrypted at rest by Supabase
-  sendgrid_key TEXT,
+  zeptomail_key TEXT,
   sender_name TEXT,
   sender_email TEXT,
   sender_title TEXT,
-  sender_company TEXT DEFAULT 'Xcigence',
+  sender_company TEXT DEFAULT 'Velorah',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

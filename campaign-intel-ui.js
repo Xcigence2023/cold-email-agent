@@ -97,7 +97,7 @@
 
     var sl = document.createElement('label'); sl.className = 'lbl'; sl.textContent = 'Your subject line';
     var si = document.createElement('input'); si.type = 'text';
-    si.placeholder = 'e.g. Xcigence | US-Patented Cyber Risk Intelligence';
+    si.placeholder = 'e.g. Velorah | AI Growth Team for B2B Sales';
     si.value = BASE.subject;
     si.addEventListener('input', function (e) { BASE.subject = e.target.value; });
 

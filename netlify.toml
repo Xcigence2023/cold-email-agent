@@ -44,6 +44,9 @@
 [functions."ai-visibility"]
   timeout = 20
 
+[functions."process-scheduled-emails"]
+  schedule = "*/5 * * * *"
+
 # ── GLOBAL SECURITY HEADERS ───────────────────────────────
 [[headers]]
   for = "/*"
@@ -61,7 +64,7 @@
   for = "/*.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://sdk.twilio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.sendgrid.com https://api.apollo.io https://api.hunter.io https://api.lusha.com https://www.reddit.com https://hn.algolia.com https://www.googleapis.com https://api.stackexchange.com https://dev.to https://api.github.com https://api.search.brave.com https://ipinfo.io https://image.pollinations.ai https://api.d-id.com https://api-inference.huggingface.co https://*.hf.space https://huggingface.co https://cdn.jsdelivr.net https://sdk.twilio.com https://eventgw.twilio.com wss://chunderw-vpc-gll.twilio.com wss://*.twilio.com https://*.twilio.com https://media.twiliocdn.com wss://voice-js.roaming.twilio.com https://velorah-voice-agent.fly.dev; worker-src blob:; frame-src 'none';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com https://sdk.twilio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.apollo.io https://api.hunter.io https://api.lusha.com https://www.reddit.com https://hn.algolia.com https://www.googleapis.com https://api.stackexchange.com https://dev.to https://api.github.com https://api.search.brave.com https://ipinfo.io https://image.pollinations.ai https://api.d-id.com https://api-inference.huggingface.co https://*.hf.space https://huggingface.co https://cdn.jsdelivr.net https://sdk.twilio.com https://eventgw.twilio.com wss://chunderw-vpc-gll.twilio.com wss://*.twilio.com https://*.twilio.com https://media.twiliocdn.com wss://voice-js.roaming.twilio.com https://velorah-voice-agent.fly.dev; worker-src blob:; frame-src 'none';"
 
 # ── STATIC ASSET CACHE ────────────────────────────────────
 [[headers]]
@@ -70,10 +73,15 @@
     Cache-Control = "public, max-age=3600"
 
 # ── REDIRECTS ─────────────────────────────────────────────
+# The site root is the front door: login.html signs users in (including people arriving
+# from an email-confirmation link, whose session token is in the URL #fragment and is
+# preserved across this redirect) and forwards logged-in users to /app.html.
+# force = true is required: without it Netlify skips this rule because index.html exists.
 [[redirects]]
   from = "/"
-  to = "/app.html"
+  to = "/login.html"
   status = 302
+  force = true
 
 [[redirects]]
   from = "/app"

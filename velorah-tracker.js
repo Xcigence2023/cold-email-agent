@@ -1,6 +1,6 @@
 /**
  * VELORAH WEBSITE VISITOR TRACKER
- * Add this script to every page of your website (xcigence.com)
+ * Add this script to every page of your website
  * Place before </body> tag
  *
  * <script src="https://portal.xcigence.com/velorah-tracker.js"></script>

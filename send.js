@@ -9,8 +9,13 @@ exports.handler = async function(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-  if (!SENDGRID_API_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'SENDGRID_API_KEY not configured' }) };
+  // Migrated from SendGrid to ZeptoMail. ZEPTOMAIL_API_KEY must include the
+  // "Zoho-enczapikey " prefix exactly as shown in ZeptoMail's dashboard
+  // (Mail Agent > Setup > Send Mail Token) -- same convention used by the
+  // marketing site's contact form function.
+  const ZEPTOMAIL_API_KEY = process.env.ZEPTOMAIL_API_KEY;
+  const ZEPTOMAIL_API_URL = process.env.ZEPTOMAIL_API_URL || 'https://api.zeptomail.com/v1.1/email';
+  if (!ZEPTOMAIL_API_KEY) return { statusCode: 500, headers, body: JSON.stringify({ error: 'ZEPTOMAIL_API_KEY not configured' }) };
 
   let to, subject, body, fromEmail, fromName, attachments;
   try {
@@ -29,50 +34,58 @@ exports.handler = async function(event) {
     .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g, '<br>')}</p>`)
     .join('');
 
-  // Unique message ID for tracking
-  const messageId = `velorah-${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
+  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:20px 20px 40px;background:#fff;max-width:600px">${htmlBody}<p style="margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px">Sent by ${fromName || 'Velorah'} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>`;
 
   const payload = {
-    personalizations: [{ to: [{ email: to }], subject }],
-    from: { email: fromEmail, name: fromName || 'Velorah' },
-    reply_to: { email: fromEmail, name: fromName || 'Velorah' },
-    content: [
-      { type: 'text/plain', value: body },
-      { type: 'text/html', value: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:20px 20px 40px;background:#fff;max-width:600px">${htmlBody}<p style="margin-top:32px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:16px">Sent by ${fromName||'Velorah'} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>` }
-    ],
-    // Enable open tracking for analytics
-    tracking_settings: {
-      click_tracking: { enable: true, enable_text: false },
-      open_tracking: { enable: true },
-      subscription_tracking: { enable: false }
-    },
-    custom_args: { message_id: messageId }
+    from: { address: fromEmail, name: fromName || 'Velorah' },
+    to: [{ email_address: { address: to } }],
+    reply_to: [{ address: fromEmail, name: fromName || 'Velorah' }],
+    subject,
+    htmlbody: fullHtml,
+    textbody: body,
+    track_clicks: true,
+    track_opens: true,
   };
 
   if (attachments && attachments.length > 0) {
     payload.attachments = attachments.slice(0, 5).map(a => ({
       content: a.base64,
-      type: a.type || 'application/octet-stream',
-      filename: a.name,
-      disposition: 'attachment'
+      mime_type: a.type || 'application/octet-stream',
+      name: a.name,
     }));
   }
 
   try {
-    const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.status >= 200 && res.status < 300) {
-      // Get SendGrid message ID from response headers
-      const sgMessageId = res.headers.get('x-message-id') || messageId;
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, messageId: sgMessageId }) };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    let res;
+    try {
+      res = await fetch(ZEPTOMAIL_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': ZEPTOMAIL_API_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
     }
+
     const text = await res.text();
-    return { statusCode: res.status, headers, body: JSON.stringify({ error: 'SendGrid error ' + res.status + ': ' + text }) };
+    if (res.status >= 200 && res.status < 300) {
+      let messageId = `velorah-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      try {
+        const parsed = JSON.parse(text);
+        messageId = parsed.request_id || messageId;
+      } catch {}
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, messageId }) };
+    }
+    return { statusCode: res.status, headers, body: JSON.stringify({ error: 'ZeptoMail error ' + res.status + ': ' + text.slice(0, 300) }) };
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    const isTimeout = err && err.name === 'AbortError';
+    return { statusCode: 502, headers, body: JSON.stringify({ error: isTimeout ? 'ZeptoMail request timed out' : (err.message || 'Network error') }) };
   }
 };

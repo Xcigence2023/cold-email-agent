@@ -31,7 +31,7 @@ exports.handler = async function(event) {
   if (event.httpMethod === 'GET') {
     const { data, error } = await supabase
       .from('user_api_keys')
-      .select('anthropic_key, sendgrid_key, sender_name, sender_email, sender_title, sender_company')
+      .select('anthropic_key, zeptomail_key, sender_name, sender_email, sender_title, sender_company')
       .eq('user_id', user.id)
       .single();
 
@@ -43,14 +43,14 @@ exports.handler = async function(event) {
 
   if (event.httpMethod === 'POST') {
     const body = JSON.parse(event.body || '{}');
-    const { anthropic_key, sendgrid_key, sender_name, sender_email, sender_title, sender_company } = body;
+    const { anthropic_key, zeptomail_key, sender_name, sender_email, sender_title, sender_company } = body;
 
     const { error } = await supabase
       .from('user_api_keys')
       .upsert({
         user_id: user.id,
         anthropic_key,
-        sendgrid_key,
+        zeptomail_key,
         sender_name,
         sender_email,
         sender_title,

@@ -59,7 +59,7 @@ exports.handler = async function(event) {
     if (cached && Date.now() < cached.exp) {
       return { statusCode: 200, headers: { ...headers, 'X-Cache': 'HIT' }, body: JSON.stringify({ keys: cached.keys }) };
     }
-    const r = await fetch(`${SB}/rest/v1/user_api_keys?user_id=eq.${user.id}&select=anthropic_key,sendgrid_key,sender_name,sender_email,sender_title,sender_company,hubspot_key,salesforce_key,salesforce_instance,pipedrive_key,zoho_key,zoho_dc,ghl_key,activecampaign_key,activecampaign_account,notion_key,notion_db_id,crm_active`, {
+    const r = await fetch(`${SB}/rest/v1/user_api_keys?user_id=eq.${user.id}&select=anthropic_key,zeptomail_key,sender_name,sender_email,sender_title,sender_company,hubspot_key,salesforce_key,salesforce_instance,pipedrive_key,zoho_key,zoho_dc,ghl_key,activecampaign_key,activecampaign_account,notion_key,notion_db_id,crm_active`, {
       headers: { 'Authorization': `Bearer ${SK}`, 'apikey': SK }
     });
     const rows = await r.json();
@@ -77,7 +77,7 @@ exports.handler = async function(event) {
     // Sanitize all inputs
     const payload = {
       user_id:        user.id,
-      sendgrid_key:   san(body.sendgrid_key, 200),
+      zeptomail_key:   san(body.zeptomail_key, 200),
       sender_name:    san(body.sender_name, 100),
       sender_email:   sanEmail(body.sender_email),
       sender_title:   san(body.sender_title, 100),
