@@ -62,7 +62,7 @@ exports.handler = async function (event) {
       reply_to: [{ address: row.from_email, name: row.from_name || row.from_email }],
       subject: row.subject || '',
       htmlbody: row.body || '',
-      textbody: (row.body || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
+      textbody: (row.body || '').replace(/<head[\s\S]*?<\/head>/i, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
       track_clicks: true,
       track_opens: true,
     };
