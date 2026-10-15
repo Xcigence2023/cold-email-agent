@@ -102,6 +102,8 @@ h2{font-size:16px;font-weight:700}
   </div>
   <div id="root"></div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/email-template.js"></script>
 <script>
 // ── STATE ───────────────────────────────────────────────────
 const S={
@@ -113,6 +115,9 @@ const S={
   emailAngle:'pain',
   researchMode:false
 };
+S.signedIn=false;
+S.lastSendError='';
+S.tpl=window.VelorahEmailTemplate?VelorahEmailTemplate.loadSettings():{enabled:false,ai:true,cfg:null};
 
 // ── CSV ─────────────────────────────────────────────────────
 function parseCSV(text){
@@ -165,7 +170,7 @@ async function callAI(lead){
   const industry=lead[S.colMap.industry]||'technology';
   const companySize=lead[S.colMap.companySize]||'';
   const revenue=lead[S.colMap.revenue]||'';
-  const prompt=getSystem(S.emailAngle,companySize,revenue)+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- Company Size: '+(companySize||'unknown')+'\n- Revenue: '+(revenue||'unknown')+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}';
+  const prompt=getSystem(S.emailAngle,companySize,revenue)+tplNote()+'\n\nWrite a cold email to:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- Company Size: '+(companySize||'unknown')+'\n- Revenue: '+(revenue||'unknown')+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown fences:\n{"subject":"...","body":"..."}';
 
   const resp=await fetch('/.netlify/functions/generate',{
     method:'POST',
@@ -212,20 +217,111 @@ async function callAI(lead){
 }
 
 // ── SEND EMAIL ──────────────────────────────────────────────
-async function sendEmail(to,subject,body){
-  const resp=await fetch('/.netlify/functions/send',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      to, subject, body,
-      fromEmail: S.sender.email,
-      fromName: S.sender.name,
-      attachments: S.attachments
-    })
-  });
-  const data=await resp.json();
-  if(!data.success){console.error('Send error:',data.error);}
+function tplOn(){return !!(S.tpl&&S.tpl.enabled&&window.VelorahEmailTemplate);}
+function tplNote(){
+  return (tplOn()&&S.tpl.ai)?` TEMPLATE MODE: this email will be placed inside a designed HTML template that already supplies the greeting, the layout, the call-to-action button, the sign-off and the unsubscribe footer. So the "body" you write must be ONLY a short personalised opening of 2 to 3 sentences (maximum 70 words) that refers to this lead's company, role or industry. Do NOT include a greeting, sign-off, signature, links or any unsubscribe line. The subject must still be under 50 characters.`:'';
+}
+
+// ── DESIGNED EMAILS ─────────────────────────────────────────
+// Designed emails are only sent for signed-in users: the page reads the Supabase session
+// (public anon key, same as login.html) and the server verifies it before sending.
+const SB_URL='https://cncxqqxwhejcyiiwlqgf.supabase.co', SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuY3hxcXh3aGVqY3lpaXdscWdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjY1MzYsImV4cCI6MjA5Mzk0MjUzNn0.pmvjvN9D2sKAiZkgRtIpGX3QRtV9yIB1FFSHqPeuRSI';
+let _sb=null;
+function sbClient(){if(!_sb&&window.supabase)_sb=window.supabase.createClient(SB_URL,SB_KEY);return _sb;}
+async function getSession(){try{const c=sbClient();if(!c)return null;const r=await c.auth.getSession();return(r&&r.data&&r.data.session)||null;}catch(e){return null;}}
+async function refreshSession(){const v=!!(await getSession());if(v!==S.signedIn){S.signedIn=v;draw();}return v;}
+function leadVars(lead){
+  const full=getName(lead);const hasName=full&&full.indexOf('@')<0&&full!=='Unknown';
+  const first=(S.colMap.firstName&&lead[S.colMap.firstName])||(hasName?full.split(' ')[0]:'');
+  const last=(S.colMap.lastName&&lead[S.colMap.lastName])||(hasName?full.split(' ').slice(1).join(' '):'');
+  return{first_name:first,last_name:last,full_name:hasName?full:'',company:lead[S.colMap.company]||'',title:lead[S.colMap.title]||'',industry:lead[S.colMap.industry]||'',email:lead[S.colMap.email]||'',
+    sender_name:S.sender.name,sender_title:S.sender.title,sender_company:S.sender.company,sender_email:S.sender.email};
+}
+function buildDesigned(ed){
+  const vars=leadVars(ed.lead);
+  if(S.tpl.ai&&ed.body)vars.opening=ed.body;
+  const out=VelorahEmailTemplate.build(S.tpl.cfg,vars);
+  return{html:out.html,text:out.text,subject:ed.subject||out.subject};
+}
+async function sendEmail(to,subject,body,ed){
+  const payload={to,subject,body,fromEmail:S.sender.email,fromName:S.sender.name,attachments:S.attachments};
+  const headers={'Content-Type':'application/json'};
+  if(tplOn()&&ed){
+    const session=await getSession();
+    if(!session){S.signedIn=false;S.lastSendError='Please sign in to send designed emails.';return false;}
+    const b=buildDesigned(ed);
+    payload.subject=b.subject||subject;payload.body=b.text;payload.bodyHtml=b.html;
+    headers.Authorization='Bearer '+session.access_token;
+  }
+  const resp=await fetch('/.netlify/functions/send',{method:'POST',headers,body:JSON.stringify(payload)});
+  const data=await resp.json().catch(()=>({}));
+  if(!data.success){console.error('Send error:',data.error);S.lastSendError=data.error||('HTTP '+resp.status);if(data.code==='SEND-AUTH')S.signedIn=false;}
+  else S.lastSendError='';
   return data.success===true;
+}
+async function ensureReadyToSend(isTest){
+  if(!tplOn())return true;
+  const v=VelorahEmailTemplate.validate(S.tpl.cfg,{needSubject:!S.tpl.ai});
+  if(!isTest&&v.errors.length){alert('Fix these before sending:\n\n• '+v.errors.join('\n• ')+'\n\nClick "Edit design" to fix them.');return false;}
+  if(!(await refreshSession())){alert('Please sign in to send designed emails.\n\nClick "Sign in" on this page (it opens in a new tab), sign in, then come back and click "I\'ve signed in".');return false;}
+  return true;
+}
+function openDesigner(){
+  const first=S.leads[0]?leadVars(S.leads[0]):{};
+  VelorahEmailTemplate.openDesigner({cfg:S.tpl.cfg,ai:S.tpl.ai,
+    sampleVars:Object.assign({},first.first_name?first:{},{sender_name:S.sender.name||'Your Name',sender_title:S.sender.title||'Your Title',sender_company:S.sender.company,sender_email:S.sender.email||'you@example.com'}),
+    sampleOpening:S.tpl.ai?'I noticed your team is growing quickly this quarter, which usually means outbound is about to matter even more.':'',
+    onSave:function(cfg){S.tpl.cfg=cfg;VelorahEmailTemplate.saveSettings(S.tpl);draw();}});
+}
+function previewFrame(ed,height){
+  const f=document.createElement('iframe');f.setAttribute('sandbox','');f.title='Email preview';
+  f.style.cssText='width:100%;height:'+(height||560)+'px;border:1px solid var(--border);border-radius:10px;background:#fff';
+  f.srcdoc=ed?buildDesigned(ed).html:VelorahEmailTemplate.render(S.tpl.cfg,S.leads[0]?leadVars(S.leads[0]):{});
+  return f;
+}
+function designCard(){
+  const T=window.VelorahEmailTemplate;const card=h('div',{cls:'card'});
+  if(!T)return card;
+  const on=!!S.tpl.enabled;
+  const seg=(label,val)=>h('button',{cls:'btn'+(on===val?' btn-primary':''),onClick:()=>{S.tpl.enabled=val;T.saveSettings(S.tpl);draw();}},label);
+  card.appendChild(h('div',{cls:'fb'},
+    h('div',null,h('h2',null,'Email design'),h('p',{cls:'sub'},'Send plain text, or a designed email with your branding, highlight boxes and a call-to-action button.')),
+    h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},seg('Plain text',false),seg('✨ Designed template',true))));
+  if(!on)return card;
+  const c=S.tpl.cfg.content,t=S.tpl.cfg.theme;
+  const v=T.validate(S.tpl.cfg,{needSubject:!S.tpl.ai});
+  const thumb=h('div',{style:{width:'260px',height:'340px',overflow:'hidden',borderRadius:'10px',border:'1px solid var(--border)',flexShrink:'0',background:'#fff',position:'relative'}});
+  const tf=previewFrame(null,800);tf.style.cssText='width:640px;height:800px;border:0;transform:scale(.406);transform-origin:top left;pointer-events:none';thumb.appendChild(tf);
+  const sw=(col)=>h('span',{style:{display:'inline-block',width:'14px',height:'14px',borderRadius:'50%',background:col,border:'1px solid var(--border2)',marginRight:'4px'}});
+  const aiBox=document.createElement('input');aiBox.type='checkbox';aiBox.checked=!!S.tpl.ai;aiBox.style.cssText='width:auto;margin-right:8px';
+  aiBox.addEventListener('change',()=>{S.tpl.ai=aiBox.checked;T.saveSettings(S.tpl);draw();});
+  const right=h('div',{style:{flex:'1',minWidth:'240px',display:'flex',flexDirection:'column',gap:'10px'}},
+    h('div',null,h('div',{style:{fontWeight:'700'}},c.headline||'(no headline yet)'),h('div',{cls:'sub'},c.ctaText?('Button: '+c.ctaText):'No button'),h('div',{style:{marginTop:'6px'}},sw(t.primary),sw(t.accent))),
+    h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},h('button',{cls:'btn btn-primary',onClick:openDesigner},'🎨 Customize template')),
+    h('label',{style:{display:'flex',alignItems:'flex-start',fontSize:'13px',cursor:'pointer',lineHeight:'1.5'}},aiBox,h('span',null,'Let AI write a short personalised opening for each lead')),
+    h('div',{cls:'tip',style:{marginTop:'0'}},S.tpl.ai?'AI adds a personalised opening after the greeting; the rest of the design stays the same. Takes a few seconds per lead.':'Every recipient gets your template, personalised with merge fields like {{first_name}} and {{company}}. Creating emails is instant.'),
+    v.errors.length?h('div',{cls:'errtip',style:{marginTop:'0'}},'Before you can send: '+v.errors[0]+(v.errors.length>1?' (+'+(v.errors.length-1)+' more)':'')):h('div',{style:{fontSize:'12px',color:'var(--success-text)'}},'✓ Template ready to send'));
+  card.appendChild(h('div',{style:{display:'flex',gap:'16px',marginTop:'14px',flexWrap:'wrap'}},thumb,right));
+  return card;
+}
+function designStatusCard(){
+  const T=window.VelorahEmailTemplate;const v=T.validate(S.tpl.cfg,{needSubject:!S.tpl.ai});const card=h('div',{cls:'card'});
+  card.appendChild(h('div',{cls:'fb'},h('div',null,h('h2',null,'✨ Designed email'),h('p',{cls:'sub'},'Every recipient gets your template, personalised with their own details.')),
+    h('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},h('button',{cls:'btn btn-sm',onClick:openDesigner},'🎨 Edit design'),h('button',{cls:'btn btn-sm btn-primary',onClick:sendTest},'✉ Send me a test'))));
+  if(!S.signedIn)card.appendChild(h('div',{cls:'tip',style:{borderLeftColor:'var(--warn-border)'}},'Designed emails can only be sent while you are signed in. ',h('button',{cls:'btn btn-sm',style:{marginLeft:'6px'},onClick:()=>window.open('/login.html','_blank')},'Sign in'),h('button',{cls:'btn btn-sm',style:{marginLeft:'6px'},onClick:refreshSession},"I've signed in")));
+  v.errors.forEach(m=>card.appendChild(h('div',{cls:'errtip'},m)));
+  v.warnings.forEach(m=>card.appendChild(h('div',{cls:'tip',style:{borderLeftColor:'var(--warn-border)'}},'⚠ '+m)));
+  if(!v.errors.length&&!v.warnings.length&&S.signedIn)card.appendChild(h('div',{style:{fontSize:'12px',color:'var(--success-text)',marginTop:'10px'}},'✓ Ready to send'));
+  return card;
+}
+async function sendTest(){
+  if(!(await ensureReadyToSend(true)))return;
+  const ed=S.emails.find(e=>e.approved&&!e.error)||S.emails[0];
+  if(!ed){alert('There is nothing to preview yet.');return;}
+  const to=S.sender.email;
+  const ok=await sendEmail(to,'[TEST] '+(ed.subject||''),ed.body,Object.assign({},ed,{subject:'[TEST] '+(ed.subject||'')}));
+  alert(ok?'Test email sent to '+to+'. Check your inbox (and spam folder).':'The test email could not be sent. '+(S.lastSendError||''));
+  draw();
 }
 
 // ── DOM HELPERS ──────────────────────────────────────────────
@@ -324,7 +420,7 @@ function p1(){
   const angles=[
     {val:'pain',    emoji:'🎯', label:'Pain-Focused',    desc:'Lead with their specific compliance pain point and urgency'},
     {val:'roi',     emoji:'💰', label:'ROI-Focused',     desc:'Lead with cost savings, time reduction and business value'},
-    {val:'risk',    emoji:'⚠️', label:'Risk-Focused',    desc:'Lead with breach risk, regulatory fines and consequences'},
+    {val:'risk',    emoji:'⚠️', label:'Risk-Focused',    desc:'Lead with the cost of a slow or fragmented outbound motion'},
     {val:'proof',   emoji:'🏆', label:'Social Proof',    desc:'Lead with customer success stories and real results'},
     {val:'question',emoji:'❓', label:'Question-Based',  desc:'Open with a sharp question that makes them think'},
     {val:'insight', emoji:'💡', label:'Insight-Led',     desc:'Share an industry insight then connect it to your solution'}
@@ -361,7 +457,7 @@ function p1(){
   const researchRow=h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'12px'}});
   const researchLeft=h('div',null,
     h('p',{style:{fontWeight:'700',fontSize:'14px',marginBottom:'4px'}},'🔍 AI Research Mode'),
-    h('p',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.5'}},'When enabled, the AI automatically searches the web for each company before writing. It researches their website, recent news, and the latest cybersecurity threats in their industry — then crafts a hyper-personalized email using real, current context.')
+    h('p',{style:{fontSize:'12px',color:'var(--text2)',lineHeight:'1.5'}},'When enabled, the AI automatically searches the web for each company before writing. It researches their website, recent news, and the latest developments in their industry — then crafts a hyper-personalized email using real, current context.')
   );
   const toggle=h('div',{
     style:{
@@ -388,12 +484,13 @@ function p1(){
   wrap.appendChild(researchCard);
 
   const ok=()=>S.colMap.email&&S.colMap.company&&S.sender.name&&S.sender.email;
+  wrap.appendChild(designCard());
   wrap.appendChild(h('div',{cls:'fb',style:{marginTop:'14px'}},
     h('button',{cls:'btn',onClick:()=>{S.step=0;draw();}},'← Back'),
     h('button',{cls:'btn btn-primary',style:{opacity:ok()?1:.5},onClick:()=>{
       if(!ok()){alert('Please map Email and Company columns, and enter your Name and Sender Email.');return;}
       S.step=2;S.emails=[];S.genProgress=0;S.sendStatus={};draw();runGenerate();
-    }},'Generate '+S.leads.length+' Emails →')
+    }},(tplOn()&&!S.tpl.ai?'Create ':'Generate ')+S.leads.length+' Emails →')
   ));
   return wrap;
 }
@@ -420,6 +517,10 @@ function p2(){
   );
 }
 async function runGenerate(){
+  if(tplOn()&&!S.tpl.ai){
+    S.leads.forEach((lead,i)=>{S.emails.push({id:i,lead,subject:VelorahEmailTemplate.build(S.tpl.cfg,leadVars(lead)).subject,body:'',approved:true,error:false});});
+    S.step=3;S.activeIdx=0;draw();return;
+  }
   for(let i=0;i<S.leads.length;i++){
     try{
       const{subject,body}=await callAI(S.leads[i]);
@@ -499,7 +600,7 @@ function p3(){
       const companySize2=lead[S.colMap.companySize]||'';
       const revenue2=lead[S.colMap.revenue]||'';
       const sysPrompt=getSystem(S.emailAngle,companySize2,revenue2);
-      const prompt=sysPrompt+'\n\nWrite ONLY the email body (no subject line) for this lead. The body MUST directly follow and expand on this exact subject line:\nSUBJECT: "'+customSubject+'"\n\nThe opening line must connect directly to the subject. Personalize for their industry and role.\n\nLead details:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown:\n{"body":"..."}';
+      const prompt=sysPrompt+tplNote()+'\n\nWrite ONLY the email body (no subject line) for this lead. The body MUST directly follow and expand on this exact subject line:\nSUBJECT: "'+customSubject+'"\n\nThe opening line must connect directly to the subject. Personalize for their industry and role.\n\nLead details:\n- Name: '+name+'\n- Title: '+title+'\n- Company: '+company+'\n- Industry: '+industry+'\n- From: '+S.sender.name+', '+(S.sender.title||'Account Executive')+', '+S.sender.company+'\n\nRespond ONLY with valid JSON, no markdown:\n{"body":"..."}';
       try{
         const resp=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,company:company,industry:industry,researchMode:S.researchMode})});
         const respText=await resp.text();
@@ -528,7 +629,19 @@ function p3(){
     subjWrap.appendChild(subjRow);
     det.appendChild(subjWrap);
     const ta=document.createElement('textarea');ta.style.minHeight='190px';ta.value=ae.body;ta.addEventListener('input',function(e){S.emails[S.activeIdx].body=e.target.value;});
-    det.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body — edit directly or use "Rewrite Body" above to regenerate from your subject'),ta));
+    if(tplOn()){
+      const pf=previewFrame(ae,560);
+      if(S.tpl.ai){
+        ta.style.minHeight='96px';
+        ta.addEventListener('input',function(){pf.srcdoc=buildDesigned(S.emails[S.activeIdx]).html;});
+        det.appendChild(h('div',null,h('div',{cls:'lbl'},'Personalised opening — appears right after the greeting in the designed email'),ta));
+      }else{
+        det.appendChild(h('div',{cls:'tip',style:{marginTop:'0'}},'Designed template: every recipient gets the same design, personalised with their own details. Change it with "Edit design" on the next step.'));
+      }
+      det.appendChild(h('div',null,h('div',{cls:'lbl'},'Preview — exactly what this lead will receive'),pf));
+    }else{
+      det.appendChild(h('div',null,h('div',{cls:'lbl'},'Email body — edit directly or use "Rewrite Body" above to regenerate from your subject'),ta));
+    }
     det.appendChild(h('div',{cls:'fb'},
       h('div',{style:{display:'flex',gap:'8px'}},
         h('button',{cls:'btn btn-sm '+(ae.approved&&!ae.error?'btn-danger':'btn-success'),onClick:()=>{S.emails[S.activeIdx].approved=!S.emails[S.activeIdx].approved;draw();}},ae.approved&&!ae.error?'✗ Exclude':'✓ Include'),
@@ -542,6 +655,7 @@ function p3(){
       h('button',{cls:'btn btn-primary',onClick:()=>{S.step=4;draw();}},'Proceed to Send →')
     ));
   }
+  if(tplOn()&&!S.tpl.ai)det.querySelectorAll('button').forEach(b=>{if(/Regenerate|Rewrite Body/.test(b.textContent))b.style.display='none';});
   panel.appendChild(det);wrap.appendChild(panel);
   return wrap;
 }
@@ -558,10 +672,11 @@ function p4(){
     g4.appendChild(h('div',{cls:'stat-card'},h('div',{cls:'stat-val'},String(s.v)),h('div',{cls:'stat-lbl'},s.l)));
   });
   wrap.appendChild(g4);
+  if(tplOn())wrap.appendChild(designStatusCard());
 
   const ac=h('div',{cls:'card'});
   ac.appendChild(h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}},
-    h('button',{cls:'btn btn-primary',onClick:()=>sendAll(approved)},'▶ Send All ('+approved.length+')'),
+    h('button',{cls:'btn btn-primary',onClick:async()=>{if(await ensureReadyToSend())sendAll(approved);}},'▶ Send All ('+approved.length+')'),
     h('button',{cls:'btn',onClick:doExport},'↓ Export CSV'),
     h('button',{cls:'btn',onClick:()=>{S.step=3;draw();}},'← Edit Emails')
   ));
@@ -570,6 +685,7 @@ function p4(){
     ac.appendChild(h('div',{style:{marginTop:'10px'}},h('div',{cls:'fb',style:{marginBottom:'4px'}},h('span',{style:{fontSize:'12px',color:'var(--text2)'}},sent+' of '+approved.length+' sent'),h('span',{style:{fontSize:'12px',fontWeight:'700'}},pct+'%')),h('div',{cls:'pbar'},h('div',{cls:'pfill',style:{width:pct+'%'}}))));
   }
   wrap.appendChild(ac);
+  if(S.lastSendError&&failed>0)wrap.appendChild(h('div',{cls:'errtip'},'Last error: '+S.lastSendError));
 
   // Check if email column mapping looks wrong
   const badEmails=approved.filter(e=>!emailRegex.test((e.lead[S.colMap.email]||'').trim()));
@@ -604,9 +720,10 @@ function p4(){
     else if(st==='error')se.appendChild(h('span',{cls:'badge bd'},'✗ Failed'));
     else if(st==='sending')se.appendChild(h('span',{cls:'spin'}));
     else se.appendChild(h('button',{cls:'btn btn-sm btn-primary',onClick:async function(){
+      if(!(await ensureReadyToSend()))return;
       S.sendStatus[id]='sending';draw();
       if(!emailRegex.test(toEmail)){S.sendStatus[id]='error';alert('Invalid email address: "'+toEmail+'"\n\nPlease go back to Step 2 and make sure the Email column is correctly mapped to the email address column in your CSV.');draw();return;}
-      try{const ok=await sendEmail(toEmail,ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}catch(e){console.error('Send error:',e.message);S.sendStatus[id]='error';}
+      try{const ok=await sendEmail(toEmail,ed.subject,ed.body,ed);S.sendStatus[id]=ok?'sent':'error';}catch(e){console.error('Send error:',e.message);S.sendStatus[id]='error';}
       draw();
     }},'Send'));
     
@@ -621,7 +738,7 @@ async function sendAll(approved){
   for(const ed of approved){
     const id=ed.id;if(S.sendStatus[id]==='sent')continue;
     S.sendStatus[id]='sending';draw();
-    try{const ok=await sendEmail(ed.lead[S.colMap.email]||'',ed.subject,ed.body);S.sendStatus[id]=ok?'sent':'error';}
+    try{const ok=await sendEmail(ed.lead[S.colMap.email]||'',ed.subject,ed.body,ed);S.sendStatus[id]=ok?'sent':'error';}
     catch{S.sendStatus[id]='error';}
     draw();await new Promise(r=>setTimeout(r,300));
   }
@@ -635,6 +752,8 @@ function doExport(){
 }
 
 draw();
+refreshSession();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&tplOn())refreshSession();});
 </script>
 </body>
 </html>
