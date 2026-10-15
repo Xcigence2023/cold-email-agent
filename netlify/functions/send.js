@@ -20,9 +20,9 @@ exports.handler = async function(event) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Sending is temporarily unavailable. If this keeps happening, mention error code SEND-CONFIG.', code: 'SEND-CONFIG' }) };
   }
 
-  let to, subject, body, fromEmail, fromName, attachments;
+  let to, subject, body, bodyHtml, fromEmail, fromName, attachments;
   try {
-    ({ to, subject, body, fromEmail, fromName, attachments } = JSON.parse(event.body));
+    ({ to, subject, body, bodyHtml, fromEmail, fromName, attachments } = JSON.parse(event.body));
   } catch (e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
@@ -31,6 +31,32 @@ exports.handler = async function(event) {
   if (!to || !emailRegex.test(to)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid TO email: ' + to }) };
   if (!fromEmail || !emailRegex.test(fromEmail)) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid FROM email: ' + fromEmail }) };
   if (!subject || !body) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing subject or body' }) };
+
+  // Designed (HTML) emails carry arbitrary markup sent from your domain, so they are only
+  // accepted from a signed-in Velorah user (the page sends its Supabase session token).
+  // Plain-text sends keep working exactly as before.
+  const isDesigned = bodyHtml !== undefined && bodyHtml !== null;
+  if (isDesigned) {
+    if (typeof bodyHtml !== 'string' || bodyHtml.length < 50 || bodyHtml.length > 200000) {
+      return { statusCode: 413, headers, body: JSON.stringify({ error: 'The designed email is empty or too large (limit 200 KB).', code: 'SEND-HTML-SIZE' }) };
+    }
+    const SB_URL = process.env.SUPABASE_URL, SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+    if (!SB_URL || !SB_KEY) {
+      console.error('[send] SEND-AUTH-CONFIG: SUPABASE_URL / SUPABASE_SERVICE_KEY missing');
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Designed emails are temporarily unavailable. Mention error code SEND-AUTH-CONFIG.', code: 'SEND-AUTH-CONFIG' }) };
+    }
+    const token = ((event.headers || {}).authorization || '').replace(/^Bearer\s+/i, '').trim();
+    let signedIn = false;
+    if (token) {
+      try {
+        const r = await fetch(`${SB_URL}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: SB_KEY } });
+        if (r.ok) { const u = await r.json(); signedIn = !!(u && u.id); }
+      } catch (e) { console.error('[send] SEND-AUTH-NET: ' + e.message); }
+    }
+    if (!signedIn) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Please sign in to send designed emails.', code: 'SEND-AUTH' }) };
+    }
+  }
 
   const htmlBody = body
     .split('\n\n')
@@ -44,7 +70,7 @@ exports.handler = async function(event) {
     to: [{ email_address: { address: to } }],
     reply_to: [{ address: fromEmail, name: fromName || fromEmail }],
     subject,
-    htmlbody: fullHtml,
+    htmlbody: isDesigned ? bodyHtml : fullHtml,
     textbody: body,
     track_clicks: true,
     track_opens: true,
