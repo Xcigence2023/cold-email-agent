@@ -61,6 +61,9 @@ exports.handler = async function(event) {
   }
 
   if (!emails.length) return { statusCode: 400, headers, body: JSON.stringify({ error: 'No emails provided' }) };
+  if (!userId && emails.some(e => e && e.bodyHtml)) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Please sign in to send designed emails.', code: 'BULK-AUTH' }) };
+  }
   if (!fromEmail)     return { statusCode: 400, headers, body: JSON.stringify({ error: 'No sender email' }) };
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -69,14 +72,18 @@ exports.handler = async function(event) {
   function buildBodies(ed) {
     const stripTags = s => String(s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     const optOutLine = 'If this is not relevant, just reply and I will remove you from my list.';
-    let bodyText, htmlBody;
+    let bodyText, htmlBody, fullDoc = false;
     if (ed.bodyHtml) {
-      const plainCheck = stripTags(ed.bodyHtml);
+      // A complete designed email (from the template designer) is sent exactly as designed:
+      // no second wrapper, and any missing opt-out line goes inside its <body>.
+      fullDoc = /^\s*(<!doctype|<html)/i.test(ed.bodyHtml);
+      const plainCheck = stripTags(String(ed.bodyHtml).replace(/<head[\s\S]*?<\/head>/i, ''));
       htmlBody = ed.bodyHtml;
       if (plainCheck && !optOutPattern.test(plainCheck)) {
-        htmlBody += `<p style="margin:16px 0 0 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${optOutLine}</p>`;
+        const line = `<p style="margin:16px 0 0 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${optOutLine}</p>`;
+        htmlBody = fullDoc ? htmlBody.replace(/<\/body>/i, line + '</body>') : htmlBody + line;
       }
-      bodyText = plainCheck + (plainCheck && !optOutPattern.test(plainCheck) ? '\n\n' + optOutLine : '');
+      bodyText = (fullDoc && ed.body) ? String(ed.body) : plainCheck + (plainCheck && !optOutPattern.test(plainCheck) ? '\n\n' + optOutLine : '');
     } else {
       bodyText = ed.body || '';
       if (bodyText && !optOutPattern.test(bodyText)) bodyText = bodyText + '\n\n' + optOutLine;
@@ -85,7 +92,7 @@ exports.handler = async function(event) {
         .map(p => `<p style="margin:0 0 16px 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333">${p.replace(/\n/g,'<br>')}</p>`)
         .join('');
     }
-    return { bodyText, htmlBody };
+    return { bodyText, htmlBody, fullDoc };
   }
 
   function pickAttachments(ed) {
@@ -179,10 +186,10 @@ exports.handler = async function(event) {
 
   async function sendOne(ed) {
     if (!ed.to || !emailRegex.test(ed.to)) return { id: ed.id, success: false, error: 'Invalid email: ' + ed.to };
-    const { bodyText, htmlBody } = buildBodies(ed);
+    const { bodyText, htmlBody, fullDoc } = buildBodies(ed);
     const thisAttachments = pickAttachments(ed);
 
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;background:#fff;max-width:600px;font-family:Arial,sans-serif">${htmlBody}<hr style="margin-top:32px;border:none;border-top:1px solid #eee"><p style="font-size:11px;color:#aaa;margin-top:12px">Sent by ${fromName} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>`;
+    const fullHtml = fullDoc ? htmlBody : `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:24px;background:#fff;max-width:600px;font-family:Arial,sans-serif">${htmlBody}<hr style="margin-top:32px;border:none;border-top:1px solid #eee"><p style="font-size:11px;color:#aaa;margin-top:12px">Sent by ${fromName} (${fromEmail}). Reply "Unsubscribe" to opt out.</p></body></html>`;
 
     const payload = {
       from: { address: fromEmail, name: fromName },
